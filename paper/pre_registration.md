@@ -118,7 +118,7 @@ Each ablation is reported as a delta to the H1 result (point estimate + 95% bloc
 | Item | Specification |
 |---|---|
 | Code repository | `github.com/mahimn01/reflexive-options` |
-| Pinned commit | `<TO_BE_FILLED_AT_PRE_REG_COMMIT>` (the commit that adds this document; will be inserted before the public push) |
+| Pinned commit | `268c061` (initial public commit, 2026-04-29, `github.com/mahimn01/reflexive-options`). All H1-H4 evaluation must run against the codebase as it exists at this hash or a strict descendant; any algorithmic divergence triggers the §9 deviations clause. |
 | Vendored sub-modules | `third_party/atlas/` (Mamba+PPO+BC+EWC, vendored from `trading-algo`), `third_party/rat/` (reflexivity meter + topology detector). Vendored commit hashes recorded in `third_party/VERSIONS.txt`. |
 | Empirical data — primary | WRDS OptionMetrics IvyDB US (UofT institutional access). SPX index level from CRSP daily file. |
 | Empirical data — fallback | historicaloptiondata.com ALLSPX bundle ($805, one-time). |
