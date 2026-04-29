@@ -1,0 +1,83 @@
+"""Tests for the surface generator and parquet I/O."""
+
+from __future__ import annotations
+
+from pathlib import Path
+from unittest.mock import MagicMock
+
+import numpy as np
+import pytest
+
+from reflexive_options.surface.generator import generate_surface, make_standard_grid
+from reflexive_options.surface.io import load_surfaces, save_surfaces
+from reflexive_options.types import SDEState, SurfaceGrid
+
+
+def test_make_standard_grid_shape() -> None:
+    grid = make_standard_grid(spot=5000.0)
+    assert grid.shape == (11, 7)
+    # Strikes symmetric around ATM.
+    np.testing.assert_allclose(grid.log_moneyness[0], -grid.log_moneyness[-1])
+    # Maturities strictly increasing, in years.
+    assert np.all(np.diff(grid.maturities) > 0)
+    # Cover 1w to 1y.
+    assert grid.maturities[0] == pytest.approx(7 / 365.0)
+    assert grid.maturities[-1] == pytest.approx(1.0)
+
+
+def test_make_standard_grid_custom_dims() -> None:
+    grid = make_standard_grid(spot=100.0, n_strikes=21, n_maturities=5)
+    assert grid.shape == (21, 5)
+
+
+def test_make_standard_grid_rejects_bad_spot() -> None:
+    with pytest.raises(ValueError):
+        make_standard_grid(spot=-1.0)
+
+
+def test_generate_surface_calls_simulator_method() -> None:
+    grid = make_standard_grid(spot=100.0)
+    state = SDEState(spot=100.0, variance=0.04, time=0.0)
+
+    sim = MagicMock()
+    expected = np.full(grid.shape, 0.2)
+    sim.implied_surface.return_value = expected
+
+    out = generate_surface(sim, state, grid, rate=0.01, dividend=0.0)
+
+    sim.implied_surface.assert_called_once_with(state, grid)
+    np.testing.assert_array_equal(out, expected)
+
+
+def test_save_load_roundtrip(tmp_path: Path) -> None:
+    rng = np.random.default_rng(0)
+    surfaces = 0.15 + 0.05 * rng.random((100, 11, 7))
+    path = tmp_path / "surfaces.parquet"
+
+    save_surfaces(surfaces, path, metadata={"experiment": "unit-test", "seed": 0})
+    loaded, meta = load_surfaces(path)
+
+    np.testing.assert_array_equal(loaded, surfaces)
+    assert meta == {"experiment": "unit-test", "seed": 0}
+
+
+def test_save_rejects_non_finite(tmp_path: Path) -> None:
+    bad = np.full((1, 5, 5), np.nan)
+    with pytest.raises(ValueError):
+        save_surfaces(bad, tmp_path / "x.parquet")
+
+
+def test_save_rejects_wrong_ndim(tmp_path: Path) -> None:
+    bad = np.full((5, 5), 0.2)
+    with pytest.raises(ValueError):
+        save_surfaces(bad, tmp_path / "x.parquet")
+
+
+def test_grid_attributes() -> None:
+    g = SurfaceGrid(
+        log_moneyness=np.linspace(-0.2, 0.2, 5),
+        maturities=np.array([0.1, 0.5, 1.0]),
+    )
+    assert g.n_strikes == 5
+    assert g.n_maturities == 3
+    assert g.shape == (5, 3)

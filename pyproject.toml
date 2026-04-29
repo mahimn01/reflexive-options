@@ -1,0 +1,95 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reflexive-options"
+version = "0.1.0"
+description = "Reflexive options market simulator with dealer-gamma feedback channel, RL-trained agents, and analytical bifurcation results."
+authors = [{name = "Mahimn Patel", email = "mahimn.patel.k@gmail.com"}]
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "MIT"}
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.13",
+    "pandas>=2.2",
+    "pyarrow>=15",
+    "torch>=2.3",
+    "gymnasium>=0.29",
+    "QuantLib>=1.33",
+    "matplotlib>=3.8",
+    "tqdm>=4.66",
+    "pyyaml>=6.0",
+    "diptest>=0.7",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.4",
+    "mypy>=1.10",
+    "pre-commit>=3.7",
+    "ipykernel>=6.29",
+    "jupyter>=1.0",
+]
+mlx = [
+    "mlx>=0.15",
+]
+calibration = [
+    "mystic>=0.4",
+]
+
+[project.urls]
+Repository = "https://github.com/mahimn01/reflexive-options"
+Issues = "https://github.com/mahimn01/reflexive-options/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+reflexive_options = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+addopts = "-ra --strict-markers --cov=reflexive_options --cov-report=term-missing"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+# Vendored ATLAS/RAT modules retain upstream style; we patch only imports
+# and strip trading-domain code (see CLAUDE.md "Vendoring discipline").
+extend-exclude = ["src/reflexive_options/third_party/**"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "RUF"]
+# RUF001/RUF002/RUF003: Greek letters (μ, σ, ρ, κ, …) and dynamical-systems notation
+#   (ℓ for the Lyapunov coefficient, × for matrix shapes, ∂, ⟨·,·⟩) are canonical
+#   throughout this codebase and in paper/theory.md.
+# N803/N806: dW_S, dW_v, drift_S, diff_S follow the standard math-paper convention; renaming
+#   them to lowercase would obscure correspondence to the SDE writeup in paper/theory.md.
+ignore = ["E501", "RUF001", "RUF002", "RUF003", "N803", "N806"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_any_unimported = true
+no_implicit_optional = true
+check_untyped_defs = true
+warn_return_any = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = ["QuantLib.*", "mlx.*", "mystic.*", "matplotlib.*", "scipy.*", "diptest.*"]
+ignore_missing_imports = true

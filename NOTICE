@@ -1,0 +1,49 @@
+reflexive-options — third-party attributions
+
+The modules under src/reflexive_options/third_party/atlas/ and
+src/reflexive_options/third_party/rat/ are vendored, with modifications, from:
+
+    https://github.com/mahimn01/trading-algo
+    Copyright (c) 2025 Mahimn Patel
+
+License status of upstream
+--------------------------
+At the time of vendoring (April 2026) the trading-algo repository has no
+LICENSE file in its root. Both reflexive-options and trading-algo are owned
+by the same author (Mahimn Patel); this vendor is therefore an internal
+author-to-author copy. The vendored files are re-licensed under the MIT
+license that applies to the destination repository (see ./LICENSE).
+
+Recommendation: add an explicit LICENSE file (MIT or Apache-2.0) to
+trading-algo so that any future external use of these modules has an
+unambiguous grant.
+
+Modifications
+-------------
+The following modifications were made during vendoring:
+- Patch import paths (`trading_algo.quant_core.models.atlas.*` →
+  `reflexive_options.third_party.atlas.*`,
+  `trading_algo.rat.*` → `reflexive_options.third_party.rat.*`).
+- Strip trading-domain code (broker integration, options-wheel pricing,
+  IBKR-specific helpers, hindsight-action scoring, execution_bridge,
+  curriculum trainer, MLX backend, deprecated v7 variants).
+- ``atlas/features.py``: inline minimal ``realized_volatility`` /
+  ``iv_series_from_prices`` / ``iv_rank`` helpers from the upstream
+  ``iv_rank`` module (which is itself trading-domain code and not vendored)
+  and add an optional ``iv_series`` parameter to ``compute_features`` so
+  callers can supply true implied-vol series from a simulator or quotes.
+- ``atlas/inference.py``: drop the ``execution_bridge`` integration; the
+  ``predict`` method now returns the raw (5,) action vector and callers
+  map it to a domain decision via ``reflexive_options.rl.atlas_adapter``.
+- ``rat/config.py``: inline the ``WeightingMethod`` enum (was imported
+  from the unused ``rat.combiner`` subpackage).
+- ``rat/attention/tracker.py``: remove the optional ``broker`` parameter
+  to keep the module standalone.
+
+The original ATLAS (Mamba state-space + cross-attention transformer, PPO/BC/EWC
+training loops) and RAT (reflexivity meter, topology detector, attention flow
+tracking) implementations remain attributable to the trading-algo project.
+
+Domain-specific glue (state encoding, action interpretation, reward shaping,
+options-env wiring) is implemented in this repository, not vendored:
+see src/reflexive_options/rl/atlas_adapter.py and src/reflexive_options/rl/.
