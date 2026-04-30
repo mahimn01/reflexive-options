@@ -14,6 +14,7 @@ import argparse
 from dataclasses import dataclass
 
 import numpy as np
+from numpy.typing import NDArray
 
 from reflexive_options.experiments._common import (
     make_run_dir,
@@ -37,8 +38,8 @@ class PhaseDiagramConfig:
 
 
 def classify_regime(
-    spots: np.ndarray,
-    variances: np.ndarray,
+    spots: NDArray[np.float64],
+    variances: NDArray[np.float64],
     *,
     initial_spot: float,
 ) -> str:

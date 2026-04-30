@@ -53,7 +53,10 @@ class _LeverageFn:
         t: float,
     ) -> NDArray[np.float64] | float:
         k = np.log(np.asarray(spot, dtype=np.float64) / self.spot0)
-        return 1.0 + self.a1 * k + self.a2 * k * k + self.a3 * k * t
+        result = 1.0 + self.a1 * k + self.a2 * k * k + self.a3 * k * t
+        if np.ndim(result) == 0:
+            return float(np.asarray(result).item())
+        return np.asarray(result, dtype=np.float64)
 
 
 class LSVSimulator:

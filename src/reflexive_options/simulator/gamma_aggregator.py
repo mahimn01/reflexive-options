@@ -46,6 +46,9 @@ class GammaAggregator:
     SPX convention (calls +1, puts -1) is the default for the sign object.
     """
 
+    _oi_calls: NDArray[np.float64]
+    _oi_puts: NDArray[np.float64]
+
     def __init__(
         self,
         oi_grid: OpenInterestGrid,
@@ -76,7 +79,7 @@ class GammaAggregator:
             self._oi_puts = (
                 np.zeros((n_strikes, n_maturities), dtype=np.float64)
                 if oi_puts is None
-                else oi_puts.astype(np.float64, copy=True)
+                else np.ascontiguousarray(oi_puts, dtype=np.float64)
             )
             if self._oi_calls.shape != (n_strikes, n_maturities):
                 raise ValueError(

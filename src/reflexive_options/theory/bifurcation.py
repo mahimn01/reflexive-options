@@ -68,9 +68,11 @@ def jacobian_3d(
 
 def jacobian_eigenvalues(jacobian: NDArray[np.float64]) -> NDArray[np.complex128]:
     """Numerical eigenvalues of the Jacobian. Sorted by descending real part."""
-    eig = np.linalg.eigvals(jacobian)
+    # eigvals returns float64 for symmetric inputs and complex128 otherwise.
+    # Cast to complex128 unconditionally so downstream arithmetic on .imag is well-typed.
+    eig = np.asarray(np.linalg.eigvals(jacobian), dtype=np.complex128)
     order = np.argsort(-eig.real)
-    return eig[order]
+    return np.asarray(eig[order], dtype=np.complex128)
 
 
 def routh_hurwitz_H(eigenvalues: NDArray[np.complex128]) -> tuple[float, float, float, float]:

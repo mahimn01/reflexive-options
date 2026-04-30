@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from functools import partial
 
 import numpy as np
+from numpy.typing import NDArray
 
 from reflexive_options.experiments._common import (
     FIGURES_DIR,
@@ -63,8 +64,8 @@ def main() -> None:
     run_dir = make_run_dir("bifurcation_scan")
     save_config(run_dir, cfg)
 
-    kappa_grid = np.linspace(cfg.kappa_min, cfg.kappa_max, cfg.n_kappa)
-    sigma_v_grid = np.linspace(cfg.sigma_v_min, cfg.sigma_v_max, cfg.n_sigma_v)
+    kappa_grid = np.linspace(cfg.kappa_min, cfg.kappa_max, cfg.n_kappa).astype(np.float64)
+    sigma_v_grid = np.linspace(cfg.sigma_v_min, cfg.sigma_v_max, cfg.n_sigma_v).astype(np.float64)
 
     kappa_star_vs_sigma_v: list[float | None] = []
 
@@ -106,7 +107,7 @@ def _jacobian_for_kappa_at_sigma(
     *,
     cfg: BifurcationConfig,
     sigma_v: float,
-) -> np.ndarray:
+) -> NDArray[np.float64]:
     a = kappa * cfg.G_x - 0.5 * cfg.sigma2_x
     b = kappa * cfg.G_v - 0.5 * cfg.sigma2_v * sigma_v
     return jacobian_3d(

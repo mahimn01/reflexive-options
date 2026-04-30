@@ -491,7 +491,7 @@ def batch_check(
             k_max = float(k_native.max(axis=0).min())
             if k_max > k_min:
                 M = max(n_K, 25)
-                kg = np.linspace(k_min, k_max, M)
+                kg = np.linspace(k_min, k_max, M).astype(np.float64)
                 # For each maturity, build linear-interp weights once → matmul over batch.
                 W = np.zeros((n_T, M, n_K), dtype=np.float64)
                 for j in range(n_T):

@@ -36,7 +36,6 @@ jobs:
 
       - name: Type check (mypy)
         run: mypy src
-        continue-on-error: true  # mypy strict mode while scaffolding; flip to false post-implementation
 
       - name: Test (pytest)
         run: pytest --cov=reflexive_options --cov-report=xml

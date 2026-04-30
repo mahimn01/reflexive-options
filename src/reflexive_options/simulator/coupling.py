@@ -53,7 +53,7 @@ def check_coupling_stable(
     if jacobian.ndim != 2 or jacobian.shape[0] != jacobian.shape[1]:
         raise ValueError(f"jacobian must be square 2D, got shape {jacobian.shape}")
 
-    eigvals = np.linalg.eigvals(jacobian)
+    eigvals = np.asarray(np.linalg.eigvals(jacobian), dtype=np.complex128)
     largest_real = float(np.max(eigvals.real))
     has_imag = bool(np.any(np.abs(eigvals.imag) > 1e-12))
 

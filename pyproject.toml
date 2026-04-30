@@ -86,12 +86,33 @@ python_version = "3.12"
 strict = true
 warn_unused_configs = true
 disallow_untyped_defs = true
-disallow_any_unimported = true
+# disallow_any_unimported intentionally False: gymnasium and torch ship without
+# type stubs as of 2026-04, and subclassing Env / nn.Module would otherwise
+# require # type: ignore comments on every class declaration. The cost is
+# accepting `Any` propagation through gymnasium/torch boundaries — bounded by
+# our own code's strict typing on either side.
+disallow_any_unimported = false
 no_implicit_optional = true
 check_untyped_defs = true
 warn_return_any = true
 show_error_codes = true
 
 [[tool.mypy.overrides]]
-module = ["QuantLib.*", "mlx.*", "mystic.*", "matplotlib.*", "scipy.*", "diptest.*"]
+module = [
+    "QuantLib.*",
+    "scipy.*",
+    "diptest.*",
+    "ripser.*",
+    "gymnasium.*",
+    "torch.*",
+    "pyarrow.*",
+]
 ignore_missing_imports = true
+follow_imports = "silent"
+
+# Vendored ATLAS / RAT modules carry upstream typing style. We only patch import
+# paths and strip trading-domain code (CLAUDE.md "Vendoring discipline"); we do
+# not retrofit strict typing onto upstream code.
+[[tool.mypy.overrides]]
+module = "reflexive_options.third_party.*"
+ignore_errors = true

@@ -143,10 +143,9 @@ def _default_surface_grid() -> SurfaceGrid:
     """7 maturities × 11 strikes, matching `paper/pre_registration.md` §4."""
     return SurfaceGrid(
         log_moneyness=np.linspace(-0.20, 0.20, 11, dtype=np.float64),
-        maturities=np.array(
-            [7, 14, 30, 60, 90, 180, 365], dtype=np.float64
-        )
-        / 365.0,
+        maturities=(np.array([7, 14, 30, 60, 90, 180, 365], dtype=np.float64) / 365.0).astype(
+            np.float64
+        ),
     )
 
 

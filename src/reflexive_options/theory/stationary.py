@@ -137,9 +137,9 @@ def solve_stationary(
 
     samples = samples[np.isfinite(samples)]
     mean, std = float(samples.mean()), float(samples.std(ddof=1))
-    grid = np.linspace(mean - 5 * std, mean + 5 * std, grid_size)
+    grid = np.linspace(mean - 5 * std, mean + 5 * std, grid_size).astype(np.float64)
     kde = stats.gaussian_kde(samples)
-    density = kde(grid)
+    density = np.asarray(kde(grid), dtype=np.float64)
 
     return StationaryDensity(grid=grid, density=density, samples=samples)
 

@@ -81,7 +81,7 @@ def make_standard_grid(
         T = np.asarray(_DEFAULT_MATURITIES_YEARS, dtype=np.float64)
     else:
         # Geometric spacing from 1 week to 1 year.
-        T = np.geomspace(7 / 365.0, 1.0, n_maturities)
+        T = np.geomspace(7 / 365.0, 1.0, n_maturities).astype(np.float64)
 
     if (T <= 0).any() or not np.all(np.diff(T) > 0):
         raise ValueError("maturities must be strictly positive and increasing")

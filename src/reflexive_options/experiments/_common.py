@@ -29,7 +29,10 @@ def make_run_dir(experiment_name: str, *, seed: int | None = None) -> Path:
 
 def save_config(run_dir: Path, config: Any) -> None:
     """Persist a dataclass or dict as config.json next to the run results."""
-    payload = asdict(config) if is_dataclass(config) else dict(config)
+    if is_dataclass(config) and not isinstance(config, type):
+        payload = asdict(config)
+    else:
+        payload = dict(config)
     (run_dir / "config.json").write_text(json.dumps(payload, indent=2, default=str))
 
 

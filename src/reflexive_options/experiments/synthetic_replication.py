@@ -42,6 +42,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
 from reflexive_options.baselines.heston import HestonSimulator
 from reflexive_options.experiments._common import (
@@ -206,7 +207,7 @@ class ReplicationConfig:
 # ---------------------------------------------------------------------------
 
 
-def _skew(x: np.ndarray) -> float:
+def _skew(x: NDArray[np.float64]) -> float:
     m = x.mean()
     s = x.std()
     if s == 0:
@@ -214,7 +215,7 @@ def _skew(x: np.ndarray) -> float:
     return float(((x - m) ** 3).mean() / s**3)
 
 
-def _excess_kurt(x: np.ndarray) -> float:
+def _excess_kurt(x: NDArray[np.float64]) -> float:
     m = x.mean()
     s = x.std()
     if s == 0:
@@ -330,8 +331,10 @@ def _default_oi_grid(initial_spot: float) -> OpenInterestGrid:
     the reflexive feedback. The exact magnitudes wash out via the κ rescale
     above — we just need a non-zero, sign-correct G.
     """
-    log_moneyness = np.linspace(-0.10, 0.10, 11)
-    maturities = np.array([7, 30, 60, 90, 180, 365], dtype=np.float64) / 365.25
+    log_moneyness = np.linspace(-0.10, 0.10, 11, dtype=np.float64)
+    maturities = (np.array([7, 30, 60, 90, 180, 365], dtype=np.float64) / 365.25).astype(
+        np.float64
+    )
     grid = SurfaceGrid(log_moneyness=log_moneyness, maturities=maturities)
     # Triangular ATM-peaked OI, scaled up so dealer-gamma is order-of-magnitude
     # similar to SPX (~$10B notional gamma ATM).

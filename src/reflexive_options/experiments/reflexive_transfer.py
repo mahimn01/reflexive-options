@@ -50,6 +50,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
+from numpy.typing import NDArray
 from torch import nn
 
 from reflexive_options.experiments._common import (
@@ -202,7 +203,7 @@ def _make_env(
 # ---------------------------------------------------------------------------
 
 
-class _MLPPolicy(nn.Module):
+class _MLPPolicy(nn.Module):  # type: ignore[misc]
     """Plain feedforward policy used for the BC student.
 
     Mirrors the env's (obs_dim → action_dim) mapping with `n_hidden_layers`
@@ -237,13 +238,13 @@ class _MLPPolicy(nn.Module):
 
 def _collect_expert_trajectories(
     env: OptionsHedgeEnv,
-    expert: Callable[[], np.ndarray],
+    expert: Callable[[], NDArray[np.float64]],
     n_episodes: int,
     seed: int,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """Roll the expert in `env` for `n_episodes` and stack (obs, action) tuples."""
-    obs_buf: list[np.ndarray] = []
-    act_buf: list[np.ndarray] = []
+    obs_buf: list[NDArray[np.float64]] = []
+    act_buf: list[NDArray[np.float64]] = []
     for ep in range(n_episodes):
         obs, _ = env.reset(seed=seed + ep)
         terminated = truncated = False
@@ -256,8 +257,8 @@ def _collect_expert_trajectories(
 
 
 def _train_mlp_bc(
-    obs: np.ndarray,
-    actions: np.ndarray,
+    obs: NDArray[np.float64],
+    actions: NDArray[np.float64],
     obs_dim: int,
     action_dim: int,
     *,
@@ -468,7 +469,7 @@ def run_experiment(cfg: TransferConfig, run_dir: Path) -> dict[str, object]:
         cfg.kappa_anchor * cfg.kappa_grid_low_mult,
         cfg.kappa_anchor * cfg.kappa_grid_high_mult,
         cfg.kappa_grid_n_points,
-    )
+    ).astype(np.float64)
 
     rng = deterministic_rng(cfg.seed)
 
