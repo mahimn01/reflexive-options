@@ -67,13 +67,13 @@ def save_surfaces(
 
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    pq.write_table(table, path, compression="snappy")
+    pq.write_table(table, path, compression="snappy")  # type: ignore[no-untyped-call]
 
 
 def load_surfaces(path: Path) -> tuple[NDArray[np.float64], dict[str, Any]]:
     """Read a parquet written by `save_surfaces`. Returns (surfaces, metadata)."""
     path = Path(path)
-    table = pq.read_table(path)
+    table = pq.read_table(path)  # type: ignore[no-untyped-call]
     schema_meta = table.schema.metadata or {}
     if _META_SHAPE_KEY not in schema_meta:
         raise ValueError(f"{path} missing reflexive_options.shape metadata")

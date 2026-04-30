@@ -102,7 +102,7 @@ def price_option_position(
     return total
 
 
-class OptionsHedgeEnv(gym.Env):  # type: ignore[misc]
+class OptionsHedgeEnv(gym.Env):  # type: ignore[misc, type-arg]
     """Single-asset options-hedging environment over a (strike × maturity) grid."""
 
     # gymnasium.Env declares `metadata` as an instance variable; we override it
@@ -152,7 +152,7 @@ class OptionsHedgeEnv(gym.Env):  # type: ignore[misc]
         self._seed_arg = seed
         self._rng: np.random.Generator = np.random.default_rng(seed)
 
-        self.action_space: gym.Space = make_action_space(action_cfg)
+        self.action_space: gym.Space = make_action_space(action_cfg)  # type: ignore[type-arg]
         self.observation_space = gym.spaces.Box(
             low=-np.inf,
             high=np.inf,

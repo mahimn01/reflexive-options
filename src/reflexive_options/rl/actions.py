@@ -57,7 +57,7 @@ class ActionConfig:
         return self.grid.n_strikes * self.grid.n_maturities
 
 
-def make_action_space(cfg: ActionConfig) -> gym.Space:
+def make_action_space(cfg: ActionConfig) -> gym.Space:  # type: ignore[type-arg]
     """Build the gymnasium action space matching `cfg`."""
     if cfg.discrete:
         return gym.spaces.MultiDiscrete(

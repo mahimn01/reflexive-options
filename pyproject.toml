@@ -96,6 +96,11 @@ no_implicit_optional = true
 check_untyped_defs = true
 warn_return_any = true
 show_error_codes = true
+# Stubs for gymnasium / torch / pyarrow ship inconsistently across environments
+# (e.g. CI has them, local install may not). A # type: ignore that's necessary on
+# CI is "unused" locally and vice versa. Disable the warning so cross-environment
+# ignores don't bounce.
+warn_unused_ignores = false
 
 [[tool.mypy.overrides]]
 module = [
