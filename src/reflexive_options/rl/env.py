@@ -172,7 +172,7 @@ class OptionsHedgeEnv(gym.Env):  # type: ignore[type-arg]
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _sample_correlated_dW(self) -> NDArray[np.float64]:  # noqa: N802 — dW is canonical SDE notation (see pyproject)
+    def _sample_correlated_dW(self) -> NDArray[np.float64]:
         z1, z2 = self._rng.standard_normal(2)
         sqrt_dt = math.sqrt(self.dt)
         dW_S = float(z1) * sqrt_dt

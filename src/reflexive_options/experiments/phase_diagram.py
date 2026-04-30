@@ -53,10 +53,7 @@ def classify_regime(
     abs_log_returns = np.abs(np.diff(np.log(spots), axis=1))
     if abs_log_returns.shape[1] >= 2:
         flat = abs_log_returns.reshape(-1)
-        if len(flat) > 200:
-            ac1 = float(np.corrcoef(flat[:-1], flat[1:])[0, 1])
-        else:
-            ac1 = 0.0
+        ac1 = float(np.corrcoef(flat[:-1], flat[1:])[0, 1]) if len(flat) > 200 else 0.0
     else:
         ac1 = 0.0
 
@@ -91,10 +88,10 @@ def main() -> None:
     blowup_fraction = np.zeros((cfg.n_kappa, cfg.n_sigma_v))
 
     with timed("phase_grid"):
-        for i, k in enumerate(kappa_grid):
-            for j, sv in enumerate(sigma_v_grid):
+        for i, _k in enumerate(kappa_grid):
+            for j, _sv in enumerate(sigma_v_grid):
                 # TODO(post-implementation, blocked on simulator task #13):
-                #   1. Build ReflexiveSimulator(coupling=k, base.xi=sv, ...)
+                #   1. Build ReflexiveSimulator(coupling=_k, base.xi=_sv, ...)
                 #   2. Run n_paths_per_cell × n_steps_per_path Monte Carlo
                 #   3. Apply detect_blowup → blowup_fraction[i, j]
                 #   4. Classify surviving paths → regime_grid[i, j]

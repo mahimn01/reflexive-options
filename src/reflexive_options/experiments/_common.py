@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import json
 import time
+from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import asdict, is_dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Generator
+from typing import Any
 
 import numpy as np
 
@@ -19,7 +20,7 @@ FIGURES_DIR = REPO_ROOT / "paper" / "figures"
 
 def make_run_dir(experiment_name: str, *, seed: int | None = None) -> Path:
     """Create a timestamped run directory under runs/<experiment>/."""
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     suffix = f"_seed{seed}" if seed is not None else ""
     run_dir = RUNS_DIR / experiment_name / f"{timestamp}{suffix}"
     run_dir.mkdir(parents=True, exist_ok=True)
