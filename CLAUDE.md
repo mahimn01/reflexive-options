@@ -73,6 +73,21 @@ python -m reflexive_options.experiments.phase_diagram          # (κ, σ_v) phas
 python -m reflexive_options.experiments.reflexive_transfer     # κ-sensitivity (novel)
 ```
 
+## Releases
+
+Versioned changes go in `CHANGELOG.md` (Keep-a-Changelog format, SemVer).
+Tag the release once the entry lands on `main`:
+
+```bash
+git tag -a v0.1.0 -m "v0.1.0 — first tagged research release"
+git push --tags
+```
+
+Convention: bump the patch version for doc-only or test-only changes,
+the minor version for new simulator/baseline/theory artifacts, and the
+major version only after empirical calibration lands (Phase 4). Each tag
+must correspond to a `## [x.y.z] - YYYY-MM-DD` heading in `CHANGELOG.md`.
+
 ## What NOT to do
 
 - Don't add a real-data path until the data acquisition phase is funded (UofT WRDS or $805 ALLSPX). The whole point of this repo is to be data-free until Phase 4.

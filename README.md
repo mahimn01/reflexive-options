@@ -92,12 +92,14 @@ notebooks/                # Tutorial walkthroughs
 | ATLAS vendored (Mamba + BC + EWC + RAT) | **vendored (~3,700 LOC, 8 smoke tests pass)** |
 | Gymnasium RL env + state/action/reward + curriculum | **implemented + tested** |
 | Hopf bifurcation analysis (Theorem 1 + numerical $\ell_1$ + stochastic shift $\Lambda$) | **derived + computed: $\kappa^* \approx 0.8964$, $\omega^* \approx 0.5724$, $\ell_1 \approx -0.025$ (supercritical), $\Lambda \approx +0.0185$** |
-| Fokker-Planck stationary density vs Heston (analytical + MC) | **derived: H_tail ✓, H_skew ✓, H_bimod ✗ (honest finding documented)** |
+| Fokker-Planck stationary density vs Heston (analytical + MC) | **derived: H_tail confirmed, H_skew confirmed, H_bimod refuted (honest finding documented)** |
 | κ-sensitivity transfer experiment (BC-trained MLP, ~15-20 min/run) | **implemented + tested** |
 | Marketron replication infrastructure | **implemented + tested (0 cells hit, mechanism mismatch — documented)** |
 | Pre-registration document | **drafted (2,624 words, commit-anchored)** |
-| Test suite | **116/116 passing** |
-| CI (GitHub Actions) | **wired** |
+| Test suite | **116/116 passing, 82.54% branch coverage** [^cov] |
+| CI (GitHub Actions) | **green on Python 3.12 / 3.13 / 3.14** |
+
+[^cov]: Coverage measured by the most recent `bash scripts/verify.sh` run; gated at >=80% in CI via `[tool.coverage.report] fail_under = 80`.
 
 **Known open items** (post-v1):
 - Joint VIX/SPX simulation (Marketron explicitly fails this; we don't address it in v1).
@@ -114,7 +116,7 @@ The repo's CI gauntlet (mirrored locally by `bash scripts/verify.sh`):
 ```text
 ruff check src tests           # lint + flake8-bandit (S) security rules
 ruff format --check src tests  # formatter conformance
-mypy src                       # strict type check (Python 3.12 / 3.13 / 3.14 matrix in CI)
+mypy src                       # project-tuned strict mode (see pyproject.toml)
 pytest --cov-fail-under=80     # branch coverage hard gate
 ```
 
@@ -125,6 +127,30 @@ Pinned tooling versions live in `pyproject.toml`'s `[dependency-groups].dev`
 Pre-commit (`.pre-commit-config.yaml`) runs ruff + format + the standard
 hygiene hooks; mypy runs in CI only — see `docs/quality_research_brief.md`
 §5 for the rationale.
+
+mypy is set to `strict = true` with a small set of project-level relaxations
+(`disallow_any_unimported = false`, `warn_unused_ignores = false`, plus
+per-module overrides for QuantLib / diptest / ripser / mystic / scipy and
+the vendored `third_party.*` tree). The full justification — including the
+PyTorch and scientific-Python precedents — is in
+`docs/quality_research_brief.md` §3 and §7.
+
+## Continuous Integration
+
+CI (`.github/workflows/ci.yml`) runs on every push and pull request to
+`main` against an Ubuntu x [3.12, 3.13, 3.14] matrix. Each job installs
+the locked environment with `uv sync --locked --all-extras --group dev`,
+then executes ruff check, ruff format --check, mypy, and pytest with
+branch coverage. The pipeline blocks merge unless every job is green and
+total coverage stays at or above 80% (`[tool.coverage.report] fail_under
+= 80`). Coverage is uploaded to Codecov via the OIDC-based v5 action.
+
+## Releases
+
+Versioned change history lives in [CHANGELOG.md](CHANGELOG.md), formatted
+per [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and tagged
+under [SemVer](https://semver.org/spec/v2.0.0.html). The current release
+is `0.1.0`.
 
 ## Reproducibility
 
