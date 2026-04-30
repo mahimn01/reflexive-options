@@ -34,6 +34,7 @@ from typing import Any
 
 import gymnasium as gym
 import numpy as np
+import numpy.typing as npt
 from numpy.typing import NDArray
 
 from reflexive_options.baselines._mc_iv import bs_call_price
@@ -102,7 +103,15 @@ def price_option_position(
     return total
 
 
-class OptionsHedgeEnv(gym.Env):  # type: ignore[misc, type-arg]
+# Action space is the continuous Box (or MultiDiscrete in ablation mode) — both
+# return ndarray samples; using NDArray[np.float64] as the canonical ActType
+# matches `apply_action()`'s output and the dominant continuous-mode path.
+# See docs/quality_research_brief.md §1 for the gymnasium 1.x typing convention.
+ObsArray = npt.NDArray[np.float64]
+ActArray = npt.NDArray[np.float64]
+
+
+class OptionsHedgeEnv(gym.Env[ObsArray, ActArray]):
     """Single-asset options-hedging environment over a (strike × maturity) grid."""
 
     # gymnasium.Env declares `metadata` as an instance variable; we override it
@@ -128,9 +137,7 @@ class OptionsHedgeEnv(gym.Env):  # type: ignore[misc, type-arg]
     ) -> None:
         super().__init__()
         if state_cfg.surface_grid.shape != action_cfg.grid.shape:
-            raise ValueError(
-                "state_cfg.surface_grid and action_cfg.grid must have the same shape"
-            )
+            raise ValueError("state_cfg.surface_grid and action_cfg.grid must have the same shape")
         if episode_length <= 0:
             raise ValueError(f"episode_length must be > 0, got {episode_length}")
         if dt <= 0:
@@ -152,7 +159,7 @@ class OptionsHedgeEnv(gym.Env):  # type: ignore[misc, type-arg]
         self._seed_arg = seed
         self._rng: np.random.Generator = np.random.default_rng(seed)
 
-        self.action_space: gym.Space = make_action_space(action_cfg)  # type: ignore[type-arg]
+        self.action_space: gym.spaces.Space[npt.NDArray[Any]] = make_action_space(action_cfg)
         self.observation_space = gym.spaces.Box(
             low=-np.inf,
             high=np.inf,
@@ -278,8 +285,8 @@ class OptionsHedgeEnv(gym.Env):  # type: ignore[misc, type-arg]
 
     def step(
         self,
-        action: NDArray,  # type: ignore[type-arg]
-    ) -> tuple[NDArray[np.float64], float, bool, bool, dict[str, Any]]:
+        action: ActArray,
+    ) -> tuple[ObsArray, float, bool, bool, dict[str, Any]]:
         if self._sde_state is None or self._surface is None:
             raise RuntimeError("step() called before reset()")
 
@@ -367,9 +374,7 @@ class OptionsHedgeEnv(gym.Env):  # type: ignore[misc, type-arg]
             "spot": float(new_state.spot),
             "variance": float(new_state.variance),
             "aggregate_gamma": (
-                float(new_state.aggregate_gamma)
-                if new_state.aggregate_gamma is not None
-                else 0.0
+                float(new_state.aggregate_gamma) if new_state.aggregate_gamma is not None else 0.0
             ),
             "memory": float(new_state.memory) if new_state.memory is not None else 0.0,
             "pnl": pnl,

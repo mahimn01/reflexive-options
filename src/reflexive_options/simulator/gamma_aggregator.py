@@ -88,8 +88,7 @@ class GammaAggregator:
                 )
             if self._oi_puts.shape != (n_strikes, n_maturities):
                 raise ValueError(
-                    f"oi_puts shape {self._oi_puts.shape} != grid shape "
-                    f"{(n_strikes, n_maturities)}"
+                    f"oi_puts shape {self._oi_puts.shape} != grid shape {(n_strikes, n_maturities)}"
                 )
 
         self._log_moneyness = oi_grid.grid.log_moneyness.astype(np.float64)
@@ -104,12 +103,14 @@ class GammaAggregator:
         sqrt_tau = np.sqrt(tau)
         # strikes K = S * exp(log_moneyness)  ⇒  log(S/K) = -log_moneyness
         log_s_over_k = -self._log_moneyness[:, None]  # (n_strikes, 1)
-        drift_term = (
-            self.risk_free_rate - self.dividend_yield + 0.5 * sigma * sigma
-        ) * tau[None, :]
+        drift_term = (self.risk_free_rate - self.dividend_yield + 0.5 * sigma * sigma) * tau[
+            None, :
+        ]
         d1 = (log_s_over_k + drift_term) / (sigma * sqrt_tau[None, :])
         phi = np.exp(-0.5 * d1 * d1) / np.sqrt(2.0 * np.pi)
-        gamma = np.exp(-self.dividend_yield * tau[None, :]) * phi / (spot * sigma * sqrt_tau[None, :])
+        gamma = (
+            np.exp(-self.dividend_yield * tau[None, :]) * phi / (spot * sigma * sqrt_tau[None, :])
+        )
         return gamma  # type: ignore[no-any-return]
 
     def compute(self, spot: float, variance: float, log_memory: float) -> float:
@@ -132,11 +133,7 @@ class GammaAggregator:
             return 0.0
 
         gamma_bs = self._bs_gamma_grid(spot, sigma)
-        signed_oi = (
-            self.sign.call_sign * self._oi_calls + self.sign.put_sign * self._oi_puts
-        )
-        g_shares_per_dollar = float(
-            np.sum(signed_oi * gamma_bs) * self.config.multiplier
-        )
+        signed_oi = self.sign.call_sign * self._oi_calls + self.sign.put_sign * self._oi_puts
+        g_shares_per_dollar = float(np.sum(signed_oi * gamma_bs) * self.config.multiplier)
         # USD of underlying dealers must trade per unit return = shares-per-$1 · S²
         return g_shares_per_dollar * spot * spot

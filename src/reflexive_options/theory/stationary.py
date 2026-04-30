@@ -26,6 +26,7 @@ Implementation: see paper/theory.md §7 for the substantiated numbers.
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Literal
@@ -79,8 +80,7 @@ class StationaryDensity:
         """
         if len(self.samples) < k_largest * 2:
             raise ValueError(
-                f"need at least {2 * k_largest} samples for Hill estimator,"
-                f" got {len(self.samples)}"
+                f"need at least {2 * k_largest} samples for Hill estimator, got {len(self.samples)}"
             )
         # Hill is for positive variates: take absolute deviations from the median
         x = np.abs(self.samples - float(np.median(self.samples)))
@@ -192,8 +192,7 @@ def _heston_log_return_cf(
     g = (kappa - rho * xi * iu - d) / (kappa - rho * xi * iu + d)
     exp_minus_d_dt = np.exp(-d * dt)
     C = drift * iu * dt + (kappa * theta / (xi * xi)) * (
-        (kappa - rho * xi * iu - d) * dt
-        - 2.0 * np.log((1.0 - g * exp_minus_d_dt) / (1.0 - g))
+        (kappa - rho * xi * iu - d) * dt - 2.0 * np.log((1.0 - g * exp_minus_d_dt) / (1.0 - g))
     )
     D = (
         (kappa - rho * xi * iu - d)
@@ -221,6 +220,7 @@ def heston_log_return_cdf(
     x_arr = np.atleast_1d(np.asarray(x, dtype=np.float64))
     out = np.empty_like(x_arr)
     for i, xi_val in enumerate(x_arr):
+
         def integrand(u: float, xv: float = float(xi_val)) -> float:
             phi = _heston_log_return_cf(
                 np.asarray([u], dtype=np.complex128),
@@ -407,15 +407,25 @@ def compare_to_heston(
 
     # Two-sample Anderson-Darling: H_0 reflexive samples and Heston samples come
     # from the same distribution. We subsample to keep the computation tractable.
+    # When the true p-value exceeds 0.25, scipy caps it and warns; we suppress
+    # that warning since downstream tests only care about p < threshold (a cap
+    # at 0.25 is a strictly conservative *upper* bound on the p-value, which
+    # only makes accept-H_0 decisions safer, not less).
     rng = np.random.default_rng(0 if seed is None else seed)
     n_ad = min(2_000, refl_centred.size, heston_centred.size)
-    ad = stats.anderson_ksamp(
-        [
-            rng.choice(refl_centred, size=n_ad, replace=False),
-            rng.choice(heston_centred, size=n_ad, replace=False),
-        ],
-        variant="midrank",
-    )
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="p-value capped",
+            category=UserWarning,
+        )
+        ad = stats.anderson_ksamp(
+            [
+                rng.choice(refl_centred, size=n_ad, replace=False),
+                rng.choice(heston_centred, size=n_ad, replace=False),
+            ],
+            variant="midrank",
+        )
 
     return {
         "mean_reflexive": float(np.mean(refl_centred)),

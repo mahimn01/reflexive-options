@@ -267,9 +267,7 @@ def compute_lyapunov_coefficient(
         order = np.argsort(np.abs(eigvals.real))
         omega_inferred = float(np.abs(eigvals[order[0]].imag))
         if omega_inferred < 1e-10:
-            raise ValueError(
-                "could not infer ω from Jacobian — no near-imaginary eigenvalue pair"
-            )
+            raise ValueError("could not infer ω from Jacobian — no near-imaginary eigenvalue pair")
         omega = omega_inferred
 
     q, p = _hopf_eigenvectors(jacobian, omega)
@@ -392,9 +390,7 @@ def build_bilinear_trilinear_tensors(
             f_mm = f(-e[j] - e[k])
             f_pk = f(e[k])
             f_mk = f(-e[k])
-            d3 = (
-                (f_pp - 2.0 * f_pk + f_mp) - (f_pm - 2.0 * f_mk + f_mm)
-            ) / (2.0 * h**3)
+            d3 = ((f_pp - 2.0 * f_pk + f_mp) - (f_pm - 2.0 * f_mk + f_mm)) / (2.0 * h**3)
             # Symmetric in the two j's: assign all (jjk, jkj, kjj) variants
             C[:, j, j, k] = d3
             C[:, j, k, j] = d3
@@ -410,9 +406,7 @@ def build_bilinear_trilinear_tensors(
     f_mpm = f(-e[j] + e[k] - e[m])
     f_mmp = f(-e[j] - e[k] + e[m])
     f_mmm = f(-e[j] - e[k] - e[m])
-    d3_jkm = (
-        f_ppp - f_ppm - f_pmp - f_mpp + f_pmm + f_mpm + f_mmp - f_mmm
-    ) / (8.0 * h**3)
+    d3_jkm = (f_ppp - f_ppm - f_pmp - f_mpp + f_pmm + f_mpm + f_mmp - f_mmm) / (8.0 * h**3)
     # All 6 permutations of (j, k, m)
     for a, b, c in [(j, k, m), (j, m, k), (k, j, m), (k, m, j), (m, j, k), (m, k, j)]:
         C[:, a, b, c] = d3_jkm
@@ -466,9 +460,7 @@ def top_lyapunov_exponent_linearised(
     if diffusion_matrix.shape != (3, 3):
         raise ValueError(f"diffusion_matrix must be 3x3, got {diffusion_matrix.shape}")
     if n_steps % renorm_every != 0:
-        raise ValueError(
-            f"n_steps ({n_steps}) must be a multiple of renorm_every ({renorm_every})"
-        )
+        raise ValueError(f"n_steps ({n_steps}) must be a multiple of renorm_every ({renorm_every})")
 
     rng = np.random.default_rng(seed)
     sqrt_dt = float(np.sqrt(dt))

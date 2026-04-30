@@ -71,9 +71,7 @@ def test_hopf_scan_recovers_zero_at_kappa_zero() -> None:
         assert np.allclose(eig.imag, 0.0, atol=1e-10), (
             f"complex eigenvalue at κ={kappa_grid[i]}: {eig}"
         )
-        assert eig.real.max() <= 1e-10, (
-            f"positive real eigenvalue at κ={kappa_grid[i]}: {eig}"
-        )
+        assert eig.real.max() <= 1e-10, f"positive real eigenvalue at κ={kappa_grid[i]}: {eig}"
 
 
 # ---------------------------------------------------------------------------
@@ -185,9 +183,7 @@ def test_lyapunov_coefficient_supercritical_normal_form() -> None:
         assert ell1 < 0, f"a={a} should give ℓ_1 < 0, got {ell1}"
         # Quantitative check: derivation in module gives ℓ_1 = 2 a / ω for this normal form
         expected = 2.0 * a / omega
-        assert abs(ell1 - expected) < 1e-10, (
-            f"a={a}: expected ℓ_1 = {expected}, got {ell1}"
-        )
+        assert abs(ell1 - expected) < 1e-10, f"a={a}: expected ℓ_1 = {expected}, got {ell1}"
 
 
 def test_lyapunov_coefficient_subcritical_normal_form() -> None:
@@ -211,6 +207,7 @@ def test_b_c_tensor_construction_finite_differences_consistency() -> None:
 
     Choose f_i(x) with explicit polynomial coefficients up to cubic order.
     """
+
     # f_1 = 2 x_1 x_2 + 3 x_2² + x_1³ + x_1 x_2 x_3
     # f_2 = x_1² - x_3² + 2 x_1² x_3
     # f_3 = x_2 x_3 + x_3³
@@ -303,9 +300,7 @@ def test_stochastic_hopf_shift_recovers_zero_in_zero_noise_limit() -> None:
     # Each λ should be within ~0.15 of α_det at these noise levels (small-noise
     # regime; tighter bounds need n_paths >> 10^4).
     for e, lam in zip(eps_values, lams, strict=True):
-        assert abs(lam - alpha_det) < 0.25, (
-            f"ε={e}: λ_1 ≈ {lam:.4f}, α_det = {alpha_det:.4f}"
-        )
+        assert abs(lam - alpha_det) < 0.25, f"ε={e}: λ_1 ≈ {lam:.4f}, α_det = {alpha_det:.4f}"
     # Monotone convergence: |λ(ε_small) - α| < |λ(ε_large) - α| (in expectation)
     # — assert at least the smallest-ε value is closer than the largest.
     assert abs(lams[-1] - alpha_det) <= abs(lams[0] - alpha_det) + 0.05
@@ -432,9 +427,7 @@ def test_build_tensors_from_simulator_shapes_and_symmetry() -> None:
         s = float(np.exp(x[0]))
         return sim.drift(s, float(x[1]), float(x[2]))
 
-    B, C = build_bilinear_trilinear_tensors(
-        drift, (log_s_star, v_star, 0.0), h=1e-3
-    )
+    B, C = build_bilinear_trilinear_tensors(drift, (log_s_star, v_star, 0.0), h=1e-3)
     assert B.shape == (3, 3, 3)
     assert C.shape == (3, 3, 3, 3)
     # Symmetry of B in last two indices
@@ -455,8 +448,14 @@ def test_top_lyapunov_exponent_seed_stability(seed: int) -> None:
     J = -0.7 * np.eye(3)
     Sigma = 0.3 * np.eye(3)
     lam = top_lyapunov_exponent_linearised(
-        J, Sigma, epsilon=0.1, n_paths=200, n_steps=2_000,
-        dt=5e-3, renorm_every=50, seed=seed,
+        J,
+        Sigma,
+        epsilon=0.1,
+        n_paths=200,
+        n_steps=2_000,
+        dt=5e-3,
+        renorm_every=50,
+        seed=seed,
     )
     # Should be within ~0.2 of -0.7 (the deterministic stable rate)
     assert abs(lam - (-0.7)) < 0.25

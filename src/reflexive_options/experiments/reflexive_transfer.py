@@ -439,9 +439,7 @@ def evaluate_at_kappa(
     mean_pnl = float(np.mean(episode_pnls))
     if not math.isfinite(mean_pnl):
         # Bubble up — sensitivity-curve bootstrap will hit ValueError on the spline.
-        raise RuntimeError(
-            f"non-finite mean P&L from κ={kappa}, seed={seed}: {episode_pnls}"
-        )
+        raise RuntimeError(f"non-finite mean P&L from κ={kappa}, seed={seed}: {episode_pnls}")
     return mean_pnl
 
 

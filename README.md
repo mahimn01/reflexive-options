@@ -35,7 +35,10 @@ A full implementation of:
 ## Quick start
 
 ```bash
-# Install in editable mode with dev extras
+# Reproducible install (recommended): uv resolves from uv.lock for bit-identical environments
+uv sync --locked --all-extras --group dev
+
+# Or, plain pip (no lockfile): editable install with dev extras
 pip install -e ".[dev,calibration]"
 
 # Run the test suite
@@ -103,6 +106,25 @@ notebooks/                # Tutorial walkthroughs
 - Empirical calibration to real SPX surfaces (gated on WRDS / ALLSPX data acquisition — Phase 4 of the master TODO).
 
 Phase 0 of [TODO.md](https://github.com/mahimn01/reflexivity-research/blob/main/TODO.md) (data acquisition) is the *only* part that requires real SPX data. Everything in this repo is data-free and reproducible from synthetic priors and published parameter sets.
+
+## Quality
+
+The repo's CI gauntlet (mirrored locally by `bash scripts/verify.sh`):
+
+```text
+ruff check src tests           # lint + flake8-bandit (S) security rules
+ruff format --check src tests  # formatter conformance
+mypy src                       # strict type check (Python 3.12 / 3.13 / 3.14 matrix in CI)
+pytest --cov-fail-under=80     # branch coverage hard gate
+```
+
+Pinned tooling versions live in `pyproject.toml`'s `[dependency-groups].dev`
+(PEP 735) and the bit-identical resolution is captured in `uv.lock`.
+`uv sync --locked` reproduces the exact environment a paper reviewer would see.
+
+Pre-commit (`.pre-commit-config.yaml`) runs ruff + format + the standard
+hygiene hooks; mypy runs in CI only — see `docs/quality_research_brief.md`
+§5 for the rationale.
 
 ## Reproducibility
 

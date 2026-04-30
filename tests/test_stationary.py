@@ -241,9 +241,7 @@ def test_tail_index_increases_with_kappa() -> None:
 def test_bimodality_detector_picks_up_synthetic_bimodal() -> None:
     rng = np.random.default_rng(0)
     unimodal = rng.normal(0.0, 1.0, size=4_000)
-    bimodal = np.concatenate(
-        [rng.normal(-3.0, 0.5, size=2_000), rng.normal(3.0, 0.5, size=2_000)]
-    )
+    bimodal = np.concatenate([rng.normal(-3.0, 0.5, size=2_000), rng.normal(3.0, 0.5, size=2_000)])
 
     uni_result = detect_bimodality(unimodal)
     bi_result = detect_bimodality(bimodal)
@@ -253,8 +251,7 @@ def test_bimodality_detector_picks_up_synthetic_bimodal() -> None:
         f" p={uni_result.p_value:.4f}"
     )
     assert bi_result.is_bimodal, (
-        f"bimodal mixture not flagged: dip={bi_result.dip_statistic:.4f},"
-        f" p={bi_result.p_value:.4f}"
+        f"bimodal mixture not flagged: dip={bi_result.dip_statistic:.4f}, p={bi_result.p_value:.4f}"
     )
     assert bi_result.dip_statistic > uni_result.dip_statistic
 

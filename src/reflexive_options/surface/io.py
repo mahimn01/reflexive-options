@@ -67,6 +67,10 @@ def save_surfaces(
 
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
+    # pyarrow 24.0 ships py.typed but the parquet submodule's write_table/
+    # read_table are still declared untyped in the bundled .pyi (same root cause
+    # as apache/arrow#49831 — dynamic registration). Tracked alongside that
+    # issue; remove these ignores once stubs are complete.
     pq.write_table(table, path, compression="snappy")  # type: ignore[no-untyped-call]
 
 
@@ -82,9 +86,7 @@ def load_surfaces(path: Path) -> tuple[NDArray[np.float64], dict[str, Any]]:
 
     iv_col = table.column("iv").to_numpy(zero_copy_only=False).astype(np.float64, copy=False)
     if iv_col.size != n * n_k * n_t:
-        raise ValueError(
-            f"row count {iv_col.size} does not match metadata shape {shape}"
-        )
+        raise ValueError(f"row count {iv_col.size} does not match metadata shape {shape}")
     surfaces = iv_col.reshape(n, n_k, n_t)
 
     user_meta_raw = schema_meta.get(_META_USER_KEY, b"{}")

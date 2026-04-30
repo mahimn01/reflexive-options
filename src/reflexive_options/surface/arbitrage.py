@@ -99,7 +99,9 @@ def _strikes_from_grid(grid: SurfaceGrid, spot: float) -> NDArray[np.float64]:
     return spot * np.exp(grid.log_moneyness)
 
 
-def _forwards(spot: float, rate: float, dividend: float, T: NDArray[np.float64]) -> NDArray[np.float64]:
+def _forwards(
+    spot: float, rate: float, dividend: float, T: NDArray[np.float64]
+) -> NDArray[np.float64]:
     return spot * np.exp((rate - dividend) * T)
 
 
@@ -165,7 +167,9 @@ def check_arbitrage_free(
     _check_calendar_call(C, D, F, tol, violations, severity, margin_flags, reject_flags)
 
     # ---- Check #3: calendar in total variance ----
-    _check_calendar_w(iv_surface, K, T, F, tol, violations, severity, margin_flags, reject_flags, notes)
+    _check_calendar_w(
+        iv_surface, K, T, F, tol, violations, severity, margin_flags, reject_flags, notes
+    )
 
     # ---- Check #4: Lee wings ----
     _check_lee(iv_surface, K, T, F, tol, violations, severity, margin_flags, reject_flags, notes)

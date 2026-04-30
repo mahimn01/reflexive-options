@@ -15,11 +15,41 @@ When upstream `trading-algo` changes the ATLAS internals, re-vendor: `scripts/re
 
 ## Code style
 
-- Python 3.12, strict mypy, ruff lint.
+- Python 3.12, strict mypy, ruff lint + format.
 - Numpy-first; reach for JAX or torch only where performance demands.
 - Dataclasses over `dict` for any structured config.
 - One concept per file — `simulator/reflexive.py` does the reflexive SDE, `simulator/gamma_aggregator.py` does $G(S, t)$, etc.
-- Tests required for every module under `src/`. Aim for ≥80% coverage.
+- Tests required for every module under `src/`. Aim for ≥80% coverage (hard CI gate).
+
+## Tooling
+
+Pinned to the versions in `docs/quality_research_brief.md` (April 2026):
+
+| Tool | Version | Purpose |
+| --- | --- | --- |
+| mypy | 1.20.2 | Strict type checking. Runs in CI only (not pre-commit) — ML deps can't be reliably checked in an isolated venv. |
+| ruff | 0.15.12 | Lint + format. Includes `S` security rules (bandit replacement). |
+| pytest / pytest-cov | 8.4.2 / 7.0.0 | Test runner with branch coverage; 80% gate. |
+| pre-commit | 4.3.0 | Local hook orchestration. |
+| uv | ≥0.10 | Reproducible environment manager. `uv.lock` committed. |
+
+Dev dependencies live under PEP 735 `[dependency-groups].dev` in `pyproject.toml`,
+mirrored in `[project.optional-dependencies].dev` for plain-pip users. Lockfile
+is `uv.lock` at the repo root — bit-identical resolution across machines and
+CI per the Scientific Python reproducibility recommendation.
+
+## Before pushing
+
+Run the full CI gauntlet locally:
+
+```bash
+bash scripts/verify.sh
+```
+
+This runs `ruff check` → `ruff format --check` → `mypy src` → `pytest --cov-fail-under=80`
+in the same order as `.github/workflows/ci.yml`. Uses `uv run` if uv is
+installed, falls back to system Python otherwise. Fail-fast: stops at the
+first error.
 
 ## Mathematical conventions
 

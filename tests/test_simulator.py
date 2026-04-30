@@ -33,9 +33,7 @@ def _make_grid(
     return SurfaceGrid(log_moneyness=log_moneyness, maturities=maturities)
 
 
-def _make_oi(
-    grid: SurfaceGrid, contracts: np.ndarray | None = None
-) -> OpenInterestGrid:
+def _make_oi(grid: SurfaceGrid, contracts: np.ndarray | None = None) -> OpenInterestGrid:
     if contracts is None:
         contracts = np.zeros(grid.shape, dtype=np.float64)
     return OpenInterestGrid(grid=grid, contracts_open=contracts)
@@ -258,7 +256,8 @@ def test_step_interface_advances_state_correctly() -> None:
     expected_v = max(v0 + drift_v * dt + sim.params.base.xi * sqrt_v * dW[1], 1e-8)
     expected_z = (
         0.0
-        + (-sim.params.memory_decay * 0.0 + sim.params.memory_intake * (np.log(s0) - np.log(s0))) * dt
+        + (-sim.params.memory_decay * 0.0 + sim.params.memory_intake * (np.log(s0) - np.log(s0)))
+        * dt
     )
 
     assert new_state.spot == pytest.approx(expected_spot, rel=1e-12)

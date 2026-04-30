@@ -72,12 +72,23 @@ def _heston_surface(grid: SurfaceGrid, *, spot: float = SPOT) -> np.ndarray:
                 surf[i, j] = float(np.sqrt(v0))
                 continue
 
-            def _diff(sigma: float, _price: float = call_price, _F: float = F_T,
-                      _K: float = K, _T: float = float(T), _D: float = D_T) -> float:
-                bs = float(_black76_call(
-                    np.array([_F]), np.array([_K]), np.array([_T]),
-                    np.array([sigma]), np.array([_D]),
-                )[0])
+            def _diff(
+                sigma: float,
+                _price: float = call_price,
+                _F: float = F_T,
+                _K: float = K,
+                _T: float = float(T),
+                _D: float = D_T,
+            ) -> float:
+                bs = float(
+                    _black76_call(
+                        np.array([_F]),
+                        np.array([_K]),
+                        np.array([_T]),
+                        np.array([sigma]),
+                        np.array([_D]),
+                    )[0]
+                )
                 return bs - _price
 
             try:
@@ -103,9 +114,7 @@ def heston_surface(grid: SurfaceGrid) -> np.ndarray:
 
 
 def test_heston_surface_passes(grid: SurfaceGrid, heston_surface: np.ndarray) -> None:
-    report = check_arbitrage_free(
-        heston_surface, grid, spot=SPOT, rate=RATE, dividend=DIV
-    )
+    report = check_arbitrage_free(heston_surface, grid, spot=SPOT, rate=RATE, dividend=DIV)
     assert report.passes_all is True, (
         f"Heston surface flagged: violations={report.violations}, "
         f"severity={report.severity}, notes={report.notes}"
@@ -145,9 +154,7 @@ def test_calendar_violator_caught(grid: SurfaceGrid, heston_surface: np.ndarray)
     assert report.passes_all is False
 
 
-def test_total_variance_violator_caught(
-    grid: SurfaceGrid, heston_surface: np.ndarray
-) -> None:
+def test_total_variance_violator_caught(grid: SurfaceGrid, heston_surface: np.ndarray) -> None:
     bad = heston_surface.copy()
     # Inflate the entire shortest-maturity slice → total variance at T_0 exceeds T_1.
     bad[:, 0] += 0.10

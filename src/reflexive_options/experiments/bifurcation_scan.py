@@ -93,9 +93,7 @@ def main() -> None:
         run_dir / "phase_diagram.npz",
         kappa_grid=kappa_grid,
         sigma_v_grid=sigma_v_grid,
-        kappa_star_curve=np.array(
-            [np.nan if k is None else k for k in kappa_star_vs_sigma_v]
-        ),
+        kappa_star_curve=np.array([np.nan if k is None else k for k in kappa_star_vs_sigma_v]),
     )
 
     print(f"Wrote results to: {run_dir}")

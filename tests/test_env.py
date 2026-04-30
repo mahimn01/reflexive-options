@@ -293,9 +293,7 @@ def _make_heston_sim(heston_params: HestonParams) -> HestonSimulator:
     return HestonSimulator(regimes=[heston_params], breakpoints=[], spot0=100.0)
 
 
-def _make_reflexive_sim(
-    reflexive_params: ReflexiveParams, grid: SurfaceGrid
-) -> ReflexiveSimulator:
+def _make_reflexive_sim(reflexive_params: ReflexiveParams, grid: SurfaceGrid) -> ReflexiveSimulator:
     agg = GammaAggregator(oi_grid=_make_oi_grid(grid), risk_free_rate=0.0)
     return ReflexiveSimulator(
         params=reflexive_params,
@@ -394,9 +392,7 @@ def test_env_works_with_gamma_aware_sim(
     assert info["aggregate_gamma"] != 0.0 or info["spot"] != 100.0
 
 
-def test_env_works_with_heston_sim(
-    small_grid: SurfaceGrid, heston_params: HestonParams
-) -> None:
+def test_env_works_with_heston_sim(small_grid: SurfaceGrid, heston_params: HestonParams) -> None:
     sim = _make_heston_sim(heston_params)
     env = _make_env(sim, small_grid, heston_params)
     env.reset(seed=3)

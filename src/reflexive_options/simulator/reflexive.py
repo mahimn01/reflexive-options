@@ -98,43 +98,49 @@ class ReflexiveSimulator:
         alpha = self.params.memory_decay
         beta = self.params.memory_intake
 
-        for k in range(n_steps):
-            s_k = spots[:, k]
-            v_k = variances[:, k]
-            z_k = memories[:, k]
+        # Suppress overflow / invalid-value warnings inside the loop. At extreme
+        # κ (e.g. stress-test paths in `test_tail_index_increases_with_kappa`)
+        # the SDE legitimately blows up; the resulting +inf / NaN values are
+        # caught downstream by `detect_blowup` and `floor_variance`. Letting
+        # numpy emit warnings here would just be noise.
+        with np.errstate(over="ignore", invalid="ignore"):
+            for k in range(n_steps):
+                s_k = spots[:, k]
+                v_k = variances[:, k]
+                z_k = memories[:, k]
 
-            g_vec = (
-                self._g_vectorized(s_k, v_k, z_k)
-                if kappa != 0.0
-                else np.zeros(n_paths, dtype=np.float64)
-            )
+                g_vec = (
+                    self._g_vectorized(s_k, v_k, z_k)
+                    if kappa != 0.0
+                    else np.zeros(n_paths, dtype=np.float64)
+                )
 
-            sqrt_v = np.sqrt(np.maximum(v_k, 0.0))
-            drift_S = s_k * (mu + kappa * g_vec)
-            diff_S = s_k * sqrt_v
-            drift_v = kappa_v * (theta_v - v_k) + gamma * z_k
-            diff_v = xi * sqrt_v
+                sqrt_v = np.sqrt(np.maximum(v_k, 0.0))
+                drift_S = s_k * (mu + kappa * g_vec)
+                diff_S = s_k * sqrt_v
+                drift_v = kappa_v * (theta_v - v_k) + gamma * z_k
+                diff_v = xi * sqrt_v
 
-            new_spot, new_variance = euler_maruyama_step(
-                spot=s_k,
-                variance=v_k,
-                t=k * dt,
-                dt=dt,
-                drift_S=drift_S,
-                drift_v=drift_v,
-                diff_S=diff_S,
-                diff_v=diff_v,
-                dW_S=dW_S[:, k],
-                dW_v=dW_v[:, k],
-                floor_variance=self.variance_floor,
-            )
-            # explicit Euler on the deterministic z-channel
-            log_ratio = np.log(np.maximum(s_k, 1e-12)) - self._log_s0
-            new_memory = z_k + (-alpha * z_k + beta * log_ratio) * dt
+                new_spot, new_variance = euler_maruyama_step(
+                    spot=s_k,
+                    variance=v_k,
+                    t=k * dt,
+                    dt=dt,
+                    drift_S=drift_S,
+                    drift_v=drift_v,
+                    diff_S=diff_S,
+                    diff_v=diff_v,
+                    dW_S=dW_S[:, k],
+                    dW_v=dW_v[:, k],
+                    floor_variance=self.variance_floor,
+                )
+                # explicit Euler on the deterministic z-channel
+                log_ratio = np.log(np.maximum(s_k, 1e-12)) - self._log_s0
+                new_memory = z_k + (-alpha * z_k + beta * log_ratio) * dt
 
-            spots[:, k + 1] = new_spot
-            variances[:, k + 1] = new_variance
-            memories[:, k + 1] = new_memory
+                spots[:, k + 1] = new_spot
+                variances[:, k + 1] = new_variance
+                memories[:, k + 1] = new_memory
 
         # memories are the *third* state; the protocol returns (spots, variances).
         # The full trajectory of z is reconstructable deterministically from S,
@@ -159,12 +165,10 @@ class ReflexiveSimulator:
         # d(log S)/dt = μ + κ G - 0.5 v   (Itô correction since σ² ≈ v)
         drift_log_s = self.params.drift + kappa * g - 0.5 * v
         drift_v = (
-            self.params.base.kappa * (self.params.base.theta - v)
-            + self.params.leverage * memory
+            self.params.base.kappa * (self.params.base.theta - v) + self.params.leverage * memory
         )
-        drift_z = (
-            -self.params.memory_decay * memory
-            + self.params.memory_intake * (np.log(s) - self._log_s0)
+        drift_z = -self.params.memory_decay * memory + self.params.memory_intake * (
+            np.log(s) - self._log_s0
         )
         return np.array([drift_log_s, drift_v, drift_z], dtype=np.float64)
 
@@ -177,23 +181,23 @@ class ReflexiveSimulator:
         sqrt_v = float(np.sqrt(v))
 
         kappa = self.params.coupling
-        g = (
-            self.gamma_aggregator.compute(s, v, z)
-            if kappa != 0.0
-            else 0.0
-        )
+        g = self.gamma_aggregator.compute(s, v, z) if kappa != 0.0 else 0.0
 
         drift_S = s * (self.params.drift + kappa * g)
         diff_S = s * sqrt_v
-        drift_v = (
-            self.params.base.kappa * (self.params.base.theta - v)
-            + self.params.leverage * z
-        )
+        drift_v = self.params.base.kappa * (self.params.base.theta - v) + self.params.leverage * z
         diff_v = self.params.base.xi * sqrt_v
 
         new_spot = s + drift_S * dt + diff_S * float(dW[0])
         new_variance = max(v + drift_v * dt + diff_v * float(dW[1]), self.variance_floor)
-        new_z = z + (-self.params.memory_decay * z + self.params.memory_intake * (np.log(max(s, 1e-12)) - self._log_s0)) * dt
+        new_z = (
+            z
+            + (
+                -self.params.memory_decay * z
+                + self.params.memory_intake * (np.log(max(s, 1e-12)) - self._log_s0)
+            )
+            * dt
+        )
 
         return SDEState(
             spot=float(new_spot),

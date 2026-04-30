@@ -332,9 +332,7 @@ def _default_oi_grid(initial_spot: float) -> OpenInterestGrid:
     above — we just need a non-zero, sign-correct G.
     """
     log_moneyness = np.linspace(-0.10, 0.10, 11, dtype=np.float64)
-    maturities = (np.array([7, 30, 60, 90, 180, 365], dtype=np.float64) / 365.25).astype(
-        np.float64
-    )
+    maturities = (np.array([7, 30, 60, 90, 180, 365], dtype=np.float64) / 365.25).astype(np.float64)
     grid = SurfaceGrid(log_moneyness=log_moneyness, maturities=maturities)
     # Triangular ATM-peaked OI, scaled up so dealer-gamma is order-of-magnitude
     # similar to SPX (~$10B notional gamma ATM).

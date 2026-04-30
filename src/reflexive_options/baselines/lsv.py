@@ -84,9 +84,7 @@ class LSVSimulator:
         # target IV surface. The MC inversion in `implied_surface` is a placeholder;
         # this is the standard literature bottleneck (~hours for one calibration).
 
-    def leverage(
-        self, spot: NDArray[np.float64] | float, t: float
-    ) -> NDArray[np.float64] | float:
+    def leverage(self, spot: NDArray[np.float64] | float, t: float) -> NDArray[np.float64] | float:
         return self._leverage.evaluate(spot, t)
 
     def simulate(

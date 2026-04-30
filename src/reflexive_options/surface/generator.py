@@ -36,13 +36,13 @@ def generate_surface(
 
 
 _DEFAULT_MATURITIES_YEARS: tuple[float, ...] = (
-    7 / 365.0,   # 1 week
+    7 / 365.0,  # 1 week
     14 / 365.0,  # 2 weeks
-    1 / 12.0,    # 1 month
-    2 / 12.0,    # 2 months
-    3 / 12.0,    # 3 months
-    6 / 12.0,    # 6 months
-    1.0,         # 1 year
+    1 / 12.0,  # 1 month
+    2 / 12.0,  # 2 months
+    3 / 12.0,  # 3 months
+    6 / 12.0,  # 6 months
+    1.0,  # 1 year
 )
 
 

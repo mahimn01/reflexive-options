@@ -189,12 +189,8 @@ def _quantlib_heston_iv_surface(
     day_count = ql.Actual365Fixed()
     calendar = ql.NullCalendar()
 
-    risk_free_curve = ql.YieldTermStructureHandle(
-        ql.FlatForward(today, drift, day_count)
-    )
-    dividend_curve = ql.YieldTermStructureHandle(
-        ql.FlatForward(today, 0.0, day_count)
-    )
+    risk_free_curve = ql.YieldTermStructureHandle(ql.FlatForward(today, drift, day_count))
+    dividend_curve = ql.YieldTermStructureHandle(ql.FlatForward(today, 0.0, day_count))
     spot_handle = ql.QuoteHandle(ql.SimpleQuote(spot))
 
     process = ql.HestonProcess(

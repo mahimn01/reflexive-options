@@ -113,9 +113,7 @@ class DeltaHedgedShortVolExpert:
                 f"front_month_idx {self.front_month_idx} out of range [0, {grid.n_maturities})"
             )
         if self.short_atm_contracts <= 0:
-            raise ValueError(
-                f"short_atm_contracts must be > 0, got {self.short_atm_contracts}"
-            )
+            raise ValueError(f"short_atm_contracts must be > 0, got {self.short_atm_contracts}")
         if self.max_position_per_strike <= 0:
             raise ValueError(
                 f"max_position_per_strike must be > 0, got {self.max_position_per_strike}"

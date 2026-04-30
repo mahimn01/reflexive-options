@@ -42,9 +42,7 @@ class RewardConfig:
 
     def __post_init__(self) -> None:
         if self.transaction_cost_bps < 0:
-            raise ValueError(
-                f"transaction_cost_bps must be >= 0, got {self.transaction_cost_bps}"
-            )
+            raise ValueError(f"transaction_cost_bps must be >= 0, got {self.transaction_cost_bps}")
         if self.position_size_penalty_lambda < 0:
             raise ValueError(
                 "position_size_penalty_lambda must be >= 0, "

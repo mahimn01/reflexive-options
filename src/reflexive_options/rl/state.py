@@ -151,14 +151,10 @@ def build_observation(
         1D float64 array of length `cfg.observation_dim`.
     """
     if surface.shape != cfg.surface_grid.shape:
-        raise ValueError(
-            f"surface shape {surface.shape} != grid shape {cfg.surface_grid.shape}"
-        )
+        raise ValueError(f"surface shape {surface.shape} != grid shape {cfg.surface_grid.shape}")
     pos_flat = np.asarray(position, dtype=np.float64).reshape(-1)
     if pos_flat.size != cfg.position_dim:
-        raise ValueError(
-            f"position has {pos_flat.size} elements, expected {cfg.position_dim}"
-        )
+        raise ValueError(f"position has {pos_flat.size} elements, expected {cfg.position_dim}")
     if cfg.history_window > 0:
         if history is None:
             raise ValueError("history must be provided when cfg.history_window > 0")
@@ -168,9 +164,7 @@ def build_observation(
             cfg.surface_grid.n_maturities,
         )
         if history.shape != expected_hist_shape:
-            raise ValueError(
-                f"history shape {history.shape} != expected {expected_hist_shape}"
-            )
+            raise ValueError(f"history shape {history.shape} != expected {expected_hist_shape}")
 
     parts: list[NDArray[np.float64]] = []
 
@@ -191,9 +185,7 @@ def build_observation(
     parts.append(np.asarray(surface, dtype=np.float64).reshape(-1))
     parts.append(pos_flat)
 
-    tte = np.maximum(
-        cfg.surface_grid.maturities.astype(np.float64) - float(state.time), 0.0
-    )
+    tte = np.maximum(cfg.surface_grid.maturities.astype(np.float64) - float(state.time), 0.0)
     parts.append(tte)
 
     if cfg.history_window > 0:

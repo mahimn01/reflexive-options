@@ -12,6 +12,7 @@ contract dimension picks one of `n_buckets` evenly-spaced target positions.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 import gymnasium as gym
 import numpy as np
@@ -57,12 +58,15 @@ class ActionConfig:
         return self.grid.n_strikes * self.grid.n_maturities
 
 
-def make_action_space(cfg: ActionConfig) -> gym.Space:  # type: ignore[type-arg]
-    """Build the gymnasium action space matching `cfg`."""
+def make_action_space(cfg: ActionConfig) -> gym.spaces.Space[NDArray[Any]]:
+    """Build the gymnasium action space matching `cfg`.
+
+    Returns `Space[NDArray[Any]]` because the discrete branch yields
+    `MultiDiscrete` samples (int64) while the continuous branch yields `Box`
+    samples (float64). Apply_action() coerces both to float64 downstream.
+    """
     if cfg.discrete:
-        return gym.spaces.MultiDiscrete(
-            np.full(cfg.action_dim, cfg.n_buckets, dtype=np.int64)
-        )
+        return gym.spaces.MultiDiscrete(np.full(cfg.action_dim, cfg.n_buckets, dtype=np.int64))
     return gym.spaces.Box(
         low=-cfg.max_position_per_strike,
         high=cfg.max_position_per_strike,
@@ -83,7 +87,7 @@ def _bucket_centers(cfg: ActionConfig) -> NDArray[np.float64]:
 
 def apply_action(
     current_position: NDArray[np.float64],
-    action: NDArray,  # type: ignore[type-arg]
+    action: NDArray[np.float64] | NDArray[np.int64],
     cfg: ActionConfig,
 ) -> NDArray[np.float64]:
     """Apply `action` and return the new clipped position vector (flat, length `action_dim`).
@@ -97,9 +101,7 @@ def apply_action(
     """
     cur = np.asarray(current_position, dtype=np.float64).reshape(-1)
     if cur.size != cfg.action_dim:
-        raise ValueError(
-            f"current_position has {cur.size} elements, expected {cfg.action_dim}"
-        )
+        raise ValueError(f"current_position has {cur.size} elements, expected {cfg.action_dim}")
 
     act = np.asarray(action)
     if act.size != cfg.action_dim:

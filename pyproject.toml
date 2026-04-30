@@ -8,22 +8,24 @@ version = "0.1.0"
 description = "Reflexive options market simulator with dealer-gamma feedback channel, RL-trained agents, and analytical bifurcation results."
 authors = [{name = "Mahimn Patel", email = "mahimn.patel.k@gmail.com"}]
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.15"
 license = {text = "MIT"}
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Mathematics",
 ]
 dependencies = [
     "numpy>=1.26",
     "scipy>=1.13",
     "pandas>=2.2",
-    "pyarrow>=15",
+    "pyarrow>=24.0",
     "torch>=2.3",
-    "gymnasium>=0.29",
+    "gymnasium>=1.2",
     "QuantLib>=1.33",
     "matplotlib>=3.8",
     "tqdm>=4.66",
@@ -32,20 +34,39 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Legacy install path for `pip install -e ".[dev]"`. PEP 735 [dependency-groups]
+# below is the canonical group used by uv; this mirror exists only so plain pip
+# users (no uv) don't lose access to the dev tooling.
 dev = [
-    "pytest>=8.0",
-    "pytest-cov>=5.0",
-    "ruff>=0.4",
-    "mypy>=1.10",
-    "pre-commit>=3.7",
-    "ipykernel>=6.29",
-    "jupyter>=1.0",
+    "pytest==8.4.2",
+    "pytest-cov==7.0.0",
+    "ruff==0.15.12",
+    "mypy==1.20.2",
+    "pre-commit==4.3.0",
+    "ipykernel==6.30.1",
+    "jupyter==1.1.1",
 ]
 mlx = [
     "mlx>=0.15",
 ]
 calibration = [
     "mystic>=0.4",
+]
+
+# PEP 735 dependency groups — the canonical 2026 way to declare dev tooling.
+# `uv sync --group dev` installs these; `pip install -e ".[dev]"` falls back to
+# the [project.optional-dependencies].dev mirror above. Pinned exact versions
+# so reviewers running `uv sync --locked` two years from now get bit-identical
+# results — see docs/quality_research_brief.md §4.
+[dependency-groups]
+dev = [
+    "pytest==8.4.2",
+    "pytest-cov==7.0.0",
+    "ruff==0.15.12",
+    "mypy==1.20.2",
+    "pre-commit==4.3.0",
+    "ipykernel==6.30.1",
+    "jupyter==1.1.1",
 ]
 
 [project.urls]
@@ -58,10 +79,28 @@ where = ["src"]
 [tool.setuptools.package-data]
 reflexive_options = ["py.typed"]
 
+[tool.uv]
+managed = true
+package = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"
 addopts = "-ra --strict-markers --cov=reflexive_options --cov-report=term-missing"
+
+[tool.coverage.run]
+branch = true
+source = ["src/reflexive_options"]
+omit = ["src/reflexive_options/third_party/*"]
+
+[tool.coverage.report]
+fail_under = 80
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "@overload",
+]
 
 [tool.ruff]
 line-length = 100
@@ -71,7 +110,9 @@ target-version = "py312"
 extend-exclude = ["src/reflexive_options/third_party/**"]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "RUF"]
+# `S` = flake8-bandit security rules (supersedes the standalone bandit tool;
+# ~25× faster — see docs/quality_research_brief.md §6).
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "RUF", "S"]
 # RUF001/RUF002/RUF003: Greek letters (μ, σ, ρ, κ, …) and dynamical-systems notation
 #   (ℓ for the Lyapunov coefficient, × for matrix shapes, ∂, ⟨·,·⟩) are canonical
 #   throughout this codebase and in paper/theory.md.
@@ -79,41 +120,75 @@ select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "RUF"]
 #   Hopf-condition discriminant in paper/theory.md eq. 5).
 # N803/N806: dW_S, dW_v, drift_S, diff_S follow the standard math-paper convention; renaming
 #   them to lowercase would obscure correspondence to the SDE writeup in paper/theory.md.
-ignore = ["E501", "RUF001", "RUF002", "RUF003", "N802", "N803", "N806"]
+# S101: `assert` is fine — used for invariants in research code; the alternative
+#   (RuntimeError) is noisier without preventing real bugs.
+# S301/S403: pickle/torch.load on our *own* trained model artifacts is fine; we
+#   never load untrusted artifacts in this repo.
+# S311: numpy/random pseudo-randomness is intentional throughout the simulator.
+ignore = [
+    "E501",
+    "RUF001", "RUF002", "RUF003",
+    "N802", "N803", "N806",
+    "S101", "S301", "S311", "S403",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests legitimately use asserts, fixtures with hardcoded seeds, etc.
+"tests/**" = ["S101", "S311"]
 
 [tool.mypy]
 python_version = "3.12"
 strict = true
 warn_unused_configs = true
 disallow_untyped_defs = true
-# disallow_any_unimported intentionally False: gymnasium and torch ship without
-# type stubs as of 2026-04, and subclassing Env / nn.Module would otherwise
-# require # type: ignore comments on every class declaration. The cost is
-# accepting `Any` propagation through gymnasium/torch boundaries — bounded by
-# our own code's strict typing on either side.
+# disallow_any_unimported intentionally False: vendored ATLAS/RAT modules and
+# untyped libs (QuantLib, diptest, ripser, mystic) would otherwise force a
+# # type: ignore on every class declaration. PyTorch's mypy-strict.ini keeps
+# this on only because they strict-check a curated allow-list. Scientific repos
+# universally relax it — see docs/quality_research_brief.md §3 / §7.
 disallow_any_unimported = false
 no_implicit_optional = true
 check_untyped_defs = true
 warn_return_any = true
+warn_redundant_casts = true
+warn_unreachable = true
+strict_equality = true
+extra_checks = true
 show_error_codes = true
-# Stubs for gymnasium / torch / pyarrow ship inconsistently across environments
-# (e.g. CI has them, local install may not). A # type: ignore that's necessary on
-# CI is "unused" locally and vice versa. Disable the warning so cross-environment
-# ignores don't bounce.
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+# warn_unused_ignores intentionally False. Cross-environment / cross-Python
+# stub coverage is uneven (e.g. CI Python 3.12 vs local 3.14, scipy partial
+# typing, gymnasium 1.x stub edge cases). A `# type: ignore` that's necessary
+# on one environment is "unused" on another and vice versa. PyTorch documents
+# the same rationale in mypy-strict.ini ("this option may cause un-ignorable
+# errors on files that are checked by both mypy.ini and mypy-strict.ini ...
+# mypy errors that appear on some platforms or environments but not on
+# others.") — see pytorch/pytorch#60006 review comment, cited in
+# docs/quality_research_brief.md §3.
 warn_unused_ignores = false
 
 [[tool.mypy.overrides]]
+# Libraries that still ship without py.typed in 2026-04. Verified absent:
+#   QuantLib (C++ binding), diptest, ripser, mystic.
+# scipy ships partial typing since 1.13 but no top-level py.typed marker;
+# we still need it here to avoid noise on import lines.
 module = [
     "QuantLib.*",
-    "scipy.*",
     "diptest.*",
     "ripser.*",
-    "gymnasium.*",
-    "torch.*",
-    "pyarrow.*",
+    "mystic.*",
+    "scipy.*",
 ]
 ignore_missing_imports = true
 follow_imports = "silent"
+
+# pyarrow 24.0 ships py.typed + bundled stubs (donated from zen-xu/pyarrow-stubs).
+# The compute submodule is incomplete: pyarrow.compute.{all,equal,...} are attached
+# at import time via _make_global_functions() rather than declared in the .pyi.
+# Tracked at apache/arrow#49831 — remove this override once that ships.
+[[tool.mypy.overrides]]
+module = ["pyarrow.compute"]
+ignore_errors = true
 
 # Vendored ATLAS / RAT modules carry upstream typing style. We only patch import
 # paths and strip trading-domain code (CLAUDE.md "Vendoring discipline"); we do

@@ -184,9 +184,7 @@ def build_curriculum(
     out: list[CurriculumStage] = []
     for stage in stages:
         if stage not in _REGIME_OVERRIDES:
-            raise ValueError(
-                f"unknown stage {stage!r}; must be one of {sorted(_REGIME_OVERRIDES)}"
-            )
+            raise ValueError(f"unknown stage {stage!r}; must be one of {sorted(_REGIME_OVERRIDES)}")
         stage_params = _params_for_stage(base_params, stage)
 
         # Late-bound factory — capture stage_params/grid by default arg so each
