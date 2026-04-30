@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v8
+        uses: astral-sh/setup-uv@v8.1.0  # no major-version tag published — pin to specific release
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
