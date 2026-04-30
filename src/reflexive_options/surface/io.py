@@ -69,8 +69,12 @@ def save_surfaces(
     path.parent.mkdir(parents=True, exist_ok=True)
     # pyarrow 24.0 ships py.typed but the parquet submodule's write_table/
     # read_table are still declared untyped in the bundled .pyi (same root cause
-    # as apache/arrow#49831 — dynamic registration). Tracked alongside that
-    # issue; remove these ignores once stubs are complete.
+    # as apache/arrow#49831 — dynamic registration). Status as of 2026-04-23:
+    # issue is OPEN, no fix released; tracked sub-issue apache/arrow#49194
+    # ("Compute module annotations") is also still open. Latest pyarrow on PyPI
+    # is 24.0.0 — no 24.1+ release. Maintainers acknowledge shipping py.typed
+    # ahead of complete stubs may have been premature (see jorisvandenbossche
+    # comment 2026-04-23). Remove these ignores once #49831 closes.
     pq.write_table(table, path, compression="snappy")  # type: ignore[no-untyped-call]
 
 

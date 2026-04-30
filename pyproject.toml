@@ -94,7 +94,7 @@ source = ["src/reflexive_options"]
 omit = ["src/reflexive_options/third_party/*"]
 
 [tool.coverage.report]
-fail_under = 80
+fail_under = 85
 exclude_also = [
     "if TYPE_CHECKING:",
     "raise NotImplementedError",

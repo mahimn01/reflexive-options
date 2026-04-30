@@ -73,6 +73,36 @@ def test_save_rejects_wrong_ndim(tmp_path: Path) -> None:
         save_surfaces(bad, tmp_path / "x.parquet")
 
 
+def test_load_rejects_missing_shape_metadata(tmp_path: Path) -> None:
+    """Reader requires reflexive_options.shape — a parquet without it is rejected."""
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    table = pa.table({"iv": pa.array([0.2, 0.3], type=pa.float64())})
+    path = tmp_path / "no_shape.parquet"
+    pq.write_table(table, path)  # type: ignore[no-untyped-call]
+    with pytest.raises(ValueError, match=r"missing reflexive_options\.shape"):
+        load_surfaces(path)
+
+
+def test_load_rejects_row_count_mismatch(tmp_path: Path) -> None:
+    """If metadata shape disagrees with the iv-column row count, raise."""
+    import json as _json
+
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    table = pa.table({"iv": pa.array([0.2, 0.3, 0.4], type=pa.float64())})
+    # Claim shape (1, 5, 5) → 25 rows, but only 3 are present.
+    table = table.replace_schema_metadata(
+        {b"reflexive_options.shape": _json.dumps([1, 5, 5]).encode("utf-8")}
+    )
+    path = tmp_path / "mismatch.parquet"
+    pq.write_table(table, path)  # type: ignore[no-untyped-call]
+    with pytest.raises(ValueError, match="does not match metadata shape"):
+        load_surfaces(path)
+
+
 def test_grid_attributes() -> None:
     g = SurfaceGrid(
         log_moneyness=np.linspace(-0.2, 0.2, 5),

@@ -19,7 +19,7 @@ When upstream `trading-algo` changes the ATLAS internals, re-vendor: `scripts/re
 - Numpy-first; reach for JAX or torch only where performance demands.
 - Dataclasses over `dict` for any structured config.
 - One concept per file — `simulator/reflexive.py` does the reflexive SDE, `simulator/gamma_aggregator.py` does $G(S, t)$, etc.
-- Tests required for every module under `src/`. Aim for ≥80% coverage (hard CI gate).
+- Tests required for every module under `src/`. Aim for ≥85% coverage (hard CI gate).
 
 ## Tooling
 
@@ -29,7 +29,7 @@ Pinned to the versions in `docs/quality_research_brief.md` (April 2026):
 | --- | --- | --- |
 | mypy | 1.20.2 | Strict type checking. Runs in CI only (not pre-commit) — ML deps can't be reliably checked in an isolated venv. |
 | ruff | 0.15.12 | Lint + format. Includes `S` security rules (bandit replacement). |
-| pytest / pytest-cov | 8.4.2 / 7.0.0 | Test runner with branch coverage; 80% gate. |
+| pytest / pytest-cov | 8.4.2 / 7.0.0 | Test runner with branch coverage; 85% gate. |
 | pre-commit | 4.3.0 | Local hook orchestration. |
 | uv | ≥0.10 | Reproducible environment manager. `uv.lock` committed. |
 
@@ -46,7 +46,7 @@ Run the full CI gauntlet locally:
 bash scripts/verify.sh
 ```
 
-This runs `ruff check` → `ruff format --check` → `mypy src` → `pytest --cov-fail-under=80`
+This runs `ruff check` → `ruff format --check` → `mypy src` → `pytest --cov-fail-under=85`
 in the same order as `.github/workflows/ci.yml`. Uses `uv run` if uv is
 installed, falls back to system Python otherwise. Fail-fast: stops at the
 first error.

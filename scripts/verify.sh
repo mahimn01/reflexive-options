@@ -46,8 +46,8 @@ run ruff format --check src tests
 echo "==> mypy src"
 run mypy src
 
-echo "==> pytest --cov-fail-under=80"
-run pytest --cov=reflexive_options --cov-report=term-missing --cov-fail-under=80
+echo "==> pytest --cov-fail-under=85"
+run pytest --cov=reflexive_options --cov-report=term-missing --cov-fail-under=85
 
 echo
 echo "verify.sh: all checks passed."

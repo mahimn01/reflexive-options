@@ -59,13 +59,15 @@ jobs:
             --cov=reflexive_options \
             --cov-report=xml \
             --cov-report=term-missing \
-            --cov-fail-under=80
+            --cov-fail-under=85
 
       - name: Prune uv cache
         run: uv cache prune --ci
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v5
+        # v6.0.0 (2026-03-26) bumps the transitive actions/github-script dep from
+        # v7 (Node 20, deprecated) to v8 (Node 24). See codecov/codecov-action#1928.
+        uses: codecov/codecov-action@v6
         with:
           files: ./coverage.xml
           fail_ci_if_error: false
