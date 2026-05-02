@@ -70,6 +70,39 @@ def test_adaptive_welch_nperseg_minimum_is_4() -> None:
     assert n == 4
 
 
+def _is_power_of_two(n: int) -> bool:
+    return n > 0 and (n & (n - 1)) == 0
+
+
+@pytest.mark.parametrize(
+    "omega_star, sampling_rate, n_trajectory",
+    [
+        (1.0, 252.0, 8192),
+        (10.0, 252.0, 8192),
+        (0.1, 252.0, 4096),
+        (5.0, 1000.0, 100),  # n_trajectory // 2 = 50, NOT a power of 2
+        (5.0, 1000.0, 200),  # cap = 100, NOT a power of 2 → must snap down to 64
+        (5.0, 1000.0, 600),  # cap = 300, NOT a power of 2 → snap to 256
+        (3.0, 252.0, 1500),  # cap = 750, snap to 512
+        (1e9, 252.0, 1024),  # degenerate high-omega → snaps to 4
+    ],
+)
+def test_adaptive_welch_nperseg_always_returns_power_of_two(
+    omega_star: float, sampling_rate: float, n_trajectory: int
+) -> None:
+    """v0.3.1 fix: even when the n_trajectory // 2 cap is not a power of 2,
+    `adaptive_welch_nperseg` must snap *down* to the nearest power of 2.
+    Without this fix the v0.3.0 implementation returned the raw cap (e.g. 50),
+    which Welch's method handles but is not the documented contract.
+    """
+    n = adaptive_welch_nperseg(
+        omega_star=omega_star, sampling_rate=sampling_rate, n_trajectory=n_trajectory
+    )
+    assert _is_power_of_two(n), f"adaptive_welch_nperseg returned {n}, which is not a power of 2"
+    assert n >= 4
+    assert n <= max(n_trajectory // 2, 4)
+
+
 # ---------------------------------------------------------------------------
 # A5: IAAFT surrogate
 # ---------------------------------------------------------------------------

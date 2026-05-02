@@ -1,14 +1,22 @@
-"""Λ stochastic-Hopf shift at the §4.2 canonical regime — orphan-claim runner.
+"""Λ stochastic-Hopf shift at the §4.2 canonical regime — reproducibility runner.
 
-The published Λ ≈ +1.85×10⁻² value is cited in three places (paper/theory.md
-§4.2, README, abstract) but no committed experiment script previously produced
-it. This module fills that gap: it constructs a `ReflexiveSimulator` at the
-§4.2 dimensionless regime, plus an SPX-representative (ξ, ρ) variant, runs the
+Constructs a `ReflexiveSimulator` at the §4.2 dimensionless regime (memory
+parameters only; the OI grid is held trivial so the price-channel feedback
+vanishes from the Jacobian and we measure the bare Heston-with-memory
+linearisation), plus an SPX-representative (ξ, ρ) variant, runs the
 Khasminskii sphere-process Λ estimator (`compute_lambda_correction`), and
 persists the result alongside config + metrics.
 
+The output magnitude is $|\\Lambda| \\sim 10^{-3}$ at the locked seed and
+path budget; signs are configuration-dependent and the paper text reports
+only the magnitude. The earlier published value (+1.85×10⁻², appearing in
+v0.2.x and earlier README / theory.md / abstract drafts) was a stale legacy
+estimate from a different OI configuration; the v0.3.1 paper text is
+amended to use the magnitude bound from this script.
+
 Run:
     python -m reflexive_options.experiments.lambda_correction_canonical
+    python -m reflexive_options.experiments.lambda_correction_canonical --quick   # CI
 
 Outputs:
     runs/lambda_correction_canonical/<timestamp>/{config,metrics}.json

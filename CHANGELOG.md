@@ -7,6 +7,130 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-04-22
+
+### Fixed
+
+**Bibliography hygiene (paper/references.bib)**
+- 5 hallucinated bibliographic entries corrected after author-by-author
+  WebFetch verification against arXiv abstracts and journal landing pages:
+  - `bai2024rlfinance`: authors corrected to **Yahui Bai, Yuhe Gao, Runzhe
+    Wan, Sheng Zhang, Rui Song** (was: "Bai, Junkun and Gao, Xinyu and Wan,
+    Cheng and Zhang, Yuan and Song, Le").
+  - `hou2025robust` → renamed to **`ma2025robust`** (Shaocong Ma, Heng
+    Huang); was wrongly attributed to "Hou, Yifan and others".
+  - `jin2025diffusion`: first names corrected to **Chen Jin, Ankush
+    Agarwal** (was: "Yufeng Jin, Ankur Agarwal").
+  - `chevallier2025ot`: first names + title corrected to **Marius
+    Chevallier, Stefano De Marco, Pierre-Emmanuel Lévy-dit-Vehel**, "An
+    Optimal Transport Approach to Arbitrage Correction: Application to
+    Volatility Stress-Tests" (was: "Julien", "Antoine", and "Optimal
+    Transport-Based Approach to Arbitrage Correction of Implied Volatility
+    Surfaces").
+  - `hosseini2024conditional` → renamed to **`hosseini2023conditional`**
+    (Hosseini, Hsu, Taghvaei); arXiv ID corrected to **2311.05672** and
+    year to **2023** (was incorrectly attributed to 2403.18705 / Hosseini,
+    Bunne, Cuturi 2024 — that arXiv ID is a different paper by Chemseddine
+    et al.).
+  - `stadnytska2025regimes` → renamed to **`luanhamp2025regimes`** (Qinmeng
+    Luan, James Hamp).
+  - `brailsford2022prereg` → renamed to **`faff2022prereg`** (Robert Faff
+    is the actual editorial author).
+- 3 metadata-level corrections to existing entries:
+  - `heli2009`: added missing 4th author **Junjie Wei** + correct DOI
+    suffix (`07.016` not `07.011`) and issue number (6).
+  - `faragohjalmarsson2023`: journal corrected to **Review of Finance**
+    (vol 27, issue 2, pp 495–538, 2023), title to **"Long-Horizon Stock
+    Returns Are Positively Skewed"** — the working paper title "Compound
+    Returns" appearing in the bib was the SSRN/working title, not the
+    published title.
+  - `murray2022multi`: title expanded to the full published version, added
+    middle initial `S.` to Pakkanen.
+- All `\cite{}` keys updated in `paper/main.tex`,
+  `paper/related_work.md`, `paper/threats_to_validity.md`, and
+  `paper/MANUSCRIPT_SKELETON.md` to match the renamed keys.
+
+**Λ stochastic-Hopf shift (paper/theory.md §4.2 + paper/main.tex §3.4)**
+- The published value $\Lambda(\kappa^\star) \approx +1.85 \times 10^{-2}$
+  was **not reproducible** from any committed runner. The current
+  `experiments/lambda_correction_canonical` produces $|\Lambda| \sim 10^{-3}$
+  with sign that depends on the OI configuration (canonical-§4.2 trivial
+  $G \equiv 0$ equilibrium gives $\Lambda \approx -6.9 \times 10^{-3}$; the
+  paper's stale +1.85e-2 number was from a different and undocumented OI
+  setup). Paper text rewritten to honestly report the reproducible
+  magnitude only and defer the sign characterisation to the empirical
+  phase. The $(\rho\xi)^{2/3}$ Engel–Lamb–Rasmussen scaling discussion in
+  theory.md §5 is correspondingly softened to "predicted but not validated
+  in sign by the present finite-budget estimator."
+
+**Figure 3 (paper/figures/h4_detector_power.pdf) — pulled**
+- The figure is removed from the §5 paper text. Re-rendering at a
+  moderate budget (n_seeds=30, n_perm=50, full T and SNR grids) confirmed
+  what the v0.3.0 stale rendering had hinted: at the locked IAAFT
+  surrogate null (amendment A5), the H4 detector's power on a pure
+  sinusoid-in-noise positive control is essentially zero across the entire
+  $(T, \text{SNR})$ grid. This is *not* a bug in the detector — IAAFT is
+  designed to preserve the linear autocorrelation of the input, and a
+  pure sinusoid has a degenerate ACF that the IAAFT surrogate reproduces
+  almost exactly, so the in-band peak ratio is similar across surrogates
+  and the p-value stays high. The realistic positive controls — limit-
+  cycle Stuart-Landau, supercritical reflexive simulator at long path
+  budgets — have a richer spectral signature that IAAFT can plausibly
+  discriminate against, but those characterisations need the realised
+  path budget that only becomes available in the empirical SPX phase.
+  The §5 paragraph is reframed accordingly: H4 is "validated synthetically
+  in the IAAFT-FPR sense (FPR $\leq 7\%$ on Heston / AR(1) $H_0$);
+  detection-power characterisation deferred to empirical SPX evaluation."
+
+**Engineering fixes (G3 audit)**
+- `theory/sensitivity.py::kappa_sensitivity_curve`: GP-posterior 95% CI
+  was under-covering at ~70% empirical vs the 95% nominal because the
+  WhiteKernel noise MLE was collapsing to its 1e-10 lower bound on n=9
+  grid points. Fix: pin the noise variance to the seed-mean MC variance
+  (averaged across the κ grid) and pass it via
+  `noise_level_bounds="fixed"`. Coverage on smooth-truth synthetic cases
+  (quadratic / linear / sin) recovers to ≥ 80% at n_seeds = 100. New test
+  `tests/test_sensitivity.py::test_gp_slope_ci_coverage_with_pinned_noise`
+  (parametrised over the three truths) enforces the bound.
+- `theory/spectral.py::adaptive_welch_nperseg`: when the
+  `n_trajectory // 2` cap was not itself a power of 2, the function
+  returned the raw cap (e.g. 50 on a `n_trajectory=100` input). Fixed by
+  snapping *down* to the largest power of 2 ≤ the capped target. New
+  parametrised test
+  `tests/test_spectral_amendments.py::test_adaptive_welch_nperseg_always_returns_power_of_two`
+  enforces this contract on a wider input grid.
+
+**Theorem 1 / consistency**
+- `paper/main.tex` Theorem 1 A2: re-added the dropped sentence "Multiple
+  equilibria may exist globally; our analysis is local." to match the
+  `paper/theory.md` version verbatim.
+- `tests/test_bifurcation.py::test_compute_lambda_correction_runs_and_returns_finite`
+  was tautologically asserting only `np.isfinite(Lambda)`. Replaced with
+  `test_compute_lambda_correction_in_canonical_section_4_2_regime` which
+  asserts the magnitude bound $-1 \leq \Lambda \leq +1$ at the §4.2
+  canonical regime — a real (not vacuous) check on the runner's behaviour.
+
+**Notation hygiene**
+- `paper/main.tex` §3.5 (closed-form section) now carries a one-line
+  footnote at first use of $G_y$ explaining that $G_y := \partial_a G$ is
+  identical to the §3.2 $G_x$ up to the choice of deviation symbol.
+  `paper/theory.md` §4.3.2 carries the same parenthetical clarification.
+- `paper/notation.md` relaxed the "reflexive coupling must be
+  $\boldsymbol{\kappa}$" rule: plain $\kappa$ is the reflexive coupling
+  throughout main.tex / theory.md, $\kappa_v$ is Heston mean-reversion;
+  the bold-symbol convention is preserved only in
+  `paper/pre_registration.md` for chain-of-custody reasons.
+
+**Metadata + housekeeping**
+- `paper/arxiv_metadata.txt`: page count corrected to **14 pages, 3
+  figures** (was 8); pre-registration commit hash placeholder
+  `<FILL_IN_AT_SUBMISSION>` replaced with the actual v0.1.0 anchor commit
+  `268c061`.
+- `paper/pre_registration_amendments.md`: commit-hash placeholder for the
+  amendments-set anchor replaced with the v0.3.0 release commit `63078f5`.
+- `README.md`: stale "current release is `0.1.0`" line updated to
+  `0.3.0`.
+
 ## [0.3.0] - 2026-04-22
 
 ### Added

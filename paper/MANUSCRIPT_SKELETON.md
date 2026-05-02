@@ -83,7 +83,7 @@ None — model statement should fit on a single page.
 1. **Equilibria and Jacobian (200 words + Eq. 2-3).** State eq. (2) — the equilibrium equation defining $(S^\star, \theta_v, z^\star)$. State Eq. (3) — the linearised Jacobian $J(\kappa)$ in deviation variables. Define the partials $G_x, G_v, G_z$ at the equilibrium. (Lift verbatim from `theory.md` §2.)
 2. **Routh-Hurwitz / Liu's criterion (150 words + Eq. 4-5).** State the characteristic polynomial $P(\lambda; \kappa) = \lambda^3 + c_2\lambda^2 + c_1\lambda + c_0$ with explicit $c_2, c_1, c_0$. State the Hopf condition $H(\kappa) := c_1 c_2 - c_0 = 0$ (Eq. 4) and the threshold definition $\kappa^\star$ (Eq. 5). Frequency $\omega^\star = \sqrt{c_1(\kappa^\star)}$. (Lift verbatim from `theory.md` §3.)
 3. **Theorem 1 statement + proof sketch (250 words).** State Theorem 1 verbatim (assumptions A1-A5, conclusions 1-3 about the limit-cycle family $\Gamma_\kappa$). Two-paragraph proof sketch via implicit function theorem on $P(\lambda; \kappa) = 0$, centre manifold reduction (Kuznetsov 2004 Thm 5.4), Poincaré normal form (Kuznetsov 2004 Thm 3.3). (Lift from `theory.md` §4.)
-4. **Numerical anchor (100 words + Table).** Report the canonical regime values: $\kappa^\star = 0.8964$, $\omega^\star = 0.5724$ rad/yr, $\ell_1 = -2.53 \times 10^{-2}$ (supercritical), $\Lambda = +1.85 \times 10^{-2}$. (Lift Table from `theory.md` §4.2.)
+4. **Numerical anchor (100 words + Table).** Report the canonical regime values: $\kappa^\star = 0.8964$, $\omega^\star = 0.5724$ rad/yr, $\ell_1 = -2.53 \times 10^{-2}$ (supercritical), $|\Lambda| \sim 10^{-3}$ at the §4.2 trivial-equilibrium evaluation; sign configuration-dependent and deferred to the empirical phase. (Lift Table from `theory.md` §4.2.)
 5. **Closed-form ℓ₁ for log-normal OI (100 words + Eq. 17-18).** State the log-normal OI aggregator (Eq. 14-15a-c), state the closed-form $\kappa^\star$ (Eq. 17) and the closed-form $\ell_1$ via Kuznetsov 2004 eq. 3.20 (Eq. 18). Cite the verification: closed form vs FD-tensor pipeline agree to <0.6% relative on every test parameter set (`tests/test_lognormal_lyapunov.py`). (Lift from `theory.md` §4.3.)
 
 ### Equations to include (all from `theory.md` §§2-4)
@@ -163,7 +163,7 @@ None in §3 (the phase diagram lives in §4).
 - Manole, Balakrishnan & Wasserman (2022) — minimax CIs for sliced-W
 - Politis & Romano (1994) — block bootstrap
 - Roper (2010) + Gatheral & Jacquier (2014) — arbitrage filter
-- Brailsford et al. (2022 PBFJ) — pre-registration in finance precedent
+- Faff (2022 PBFJ) — pre-registration in finance precedent
 - Pérignon et al. (2024 RFS) — reproducibility crisis in finance
 
 ### Notes
@@ -256,20 +256,20 @@ The URLs are consolidated at the bottom of `paper/related_work.md`. Convert each
 | Issa, Horvath, Lemercier & Salvi (2023 NeurIPS) | `@inproceedings` (NeurIPS) | URL block |
 | Jin & Agarwal (2025) | `@article` (arXiv) | URL block |
 | Chevallier, De Marco & Lévy-dit-Vehel (2025) | `@article` (arXiv) | URL block |
-| Stadnytska et al. (2025) | `@article` (AIMS DSFE) | URL block |
+| Luan & Hamp (2025) | `@article` (DSFE) | URL block |
 | Bonneel, Rabin, Peyré & Pfister (2015) | `@article` (J Math Imaging Vis) | URL block |
 | Manole, Balakrishnan & Wasserman (2022) | `@article` (EJS) | URL block |
 | Politis & Romano (1994) | `@article` (JASA) | URL block |
 | Roper (2010) | `@techreport` (Sydney) | URL block |
 | Gatheral & Jacquier (2014) | `@article` (Quantitative Finance) | URL block |
-| Hosseini, Bunne & Cuturi (2024) | `@article` (arXiv) | URL block |
-| Brailsford et al. (2022 PBFJ) | `@article` (PBFJ editorial) | URL block |
+| Hosseini, Hsu & Taghvaei (2023) | `@article` (arXiv) | URL block |
+| Faff (2022 PBFJ) | `@article` (PBFJ editorial) | URL block |
 | Pérignon et al. (2024 RFS) | `@article` (RFS) | URL block |
 | Camerer et al. (2018) | `@article` (Nature Human Behaviour) | URL block |
 | Huang et al. (2024 Open RL Benchmark) | `@article` (arXiv) | URL block |
 | Sun et al. (2024) | `@article` (arXiv) | URL block |
 | Bessembinder (2018) | `@article` (JFE) | `mechanism_decomposition.md` references |
-| Farago & Hjalmarsson (2023) | `@article` (JFE) | `mechanism_decomposition.md` references |
+| Farago & Hjalmarsson (2023) | `@article` (Review of Finance) | `mechanism_decomposition.md` references |
 | SqueezeMetrics (2017 GEX) | `@misc` (whitepaper) | `dealer_gamma_brief.md` §2 |
 | Barbon & Buraschi (2021) | `@article` (working paper) | `dealer_gamma_brief.md` §2 |
 | Lee (2004) | `@article` (Math Finance) | `pre_registration.md` §4 |

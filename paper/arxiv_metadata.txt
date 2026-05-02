@@ -10,4 +10,4 @@ MSC 2020 codes: 91G80, 37G15, 60H10, 91G60, 93E20
 
 License: CC-BY 4.0
 
-Comments: 8 pages, 3 figures. Code at https://github.com/mahimn01/reflexive-options. Pre-registration anchored at commit hash <FILL_IN_AT_SUBMISSION>.
+Comments: 14 pages, 2 figures. Code at https://github.com/mahimn01/reflexive-options. Pre-registration anchored at commit hash 268c061.

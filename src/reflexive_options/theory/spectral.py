@@ -114,11 +114,16 @@ def adaptive_welch_nperseg(
     # but the brief's nperseg formula is target * sampling_rate / omega_star).
     target_n = target_bins_in_band * sampling_rate / omega_star
     log2_target = float(np.log2(max(target_n, 1.0)))
-    # Closest power of 2 (round to nearest int exponent, then cap).
-    nperseg = int(2 ** round(log2_target))
-    nperseg = max(nperseg, 4)
+    # Closest power of 2 to the target (round to nearest int exponent).
+    closest_pow2 = int(2 ** round(log2_target))
     cap = max(n_trajectory // 2, 4)
-    return int(min(nperseg, cap))
+    # Apply the cap, then snap *down* to the nearest power of 2 — without this
+    # final snap, when the cap < closest_pow2 we return the cap directly,
+    # which may not be a power of 2 (the v0.3.0 G3 audit's bug).
+    capped = min(closest_pow2, cap)
+    capped = max(capped, 4)
+    largest_pow2_le = int(2 ** int(np.floor(np.log2(capped))))
+    return max(largest_pow2_le, 4)
 
 
 def _welch_psd(

@@ -26,7 +26,7 @@ The reflexive simulator is **3-dimensional**: $(S_t, v_t, z_t)$. The memory vari
 | $\rho$ | Correlation between $dW_S$ and $dW_v$ |
 | $v_0$ | Initial variance |
 
-> **Naming clash warning.** Heston's mean-reversion parameter is conventionally $\kappa$. The reflexive coupling parameter is also conventionally $\kappa$. Throughout the code and paper we use **`kappa`** (Heston) and **`coupling`** (reflexive) to disambiguate. In LaTeX use $\kappa$ for Heston, $\boldsymbol{\kappa}$ (bold) for the coupling, with explicit definitions on first use.
+> **Naming clash warning.** Heston's mean-reversion parameter is conventionally $\kappa$. The reflexive coupling parameter is also conventionally $\kappa$. Throughout the code and paper we use **`kappa`** (Heston) and **`coupling`** (reflexive) to disambiguate. In LaTeX, plain $\kappa$ refers to the **reflexive coupling** (the central object of the paper) and $\kappa_v$ (with subscript $v$) refers to **Heston's variance mean-reversion**; this matches `paper/main.tex` and `paper/theory.md` and avoids the bold-symbol overhead in expressions like $H(\kappa)$. The legacy $\boldsymbol{\kappa}$ notation appears only in `paper/pre_registration.md` and is preserved there for chain-of-custody reasons.
 
 ## Reflexive simulator parameters
 

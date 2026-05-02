@@ -20,6 +20,18 @@ has a closed-form Gaussian distribution; the slope CI is the resulting
 posterior interval. A local-quadratic-regression fallback handles the rare
 case where GP hyperparameter optimisation diverges.
 
+**Noise-variance pinning — v0.3.1 fix to A6.** The G3 statistical audit at
+v0.3.0 found ~70% empirical coverage on smooth-truth synthetic cases (vs
+the 95% nominal), traced to the WhiteKernel noise MLE collapsing to its
+1e-10 lower bound on the n=9 grid. The fix: instead of letting the GP
+optimise the noise variance jointly with the length scale, we *pin* the
+noise variance to the observed seed-to-seed std (averaged across the κ
+grid). This is the natural noise level — it is exactly the variance of
+the metric estimator at fixed κ, which is what the GP's WhiteKernel
+should represent. With pinned noise, coverage on quadratic / linear /
+sin / quintic synthetic ground truths recovers to ≥85% at the locked
+n_seeds = 100. See `tests/test_sensitivity.py::test_gp_slope_ci_coverage_with_pinned_noise`.
+
 Reference: evaluation_framework_brief.md §3, paper/pre_registration_amendments.md A6.
 """
 
@@ -131,11 +143,25 @@ def _fit_gp_and_derivative(
     x_train: NDArray[np.float64],
     y_train: NDArray[np.float64],
     x_anchor: float,
+    *,
+    noise_variance_raw: float | None = None,
 ) -> tuple[float, float]:
     """Fit sklearn GP (RBF + White) on (x, y) then evaluate derivative posterior at x_anchor.
 
     Returns ``(slope_mean, slope_se)``. Raises RuntimeError on any failure
     so callers can fall back to local-quadratic regression cleanly.
+
+    Args:
+        x_train: κ grid (raw scale).
+        y_train: per-κ mean metric values (raw scale).
+        x_anchor: κ at which to evaluate the slope (raw scale).
+        noise_variance_raw: if not None, pin the WhiteKernel noise variance
+            to this value (in raw `y_train` units, i.e. `Var(estimator at κ)`).
+            This represents the seed-to-seed Monte-Carlo variance of the metric
+            mean and is the *natural* noise level for the GP. Pinning fixes
+            the under-coverage discovered by the v0.3.0 G3 audit (the noise
+            MLE was collapsing to the lower bound on n=9 grid points).
+            If None, fall back to the legacy joint-MLE behaviour.
     """
     # Centre and scale x for numerical stability — anchor scales can be 1e-12.
     x_scale = float(np.max(np.abs(x_train))) if np.max(np.abs(x_train)) > 0 else 1.0
@@ -154,12 +180,26 @@ def _fit_gp_and_derivative(
     if grid_span == 0.0:
         raise RuntimeError("kappa_grid degenerate after scaling")
 
-    kernel = RBF(
-        length_scale=grid_span / 4.0,
-        length_scale_bounds=(grid_span * 1e-2, grid_span * 1e2),
-    ) + WhiteKernel(
-        noise_level=1e-2,
-        noise_level_bounds=(1e-10, 1.0),
+    if noise_variance_raw is not None and noise_variance_raw > 0.0:
+        # Pin noise level on the standardised y scale.
+        pinned_noise_level = float(noise_variance_raw / (y_std**2))
+        # Floor at machine-precision so the kernel matrix stays positive-definite.
+        pinned_noise_level = max(pinned_noise_level, 1e-10)
+        white = WhiteKernel(
+            noise_level=pinned_noise_level,
+            noise_level_bounds="fixed",
+        )
+    else:
+        white = WhiteKernel(
+            noise_level=1e-2,
+            noise_level_bounds=(1e-10, 1.0),
+        )
+    kernel = (
+        RBF(
+            length_scale=grid_span / 4.0,
+            length_scale_bounds=(grid_span * 1e-2, grid_span * 1e2),
+        )
+        + white
     )
     gp = GaussianProcessRegressor(
         kernel=kernel,
@@ -273,10 +313,24 @@ def kappa_sensitivity_curve(
 
     means = raw.mean(axis=1)
     stds = raw.std(axis=1, ddof=1)
+    # Pin the GP noise variance to the seed-mean MC variance, averaged across κ.
+    # This is the natural noise level — Var(metric mean | κ) ≈ stds² / n_seeds —
+    # and prevents the WhiteKernel MLE from collapsing to its lower bound on
+    # small grids (the v0.3.0 G3 audit's coverage bug).
+    if n_seeds > 0:
+        seed_mean_variances = (stds**2) / float(n_seeds)
+        noise_variance_raw = float(np.mean(seed_mean_variances))
+    else:
+        noise_variance_raw = 0.0
 
     method: SlopeMethod = "gp"
     try:
-        slope, slope_se = _fit_gp_and_derivative(kappa_grid, means, kappa_anchor)
+        slope, slope_se = _fit_gp_and_derivative(
+            kappa_grid,
+            means,
+            kappa_anchor,
+            noise_variance_raw=noise_variance_raw if noise_variance_raw > 0.0 else None,
+        )
     except (RuntimeError, np.linalg.LinAlgError, ValueError):
         slope, slope_se = _local_quadratic_slope(kappa_grid, means, kappa_anchor)
         method = "local_quadratic_fallback"

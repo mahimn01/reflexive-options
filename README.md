@@ -104,15 +104,15 @@ The arXiv submission metadata (subjects, MSC codes, license, comments) lives in 
 | Surface generator + arbitrage filter (~85k surfaces/sec) | **implemented + tested** |
 | ATLAS vendored (Mamba + BC + EWC + RAT) | **vendored (~3,700 LOC, 8 smoke tests pass)** |
 | Gymnasium RL env + state/action/reward + curriculum | **implemented + tested** |
-| Hopf bifurcation analysis (Theorem 1 + closed-form $\ell_1$ + stochastic shift $\Lambda$) | **derived + computed (closed-form-OI regime, §4.3.5): $\kappa^* = 17.81$, $\omega^* = 1.18$, $\ell_1 = -0.48$ (supercritical); $\Lambda$ computed via `lambda_correction_canonical` at the §4.2 dimensionless regime and SPX-representative $(\xi, \rho) = (0.3, -0.7)$** |
+| Hopf bifurcation analysis (Theorem 1 + closed-form $\ell_1$ + stochastic shift $\Lambda$) | **derived + computed (closed-form-OI regime, §4.3.5): $\kappa^* = 17.81$, $\omega^* = 1.18$, $\ell_1 = -0.48$ (supercritical); $\|\Lambda\| \sim 10^{-3}$ at the §4.2 trivial-equilibrium evaluation, sign configuration-dependent (deferred to empirical phase) — reproduce via `lambda_correction_canonical`** |
 | Fokker-Planck stationary density vs Heston (analytical + MC) | **derived: H_tail confirmed, H_skew confirmed, H_bimod refuted (honest finding documented)** |
 | κ-sensitivity transfer experiment (BC-trained MLP, ~15-20 min/run) | **implemented + tested** |
 | Marketron replication infrastructure | **implemented + tested (0 cells hit, mechanism mismatch — documented)** |
 | Pre-registration document | **drafted (2,624 words, commit-anchored)** |
-| Test suite | **329/329 passing, ≥85% branch coverage** [^cov] |
+| Test suite | **336/336 passing, ≥85% branch coverage** [^cov] |
 | CI (GitHub Actions) | **green on Python 3.12 / 3.13 / 3.14** |
 
-[^cov]: Coverage measured by the most recent `bash scripts/verify.sh` run (89.05% as of v0.3.0); gated at >=85% in CI via `[tool.coverage.report] fail_under = 85`.
+[^cov]: Coverage measured by the most recent `bash scripts/verify.sh` run (88.94% as of v0.3.1); gated at >=85% in CI via `[tool.coverage.report] fail_under = 85`.
 
 **v0.3 shipped** (2026-04-22):
 - Closed-form first Lyapunov coefficient $\ell_1$ for log-normal open-interest in moneyness (`paper/theory.md` §4.3, `theory/bifurcation.lyapunov_coefficient_lognormal_oi`); matches the FD-tensor pipeline to <0.6% relative.
@@ -172,7 +172,7 @@ total coverage stays at or above 85% (`[tool.coverage.report] fail_under
 Versioned change history lives in [CHANGELOG.md](CHANGELOG.md), formatted
 per [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and tagged
 under [SemVer](https://semver.org/spec/v2.0.0.html). The current release
-is `0.1.0`.
+is `0.3.0`.
 
 ## Reproducibility
 

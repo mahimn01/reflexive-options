@@ -402,8 +402,8 @@ comparison.
 
 ### 3.5 Diffusion-based IV-surface forecasting — Jin & Agarwal (2025)
 
-Jin & Agarwal, *Forecasting Implied Volatility Surface with Generative
-Diffusion Models*, arXiv:2511.07571, November 2025.
+Chen Jin & Ankush Agarwal, *Forecasting Implied Volatility Surface with
+Generative Diffusion Models*, arXiv:2511.07571, November 2025.
 
 Most temporally adjacent competitor. Verified via WebFetch of the HTML
 that evaluation uses MAPE, calibration of 90% CIs, time-series slice
@@ -422,8 +422,8 @@ distribution.
 
 ### 3.6 OT-for-arbitrage-correction — Chevallier, De Marco & Lévy-dit-Vehel (2025)
 
-J. Chevallier, S. De Marco & A. Lévy-dit-Vehel, *Optimal Transport-Based
-Approach to Arbitrage Correction of Implied Volatility Surfaces*,
+M. Chevallier, S. De Marco & P.-E. Lévy-dit-Vehel, *An Optimal Transport
+Approach to Arbitrage Correction: Application to Volatility Stress-Tests*,
 arXiv:2501.12195, January 2025.
 
 | Ingredient | Chevallier et al. (2025) | Patel (2026) |
@@ -436,13 +436,14 @@ arXiv:2501.12195, January 2025.
 
 Same building block (OT on option-price space), entirely different role.
 
-### 3.7 Sliced-W in finance — Stadnytska et al. (2025)
+### 3.7 Sliced-W in finance — Luan & Hamp (2025)
 
-Tetyana Stadnytska et al., *Automated regime classification via
-sliced-Wasserstein k-means*, AIMS *Data Science in Finance and Economics*,
-2025, DOI 10.3934/DSFE.2025016.
+Qinmeng Luan & James Hamp, *Automated regime classification in
+multidimensional time series data using sliced Wasserstein k-means
+clustering*, *Data Science in Finance and Economics*, 2025,
+DOI 10.3934/DSFE.2025016.
 
-| Ingredient | Stadnytska et al. (2025) | Patel (2026) |
+| Ingredient | Luan & Hamp (2025) | Patel (2026) |
 | --- | --- | --- |
 | Sliced-Wasserstein in finance | Yes (FX time series) | Yes (IV-surface windows) |
 | IV surface object | No | Yes |
@@ -461,17 +462,18 @@ evaluation rubric for IV-surface generators.
 | Manole, Balakrishnan & Wasserman (arXiv:1909.07862, *EJS* 2022) | Minimax CIs for sliced-Wasserstein; $n^{-1/2}$ convergence in any dimension |
 | Politis & Romano (1994), *JASA* | Stationary block bootstrap |
 | Roper (2010), U. Sydney preprint; Gatheral & Jacquier (2014), arXiv:1204.0646 | Static-arbitrage filter on IV surfaces |
-| Hosseini, Bunne & Cuturi (arXiv:2403.18705, 2024) | Conditional Wasserstein for state-conditional comparisons |
+| Hosseini, Hsu & Taghvaei (arXiv:2311.05672, 2023) | Conditional optimal transport on function spaces; state-conditional comparisons |
 
 ---
 
 ## 4. Pre-registration in computational finance
 
-### 4.1 Pacific-Basin Finance Journal pre-registration pathway (Brailsford et al. 2022; PBFJ 2025 update)
+### 4.1 Pacific-Basin Finance Journal pre-registration pathway (Faff 2022; PBFJ 2025 update)
 
-Tim Brailsford et al., *Editorial: Pre-registration in finance*, *Pacific-
-Basin Finance Journal* (2022), DOI 10.1016/j.pacfin.2022.101859; 2025
-update DOI 10.1016/j.pacfin.2025.102697.
+Robert Faff, *PBFJ Editorial … Engaging with responsible science. "OPEN
+FOR BUSINESS" — Launching the PBFJ pre-registration publication
+initiative*, *Pacific-Basin Finance Journal* (2022), DOI
+10.1016/j.pacfin.2022.101859; 2025 update DOI 10.1016/j.pacfin.2025.102697.
 
 First finance journal with a formal pre-registration pathway. Four-phase
 process. Editor commits to publication regardless of result direction.
@@ -629,11 +631,11 @@ the specific four-way intersection in this subfield.
 - Issa, Horvath, Lemercier & Salvi (2023): https://arxiv.org/abs/2305.16274
 - Jin & Agarwal (2025): https://arxiv.org/abs/2511.07571
 - Chevallier, De Marco & Lévy-dit-Vehel (2025): https://arxiv.org/abs/2501.12195
-- Stadnytska et al. (2025): http://www.aimspress.com/article/doi/10.3934/DSFE.2025016
+- Luan & Hamp (2025): http://www.aimspress.com/article/doi/10.3934/DSFE.2025016
 - Manole, Balakrishnan & Wasserman (2022): https://arxiv.org/abs/1909.07862
 
 **Pre-registration:**
-- Brailsford et al. (PBFJ 2022): https://www.sciencedirect.com/science/article/abs/pii/S0927538X22001329
+- Faff (PBFJ 2022): https://www.sciencedirect.com/science/article/abs/pii/S0927538X22001329
 - AEA RCT Registry: https://www.aeaweb.org/journals/policies/rct-registry
 - Pérignon et al. (RFS 2024): https://academic.oup.com/rfs/article-abstract/37/11/3558/7697104
 - Camerer et al. (2018): https://www.nature.com/articles/s41562-018-0399-z

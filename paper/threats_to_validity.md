@@ -90,7 +90,7 @@ the precedent and forces direct empirical comparison.
 ## 4. Pre-registration framing — drop "first in finance"
 
 The Pacific-Basin Finance Journal has had a formal pre-registration
-pathway since Brailsford et al.'s 2022 editorial (DOI
+pathway since Faff's 2022 editorial (DOI
 10.1016/j.pacfin.2022.101859), with a 2025 update. The AEA RCT Registry
 has hosted finance / market-microstructure RCTs since 2018.
 

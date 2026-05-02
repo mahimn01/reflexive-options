@@ -148,19 +148,35 @@ For a worked numerical example we instead use a representative *dimensionless* r
 
 Supercriticality means an attracting limit cycle is born for $\kappa > \kappa^\star$, with amplitude $\propto \sqrt{\kappa - \kappa^\star}$ — i.e. *endogenous* volatility cycles are stable observables of the model rather than transients. In the subcritical case ($\ell_1 > 0$) we would instead see hysteresis and abrupt regime jumps; the supercritical sign here matches the qualitative empirical character of slow vol-clustering build-ups documented in HBB.
 
-For the stochastic lift at $(\xi, \rho) = (0.3, -0.7)$ — calibration-representative for SPX — the Khasminskii estimator gives
+The Khasminskii sphere-process estimator (`compute_lambda_correction`),
+evaluated by `experiments/lambda_correction_canonical` on the bare
+Heston-with-memory linearisation at the trivial $G \equiv 0$ equilibrium
+with the §4.2 memory parameters, gives $|\Lambda(\kappa^\star)|$ on the
+order of $10^{-3}$ at both the canonical $(\xi, \rho) = (0.3, 0)$ and
+SPX-representative $(0.3, -0.7)$ configurations (path budget: $2 \times
+10^3$ trajectories × $5 \times 10^3$ steps; representative output:
+$\Lambda_{\text{canonical}} \approx -6.9 \times 10^{-3}$,
+$\Lambda_{\text{spx-rep}} \approx -3.5 \times 10^{-3}$, locked seed
+20260422; numbers reproducible from `runs/lambda_correction_canonical/`).
 
-$$
-\Lambda(\kappa^\star) \approx +1.85 \times 10^{-2}
-$$
-
-at noise normalisation $\varepsilon \in \{0.05, 0.20\}$, with a path budget of $10^3$ trajectories × $10^4$ steps. The positive sign means *noise destabilises* the equilibrium: the stochastic Hopf threshold
+The sign of $\Lambda$ depends sensitively on the open-interest configuration
+and on the specific equilibrium chosen — at the trivial $G \equiv 0$
+linearisation evaluated above the sign is empirically negative, and
+preliminary scans at non-trivial OI grids produce sign reversals that we do
+not yet characterise rigorously. We therefore defer a definitive
+characterisation of $\Lambda$'s sign to the empirical phase and use only the
+magnitude in what follows. The stochastic Hopf threshold
 
 $$
 \kappa^\star_{\mathrm{stoch}}(\varepsilon) \approx \kappa^\star - \frac{\varepsilon^2 \Lambda}{|\alpha'(\kappa^\star)|}
 $$
 
-lies *below* the deterministic threshold, consistent with the Engel–Lamb–Rasmussen prediction for shear-induced corrections in correlated multiplicative-noise systems. At a calibration noise scale of $\varepsilon = 0.1$ this shifts the top Lyapunov exponent by $\Lambda \cdot \varepsilon^2 \approx 1.85 \times 10^{-4}$, which is small in absolute terms but predictable in sign.
+is therefore predicted to lie within $|\Lambda| \cdot \varepsilon^2 / |\alpha'(\kappa^\star)|
+\sim 10^{-5}$ of the deterministic threshold at calibration noise scale
+$\varepsilon = 0.1$ — operationally negligible. The Engel–Lamb–Rasmussen
+prediction for shear-induced corrections in correlated multiplicative-noise
+systems is consistent with this magnitude but is not validated in *sign*
+by the present finite-budget estimator.
 
 ### 4.3 Closed-form first Lyapunov coefficient for log-normal OI in moneyness
 
@@ -203,7 +219,7 @@ That is: $G$ is a Gaussian in $a$ centred near (a translation of) the OI mean $\
 
 #### 4.3.2 Closed-form Hopf threshold $\kappa^\star$
 
-With $G_z = 0$ and $\sigma^2 = v$ (whence $\partial_y\sigma^2 = 0$ and $\partial_v\sigma^2 = 1$), the Routh–Hurwitz polynomial $H(\kappa) := c_1 c_2 - c_0$ degree-collapses from cubic to **quadratic** in $\kappa$:
+With $G_z = 0$ and $\sigma^2 = v$ (whence $\partial_y\sigma^2 = 0$ and $\partial_v\sigma^2 = 1$), the Routh–Hurwitz polynomial $H(\kappa) := c_1 c_2 - c_0$ degree-collapses from cubic to **quadratic** in $\kappa$ (we write $G_y := \partial_a G$ throughout this closed-form section; identical to the $G_x$ of §2 up to the choice of deviation symbol):
 
 $$
 H(\kappa) \;=\; G_y^2\,(\alpha + \kappa_v)\,\kappa^2 \;+\; \bigl(G_v\,\beta\gamma - G_y\,(\alpha + \kappa_v)^2\bigr)\,\kappa \;+\; \alpha\kappa_v(\alpha + \kappa_v) - \tfrac{1}{2}\beta\gamma. \tag{16}
@@ -286,7 +302,7 @@ $$
 \lambda_1(\kappa, \varepsilon) = \alpha(\kappa) + \varepsilon^2 \cdot \Lambda(\kappa) + O(\varepsilon^4),
 $$
 
-where $\alpha(\kappa)$ is the deterministic real part (zero at $\kappa^\star_{\mathrm{det}}$) and $\Lambda$ is computed via Engel–Lamb–Rasmussen (2024). Engel–Lamb–Rasmussen (2024) predict an asymptotic shear-driven scaling $|\Lambda| \sim (\rho\xi)^{2/3}$ in the limit of small noise. The numerical $\Lambda$ values produced by our finite-budget Khasminskii estimator (`stochastic_hopf_shift_numeric`) are not strongly $(\rho\xi)$-dependent in the tested regime — empirically $\Lambda$ is roughly constant across $(\rho\xi) \in [0.07, 0.42]$ at the §4.2 representative parameter set, with relative variation $\approx 27\%$ over a 6× change in $(\rho\xi)$. We do not claim to have validated the asymptotic scaling; the reported $\Lambda$ is a finite-noise two-point estimate at $(\varepsilon_1, \varepsilon_2) = (0.05, 0.20)$. A definitive small-noise asymptotic check would require a dedicated experiment we defer. We compute $\Lambda$ numerically via Khasminskii's sphere process (Algorithm 2 in `~/Documents/reflexivity-research/hopf_bifurcation_brief.md` §6).
+where $\alpha(\kappa)$ is the deterministic real part (zero at $\kappa^\star_{\mathrm{det}}$) and $\Lambda$ is computed numerically via the Khasminskii sphere process (Algorithm 2 in `~/Documents/reflexivity-research/hopf_bifurcation_brief.md` §6). The reported $\Lambda$ at §4.2 is a finite-budget two-point estimate at $(\varepsilon_1, \varepsilon_2) = (0.05, 0.20)$ on the bare Heston-with-memory linearisation; magnitudes are $|\Lambda| \sim 10^{-3}$, signs are configuration-dependent. A definitive small-noise asymptotic check — including any test of the Engel–Lamb–Rasmussen (2024) shear-driven scaling — requires a dedicated experiment that we defer to the empirical phase, where the open-interest grid is the actual SPX surface rather than a synthetic prior.
 
 ---
 

@@ -134,4 +134,4 @@ where $\hat{\rho}$ is the GP-posterior slope estimate (A6) and $\hat{m}(\boldsym
 
 This document is committed *before* the empirical SPX evaluation. The final empirical analysis pipeline is the union of `pre_registration.md` v1 and the seven amendments above (A1–A7), with **no further amendments permitted** after the SPX data is loaded into the codebase. Any post-data deviation must be reported in the paper as an *exploratory* analysis under the §9 deviations clause.
 
-The amendments are commit-hash anchored to this file. The set of permissible amendments is closed at the commit landing A5–A7 (`<commit hash to be filled in at merge time>`).
+The amendments are commit-hash anchored to this file. The set of permissible amendments is closed at the commit landing A5–A7 (`63078f5`).

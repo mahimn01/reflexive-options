@@ -290,7 +290,7 @@ def test_gp_falls_back_to_local_quadratic_on_runtime_error(monkeypatch: pytest.M
     """When GP fitting raises, the wrapper falls back to local-quadratic."""
     import reflexive_options.theory.sensitivity as sens
 
-    def _failing_gp(_x, _y, _x_anchor):
+    def _failing_gp(_x, _y, _x_anchor, **_kwargs):
         raise RuntimeError("synthetic GP failure for fallback test")
 
     monkeypatch.setattr(sens, "_fit_gp_and_derivative", _failing_gp)
@@ -308,3 +308,74 @@ def test_gp_falls_back_to_local_quadratic_on_runtime_error(monkeypatch: pytest.M
     assert res.method == "local_quadratic_fallback"
     # Local-quadratic still recovers the linear slope reasonably.
     assert abs(res.slope_at_anchor - 2.0) < 0.5
+
+
+# ---------------------------------------------------------------------------
+# v0.3.1 — coverage diagnostic with pinned noise variance.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "truth,truth_slope_fn",
+    [
+        ("quadratic", lambda k, anchor: 2.0 * (k - anchor)),
+        ("linear", lambda _k, _anchor: 1.5),
+        ("sin", lambda k, anchor: 2.0 * np.cos(2.0 * (k - anchor))),
+    ],
+)
+def test_gp_slope_ci_coverage_with_pinned_noise(truth: str, truth_slope_fn) -> None:
+    """v0.3.1 fix: with seed-MC-variance-pinned noise the GP CI achieves ≥80% coverage.
+
+    The G3 audit at v0.3.0 measured ~70% empirical coverage on smooth-truth cases
+    (vs the 95% nominal) because the WhiteKernel noise MLE collapsed to its 1e-10
+    lower bound on n=9 grid points. Pinning noise variance to the seed-mean MC
+    variance fixes the issue.
+
+    We run 50 independent realisations per truth, compute the empirical coverage
+    of the 95% CI, and assert it is ≥ 0.80 (a generous bound that accounts for
+    the small replicate budget and the still-imperfect length-scale MLE).
+    """
+    n_replicates = 50
+    n_seeds = 100
+    anchor = 1.0
+    grid = _grid(anchor)
+    sigma_noise = 0.30
+
+    def _truth_value(k: float, anchor_: float) -> float:
+        if truth == "quadratic":
+            return float((k - anchor_) ** 2)
+        if truth == "linear":
+            return float(1.5 * (k - anchor_))
+        if truth == "sin":
+            return float(np.sin(2.0 * (k - anchor_)))
+        raise AssertionError(truth)
+
+    true_slope = float(truth_slope_fn(anchor, anchor))
+    if truth == "quadratic":
+        # ∂/∂k (k - anchor)² at anchor = 0
+        true_slope = 0.0
+    elif truth == "sin":
+        # ∂/∂k sin(2(k - anchor)) at anchor = 2
+        true_slope = 2.0
+
+    covered = 0
+    for replicate in range(n_replicates):
+        replicate_rng_seed = 1_000 + replicate
+
+        def f(k: float, seed: int) -> float:
+            rng = np.random.default_rng(seed)
+            return _truth_value(k, anchor) + sigma_noise * float(rng.standard_normal())
+
+        res = kappa_sensitivity_curve(
+            metric_fn=f,
+            kappa_grid=grid,
+            kappa_anchor=anchor,
+            n_seeds=n_seeds,
+            rng_seed=replicate_rng_seed,
+        )
+        if res.slope_ci_low <= true_slope <= res.slope_ci_high:
+            covered += 1
+    coverage = covered / n_replicates
+    assert coverage >= 0.80, (
+        f"truth={truth}: coverage {coverage:.2f} below 0.80 (target nominal 0.95)"
+    )
