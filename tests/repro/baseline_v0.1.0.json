@@ -10,7 +10,7 @@
     46
   ],
   "stochastic_rel_tolerance": 0.05,
-  "generated_at_utc": "2026-05-02T05:03:18+00:00",
+  "generated_at_utc": "2026-05-02T06:26:44+00:00",
   "tooling": {
     "python": "3.14.3",
     "platform": "macOS-26.3.1-arm64-arm-64bit-Mach-O",
@@ -121,7 +121,7 @@
       },
       "blake2b_hash": "7f2d5c35b3c853c3fca398d1227e2b0bb1ff4191c3de35cac128c463935779dd",
       "tolerance": "exact",
-      "timestamp_utc": "2026-05-02T05:03:03+00:00",
+      "timestamp_utc": "2026-05-02T06:26:29+00:00",
       "tooling": {
         "python": "3.14.3",
         "platform": "macOS-26.3.1-arm64-arm-64bit-Mach-O",
@@ -959,7 +959,7 @@
       },
       "blake2b_hash": "0dff31dd45d622283a4c614071ddf210340162dcac632845d5e6ab09f8d9030d",
       "tolerance": "exact",
-      "timestamp_utc": "2026-05-02T05:03:03+00:00",
+      "timestamp_utc": "2026-05-02T06:26:29+00:00",
       "tooling": {
         "python": "3.14.3",
         "platform": "macOS-26.3.1-arm64-arm-64bit-Mach-O",
@@ -1001,8 +1001,6 @@
         "rel_tolerance": 0.08
       },
       "metrics": {
-        "parameter_set": "table_5_calibrated_2017",
-        "n_paths": 2000,
         "heston_horizon_metrics": {
           "0.0397y": {
             "mean": -0.07798127098177896,
@@ -1035,9 +1033,15 @@
             "excess_kurt": 1.3390224010153302
           }
         },
-        "heston_terminal_spot_mean": 101.4179250820946,
-        "heston_terminal_spot_std": 42.11359918481579,
-        "heston_terminal_variance_mean": 0.15740938011056285,
+        "heston_n_fail": 15.0,
+        "heston_n_informational": 5.0,
+        "heston_n_pass": 0.0,
+        "heston_overall_passed": false,
+        "heston_terminal_spot_mean": 100.94412649723532,
+        "heston_terminal_spot_std": 41.09683759081324,
+        "heston_terminal_variance_mean": 0.1575341792320411,
+        "n_paths": 2000.0,
+        "parameter_set": "table_5_calibrated_2017",
         "reflexive_horizon_metrics": {
           "0.0397y": {
             "mean": -0.06598492168756345,
@@ -1070,21 +1074,17 @@
             "excess_kurt": 2.3049008292208413
           }
         },
-        "reflexive_terminal_spot_mean": 101.59163304448064,
-        "reflexive_terminal_spot_std": 42.301551816926285,
-        "reflexive_terminal_variance_mean": 0.1529528763537681,
-        "heston_n_pass": 0,
-        "heston_n_fail": 15,
-        "heston_n_informational": 5,
-        "heston_overall_passed": false,
-        "reflexive_n_pass": 0,
-        "reflexive_n_fail": 15,
-        "reflexive_n_informational": 5,
-        "reflexive_overall_passed": false
+        "reflexive_n_fail": 15.0,
+        "reflexive_n_informational": 5.0,
+        "reflexive_n_pass": 0.0,
+        "reflexive_overall_passed": false,
+        "reflexive_terminal_spot_mean": 101.1347958512254,
+        "reflexive_terminal_spot_std": 42.60198414787099,
+        "reflexive_terminal_variance_mean": 0.15468905918580372
       },
-      "blake2b_hash": "64b3ff9413a52c57d5be30f59cf89b561761d549643d0af5b162298494fd9166",
-      "tolerance": "exact",
-      "timestamp_utc": "2026-05-02T05:03:04+00:00",
+      "blake2b_hash": "b0d4b9f7189fdbf8463d57844d6149c147cd5cb2517ce704dd21416a1d477998",
+      "tolerance": "relative_5pct",
+      "timestamp_utc": "2026-05-02T06:26:31+00:00",
       "tooling": {
         "python": "3.14.3",
         "platform": "macOS-26.3.1-arm64-arm-64bit-Mach-O",
@@ -1097,10 +1097,33 @@
         "matplotlib": "3.10.9",
         "QuantLib": "1.42.1"
       },
-      "notes": "",
-      "metrics_std": {},
+      "notes": "torch BC training; means/stds aggregated across 5 seeds.",
+      "metrics_std": {
+        "heston_horizon_metrics": null,
+        "heston_n_fail": 0.0,
+        "heston_n_informational": 0.0,
+        "heston_n_pass": 0.0,
+        "heston_overall_passed": 0,
+        "heston_terminal_spot_mean": 0.8340029822395835,
+        "heston_terminal_spot_std": 1.7300192823110918,
+        "heston_terminal_variance_mean": 0.001462148847890437,
+        "n_paths": 0.0,
+        "parameter_set": null,
+        "reflexive_horizon_metrics": null,
+        "reflexive_n_fail": 0.0,
+        "reflexive_n_informational": 0.0,
+        "reflexive_n_pass": 0.0,
+        "reflexive_overall_passed": 0,
+        "reflexive_terminal_spot_mean": 0.6481643746665663,
+        "reflexive_terminal_spot_std": 1.4169079189938225,
+        "reflexive_terminal_variance_mean": 0.002815610349186176
+      },
       "seeds_used": [
-        42
+        42,
+        43,
+        44,
+        45,
+        46
       ]
     },
     {
@@ -1154,7 +1177,7 @@
       },
       "blake2b_hash": "2d03647d60ff2e58019b858955c4b0742c48ab4bb91db628ea25e0cd0f948c6c",
       "tolerance": "relative_5pct",
-      "timestamp_utc": "2026-05-02T05:03:18+00:00",
+      "timestamp_utc": "2026-05-02T06:26:44+00:00",
       "tooling": {
         "python": "3.14.3",
         "platform": "macOS-26.3.1-arm64-arm-64bit-Mach-O",

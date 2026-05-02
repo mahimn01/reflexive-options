@@ -548,7 +548,11 @@ def test_all_specs_registry_has_expected_entries() -> None:
     tolerances = {s.name: s.tolerance for s in specs}
     assert tolerances["reflexive_transfer"] == "relative_5pct"
     assert tolerances["bifurcation_scan"] == "exact"
-    assert tolerances["synthetic_replication"] == "exact"
+    # synthetic_replication moved to relative_5pct after the C5 mechanism-decomp
+    # rewrite — the per-cell metric float values differ at the 1e-12 level across
+    # Python 3.12 vs 3.13/3.14 due to BLAS/float-sum ordering, which propagates
+    # into the blake2b hash. The 5% gate is the right one for this experiment.
+    assert tolerances["synthetic_replication"] == "relative_5pct"
     assert tolerances["phase_diagram"] == "exact"
 
 
