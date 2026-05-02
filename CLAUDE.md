@@ -70,8 +70,22 @@ pytest tests/test_simulator.py                                  # one module
 python -m reflexive_options.experiments.synthetic_replication  # reproduce Marketron figures
 python -m reflexive_options.experiments.bifurcation_scan       # numerical Hopf
 python -m reflexive_options.experiments.phase_diagram          # (κ, σ_v) phase scan
-python -m reflexive_options.experiments.reflexive_transfer     # κ-sensitivity (novel)
+python -m reflexive_options.experiments.reflexive_transfer     # κ-sensitivity
 ```
+
+## Reproducibility receipt
+
+Every experiment's v0.1.0 outputs are recorded in `tests/repro/baseline_v0.1.0.json` with blake2b hashes. The regression test `test_reproducibility.py` re-runs each experiment and asserts metrics match. To intentionally update the baseline (after a science change):
+
+```bash
+bash scripts/generate_repro_baseline.sh
+```
+
+Commit the resulting `baseline_v0.1.0.json` change with a description of *why* the numbers moved.
+
+The deterministic-bucket experiments (`bifurcation_scan`, `phase_diagram`, `synthetic_replication`) are locked at exact-equality (1e-12 absolute tolerance). The torch-trained `reflexive_transfer` is locked at distributional 5% relative tolerance across 5 seeds — flag any drift larger than that as a real regression.
+
+The repro test is gated behind `@pytest.mark.slow` and runs in ~30 s. Skip locally with `CI_FAST=1 pytest`; in CI the test runs by default and there's a `SKIP_REPRO=1` escape hatch for genuine flakes.
 
 ## Releases
 

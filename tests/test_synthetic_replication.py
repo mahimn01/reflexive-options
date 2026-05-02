@@ -102,20 +102,28 @@ def test_compare_to_marketron_targets_passes_at_match() -> None:
 def test_compare_to_marketron_targets_fails_at_disagreement() -> None:
     target_set = "table_5_calibrated_2017"
     metrics = _exact_match_metrics(target_set)
-    # Shift every (non-informational) moment by 50% relative — well past the
-    # 8% tolerance. Use a multiplicative bump so even small targets get pushed
-    # outside the abs(target)=1e-3 floor in `_relative_error`.
+    # Flip the SIGN of every shape moment AND push every cell past 8% tolerance.
+    # Sign flips drop the new shape-match-rate gate to 0%; the value bump pushes
+    # the legacy 8% counters into the fail bucket too. Use the *opposite* sign
+    # of the target with magnitude bumped by +0.5 so even cells with target
+    # close to the dead-zone (|x|<=1e-3) get pushed past it on the wrong side.
+    import math
+
     for horizon_metrics in metrics["horizon_metrics"].values():
         for moment_name in list(horizon_metrics):
-            if moment_name in INFORMATIONAL_MOMENTS:
-                continue
             v = horizon_metrics[moment_name]
-            # Push every moment well outside the 8% tolerance band.
-            horizon_metrics[moment_name] = (v + 1.0) * 1.5
+            if moment_name in {"skew", "excess_kurt"}:
+                target_sign = math.copysign(1.0, v) if v != 0 else 1.0
+                horizon_metrics[moment_name] = -target_sign * (abs(v) + 0.5)
+            elif moment_name not in INFORMATIONAL_MOMENTS:
+                horizon_metrics[moment_name] = (v + 1.0) * 1.5
 
     result = compare_to_marketron_targets(metrics, target_set)
     assert result["overall_passed"] is False
     assert result["n_fail"] > 0
+    # Sign-flip → no shape cells should match in sign.
+    assert result["shape_target_sign_match"] == 0
+    assert result["shape_match_rate"] == 0.0
 
 
 def test_compare_to_marketron_targets_unknown_set_raises() -> None:

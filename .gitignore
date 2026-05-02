@@ -67,8 +67,10 @@ wandb/
 mlruns/
 logs/
 *.log
-paper/figures/*.pdf
-paper/figures/*.png
+# Paper figures: vector outputs are committed (they're publication artifacts
+# pinned by the pre-registration commit hash). Raster PNGs are also committed
+# at 300 DPI for slide deck use. SVG intermediates are excluded — regenerate
+# from notebooks/ or experiments/.
 paper/figures/*.svg
 !paper/figures/.gitkeep
 

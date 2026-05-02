@@ -137,3 +137,74 @@ class GammaAggregator:
         g_shares_per_dollar = float(np.sum(signed_oi * gamma_bs) * self.config.multiplier)
         # USD of underlying dealers must trade per unit return = shares-per-$1 · S²
         return g_shares_per_dollar * spot * spot
+
+    def compute_batch(
+        self,
+        spots: NDArray[np.float64],
+        variances: NDArray[np.float64],
+        log_memory: NDArray[np.float64],
+    ) -> NDArray[np.float64]:
+        """Vectorised G(S, z, v) over n_paths. Returns shape (n_paths,).
+
+        Tensor-broadcast equivalent of `compute(...)` applied per-path. Builds the
+        BS-gamma grid as a (n_paths, n_strikes, n_maturities) tensor in one pass,
+        contracts against signed-OI, and returns the dollar-converted aggregate.
+
+        The `log_memory` argument is accepted for API symmetry with `compute(...)`
+        — it is unused in v1 (no memory-skew on the IV surface yet).
+        """
+        del log_memory  # interface symmetry; not yet used (see compute())
+
+        spots = np.asarray(spots, dtype=np.float64)
+        variances = np.asarray(variances, dtype=np.float64)
+        if spots.shape != variances.shape:
+            raise ValueError(f"spots shape {spots.shape} != variances shape {variances.shape}")
+        n_paths = spots.shape[0]
+
+        # sigma per path. fixed_iv overrides variance ⇒ broadcast scalar across paths.
+        if self.config.fixed_iv is not None:
+            sigma = np.full(n_paths, float(self.config.fixed_iv), dtype=np.float64)
+        else:
+            sigma = np.sqrt(np.maximum(variances, 1e-12))
+
+        tau = np.maximum(self._maturities, self.config.tau_floor_years)  # (n_T,)
+        sqrt_tau = np.sqrt(tau)  # (n_T,)
+
+        # Per-path mask: paths with sigma ≤ 0 contribute 0 (matches scalar branch).
+        # Use a safe sigma for the broadcast arithmetic, then zero those paths out.
+        valid = sigma > 0.0
+        sigma_safe = np.where(valid, sigma, 1.0)  # avoid /0 in d1 for masked paths
+
+        # Reshape for broadcasting:
+        #   sigma     -> (n_paths, 1, 1)
+        #   spots     -> (n_paths, 1, 1)
+        #   log_s_K   -> (1, n_K, 1)
+        #   tau, √τ   -> (1, 1, n_T)
+        sigma_b = sigma_safe[:, None, None]
+        spots_b = spots[:, None, None]
+        log_s_over_k = -self._log_moneyness[None, :, None]  # (1, n_K, 1)
+        tau_b = tau[None, None, :]
+        sqrt_tau_b = sqrt_tau[None, None, :]
+
+        # drift_term has σ² → path-dependent ⇒ shape (n_paths, 1, n_T)
+        drift_term = (self.risk_free_rate - self.dividend_yield + 0.5 * sigma_safe * sigma_safe)[
+            :, None, None
+        ] * tau_b
+        d1 = (log_s_over_k + drift_term) / (sigma_b * sqrt_tau_b)
+        phi = np.exp(-0.5 * d1 * d1) / np.sqrt(2.0 * np.pi)
+        gamma_bs = (
+            np.exp(-self.dividend_yield * tau_b) * phi / (spots_b * sigma_b * sqrt_tau_b)
+        )  # (n_paths, n_K, n_T)
+
+        signed_oi = (
+            self.sign.call_sign * self._oi_calls + self.sign.put_sign * self._oi_puts
+        )  # (n_K, n_T)
+        # Contract over (K, T) → (n_paths,)
+        g_shares_per_dollar = (
+            np.sum(signed_oi[None, :, :] * gamma_bs, axis=(1, 2)) * self.config.multiplier
+        )
+        out = g_shares_per_dollar * spots * spots
+        # Zero out paths with non-positive sigma to match the scalar branch.
+        if not np.all(valid):
+            out = np.where(valid, out, 0.0)
+        return out  # type: ignore[no-any-return]

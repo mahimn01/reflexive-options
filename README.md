@@ -22,11 +22,11 @@ A full implementation of:
 
 4. **An RL training infrastructure** (Mamba state-space + cross-attention transformer, PPO + behavioral cloning + EWC + curriculum learning) vendored from the [`mahimn01/trading-algo`](https://github.com/mahimn01/trading-algo) ATLAS module.
 
-5. **Two novel analytical results**:
+5. **Two analytical results** (synthesis of established machinery in a configuration not previously published in this combination — see `paper/related_work.md` §1 for the precedent comparison against Halperin–Itkin Marketron, Dai 2025, Brock–Hommes–Wagener, and He–Li–Zheng 2009):
    - A Hopf bifurcation theorem characterizing the critical coupling $\kappa^*$ at which endogenous limit cycles in volatility appear.
    - The reflexive simulator's stationary marginal density, contrasted analytically with Heston's known stationary distribution.
 
-6. **A novel evaluation framework**:
+6. **An evaluation framework** (each ingredient borrowed; combination not previously published — see `paper/related_work.md` §§2–3 for the comparison against He–Li–Zheng 2025 NeurIPS, Ning et al. 2021/2024, VolGAN, FuNVol, Subbaswamy–Saria 2022, Packer 2018):
    - Sliced Wasserstein-2 distance over arbitrage-free IV surface distributions.
    - $\kappa$-sensitivity curves: train an agent at $\kappa = \kappa_0$, deploy across $\kappa \in [0, 2\kappa_0]$, slope-of-degradation as a quantitative measure of reflexivity-importance.
 
@@ -50,10 +50,10 @@ python -m reflexive_options.experiments.synthetic_replication
 # Generate the (κ, σ_v) phase diagram (data-free)
 python -m reflexive_options.experiments.phase_diagram
 
-# Run the κ-sensitivity transfer experiment (data-free, novel)
+# Run the κ-sensitivity transfer experiment (data-free)
 python -m reflexive_options.experiments.reflexive_transfer
 
-# Numerical Hopf bifurcation scan (data-free, novel)
+# Numerical Hopf bifurcation scan (data-free)
 python -m reflexive_options.experiments.bifurcation_scan
 ```
 
@@ -101,6 +101,12 @@ notebooks/                # Tutorial walkthroughs
 
 [^cov]: Coverage measured by the most recent `bash scripts/verify.sh` run; gated at >=80% in CI via `[tool.coverage.report] fail_under = 80`.
 
+**v0.2 follow-ups in flight** (in-progress, not yet complete):
+- Closed-form first Lyapunov coefficient $\ell_1$ for log-normal open-interest in moneyness — currently numerical via finite-difference Taylor tensors (Theory §4.1 open item 1).
+- 4D phase scan extending the $(\kappa, \xi)$ scan to $(\kappa, \xi, \alpha, \gamma)$ to chart the Hopf locus across the memory-channel decay and leverage-feedback strength axes.
+- Reproducibility receipt — packaged `make reproduce` artifact bundling the full pipeline output with hash-pinned dependencies, mirroring the Open RL Benchmark (Huang et al. arXiv:2402.03046, 2024) tracking discipline for our specific run set.
+- H4 spectral-peak detector — Welch-PSD-based detector for the Hopf-frequency $\omega^\star \pm 20\%$ spectral peak in absolute returns, per the H4 decision rule in `paper/pre_registration.md` §6.
+
 **Known open items** (post-v1):
 - Joint VIX/SPX simulation (Marketron explicitly fails this; we don't address it in v1).
 - Vectorized BS-gamma over paths in `simulator.reflexive._g_vectorized` (~10× speedup possible).
@@ -119,6 +125,8 @@ ruff format --check src tests  # formatter conformance
 mypy src                       # project-tuned strict mode (see pyproject.toml)
 pytest --cov-fail-under=80     # branch coverage hard gate
 ```
+
+- **Reproducibility receipt**: `tests/test_reproducibility.py` re-runs every experiment and asserts the v0.1.0 numbers reproduce within tolerance. Refresh with `bash scripts/generate_repro_baseline.sh`.
 
 Pinned tooling versions live in `pyproject.toml`'s `[dependency-groups].dev`
 (PEP 735) and the bit-identical resolution is captured in `uv.lock`.

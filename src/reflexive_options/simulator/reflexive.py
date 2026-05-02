@@ -52,9 +52,15 @@ class ReflexiveSimulator:
         variances: NDArray[np.float64],
         memories: NDArray[np.float64],
     ) -> NDArray[np.float64]:
-        # gamma_aggregator.compute is path-scalar; loop over paths. n_paths is bounded
-        # by the MC budget (~1e4–1e5) so this is acceptable for v1; vectorizing requires
-        # rewriting the BS-gamma grid to broadcast over paths × strikes × maturities.
+        return self.gamma_aggregator.compute_batch(spots, variances, memories)
+
+    def _g_per_path(
+        self,
+        spots: NDArray[np.float64],
+        variances: NDArray[np.float64],
+        memories: NDArray[np.float64],
+    ) -> NDArray[np.float64]:
+        """Reference per-path implementation. Retained for benchmarking only."""
         n_paths = spots.shape[0]
         out = np.empty(n_paths, dtype=np.float64)
         for i in range(n_paths):

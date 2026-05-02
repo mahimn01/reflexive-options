@@ -6,6 +6,8 @@ This document is the canonical writeup of the analytical contributions of the pa
 
 ## 1. The model
 
+A complete comparison against the closest precedents — Halperin and Itkin's Marketron framework (arXiv:2508.09863, August 2025), Dai's gamma-squeeze recursion (arXiv:2511.22766, November 2025), Brock–Hommes-style heterogeneous-agent dynamics (Brock, Hommes & Wagener, *JEDC* 2009; He, Li & Zheng, *Economic Modelling* 2009; Chiarella, He & Hommes, UTS QFRC RP 268, 2006), the He–Li–Zheng adversarial deep-hedging line (arXiv:2508.14757, NeurIPS 2025), and the Ning–Jaimungal Wasserstein-on-surfaces work (arXiv:2108.04941, *SIAM SIFIN* 2024) — is in `related_work.md`. Each has 1–2 of the ingredients we combine; none has all.
+
 Let $S_t$ be the underlying spot price, $v_t$ the instantaneous variance, and $z_t$ a memory variable encoding low-pass-filtered price history. The reflexive system is
 
 $$
@@ -125,7 +127,7 @@ The full derivation, including the explicit formula for $\ell_1$ via the bilinea
 | $\kappa^\star$ via Routh–Hurwitz $H(\kappa) = 0$ | Yes, given $G_x, G_v, G_z$ at equilibrium |
 | Frequency $\omega^\star = \sqrt{c_1(\kappa^\star)}$ | Yes |
 | Existence of Hopf (Theorem 1) | Yes |
-| Sign of $\ell_1$ | Yes for parametric $G$ (e.g. log-normal OI in moneyness); numerical otherwise |
+| Sign of $\ell_1$ | Yes — closed form for log-normal OI in moneyness (§4.3, Eq. 17–18); numerical otherwise |
 | Limit-cycle amplitude / shape past $\kappa^\star$ | Numerical |
 
 The implementation in `src/reflexive_options/theory/bifurcation.py` does the numerical eigenvalue scan over $(\kappa, \xi)$ and locates $\kappa^\star$ as the contour where $\mathrm{Re}\,\lambda_\pm$ crosses zero. It also computes the first Lyapunov coefficient $\ell_1$ (Kuznetsov 2004 eq. 3.20) via finite-difference construction of the bilinear / trilinear Taylor tensors $B$ and $C$ around the equilibrium, and the stochastic-Hopf shift $\Lambda(\kappa)$ via a Khasminskii-style sphere process (Benettin renormalisation of the linearised SDE).
@@ -159,6 +161,120 @@ $$
 $$
 
 lies *below* the deterministic threshold, consistent with the Engel–Lamb–Rasmussen prediction for shear-induced corrections in correlated multiplicative-noise systems. At a calibration noise scale of $\varepsilon = 0.1$ this shifts the top Lyapunov exponent by $\Lambda \cdot \varepsilon^2 \approx 1.85 \times 10^{-4}$, which is small in absolute terms but predictable in sign.
+
+### 4.3 Closed-form first Lyapunov coefficient for log-normal OI in moneyness
+
+The numerical $\ell_1$ in §4.2 is built from a finite-difference construction of the bilinear/trilinear tensors $B$, $C$ around the equilibrium. While accurate to ${\sim}10^{-3}$ at the canonical regime, this leaves the *sign* of $\ell_1$ — the structurally critical quantity that fixes super- vs sub-criticality — vulnerable to numerical noise near the $\ell_1 = 0$ contour. For the natural parametric specification of the dealer-gamma functional — a *log-normal open-interest density in log-strike* — the entire computation admits a closed form, eliminating this vulnerability and exposing the parametric phase boundary explicitly.
+
+#### 4.3.1 The log-normal aggregator
+
+Replace the discrete OI grid with the continuous density $q(\log K) = \frac{1}{\sigma_q\sqrt{2\pi}}\exp\bigl(-(\log K - \mu_q)^2/(2\sigma_q^2)\bigr)$ — log-normal in $K$, equivalently Gaussian in log-strike with center $\mu_q$ and spread $\sigma_q$. Take a single representative maturity $T_{\mathrm{eff}}$, sign convention $s \equiv +1$ (SqueezeMetrics SPX default), and write $a := \log S$ throughout. The aggregator becomes
+
+$$
+G(a, v) \;=\; \kappa_u \int_{-\infty}^{+\infty} q(\log K)\, \Gamma_{\mathrm{BS}}\!\left(S, K, T_{\mathrm{eff}}, \sqrt{v}\right)\, d(\log K). \tag{14}
+$$
+
+Black–Scholes gamma at fixed $T = T_{\mathrm{eff}}$ and $\sigma = \sqrt{v}$ is itself Gaussian in $\log K$:
+
+$$
+\Gamma_{\mathrm{BS}}(S, K, T, \sigma) \;=\; \frac{e^{-q_\mathrm{div}T}}{S\sigma\sqrt{T}} \cdot \frac{1}{\sqrt{2\pi}}\,\exp\!\biggl(-\frac{(\log K - \mu_d)^2}{2\sigma^2 T}\biggr),
+$$
+
+with $\mu_d := a + (r - q_{\mathrm{div}} + \tfrac{1}{2} v)T$. The integrand in (14) is therefore a product of two Gaussians in $\log K$; the standard Gaussian-product identity (Briggs 2003; also Halperin–Itkin Marketron Eq. B.8) collapses (14) to
+
+$$
+\boxed{\;G(a, v) \;=\; \mathcal{C}(v)\cdot e^{-a}\cdot \exp\!\biggl(-\frac{(a - m(v))^2}{2\,\tau^2(v)}\biggr),\;} \tag{15a}
+$$
+
+where
+
+$$
+\mathcal{C}(v) \;=\; \frac{\kappa_u\, e^{-q_{\mathrm{div}} T_{\mathrm{eff}}}}{\sqrt{2\pi\,\tau^2(v)}}, \qquad
+\tau^2(v) \;=\; \sigma_q^2 + v\,T_{\mathrm{eff}}, \tag{15b}
+$$
+
+$$
+m(v) \;=\; \mu_q - \bigl(r - q_{\mathrm{div}} + \tfrac{1}{2}v\bigr)\, T_{\mathrm{eff}}. \tag{15c}
+$$
+
+That is: $G$ is a Gaussian in $a$ centred near (a translation of) the OI mean $\mu_q$, with width $\tau(v)$ that mixes the OI spread $\sigma_q$ and the implied-vol scale $\sqrt{v\,T_{\mathrm{eff}}}$ in quadrature, modulated by the $1/S = e^{-a}$ factor that comes from the per-share normalisation of $\Gamma_{\mathrm{BS}}$. Verified symbolically in `notebooks/closed_form_ell1_derivation.py` (sympy, 30 s wall-clock).
+
+**Vanishing $z$-channel.** $G$ in (15a) does not depend on $z$ — the OI grid is exogenous to the slow trend variable. Therefore $G_z = 0$, and the Jacobian (3) loses its $(1, 3)$ entry. **This does *not* eliminate the Hopf** — the leverage channel $\gamma z$ in $\dot u$ keeps the $(2,3)$ entry alive, so cross-coupling persists through the variance row.
+
+#### 4.3.2 Closed-form Hopf threshold $\kappa^\star$
+
+With $G_z = 0$ and $\sigma^2 = v$ (whence $\partial_y\sigma^2 = 0$ and $\partial_v\sigma^2 = 1$), the Routh–Hurwitz polynomial $H(\kappa) := c_1 c_2 - c_0$ degree-collapses from cubic to **quadratic** in $\kappa$:
+
+$$
+H(\kappa) \;=\; G_y^2\,(\alpha + \kappa_v)\,\kappa^2 \;+\; \bigl(G_v\,\beta\gamma - G_y\,(\alpha + \kappa_v)^2\bigr)\,\kappa \;+\; \alpha\kappa_v(\alpha + \kappa_v) - \tfrac{1}{2}\beta\gamma. \tag{16}
+$$
+
+Writing $A := \alpha + \kappa_v$, $M := \alpha\kappa_v$, $L := \beta\gamma$, the Hopf threshold is the smallest positive root of the quadratic:
+
+$$
+\boxed{\;\kappa^\star \;=\; \frac{G_y\, A^2 - G_v\, L \;-\; \sqrt{(G_v L - G_y A^2)^2 - 4\,G_y^2 A\,(MA - L/2)}}{2\,G_y^2\,A}.\;} \tag{17}
+$$
+
+The Hopf frequency follows immediately from $\omega^\star = \sqrt{c_1(\kappa^\star)} = \sqrt{-\kappa^\star G_y \cdot A + M}$ once $\kappa^\star$ is in hand. The discriminant in (17) provides the *first* parametric phase boundary: when $D := (G_v L - G_y A^2)^2 - 4\,G_y^2 A\,(MA - L/2) < 0$, the system has no Hopf at any $\kappa$ — the deterministic skeleton is unconditionally stable.
+
+#### 4.3.3 Closed-form first Lyapunov coefficient $\ell_1$
+
+All third-order partials of (15a) at the equilibrium $(a^\star, v^\star)$ are explicit rational functions of $(\delta := a^\star - m(v^\star),\, \tau^2,\, T_{\mathrm{eff}})$. Writing $g(a, v) := \log G(a, v) - \log\mathcal{C}(v) = -a - \delta^2/(2\tau^2)$:
+
+$$
+\begin{aligned}
+g_a &= -1 - \delta/\tau^2, &\qquad g_{aa} &= -1/\tau^2, &\qquad g_{aaa} &= 0, \\
+g_v &= -\frac{\delta T_{\mathrm{eff}}}{2\tau^2} + \frac{\delta^2 T_{\mathrm{eff}}}{2\tau^4}, &\qquad
+g_{vv} &= -\frac{T_{\mathrm{eff}}^2}{4\tau^2} + \frac{\delta T_{\mathrm{eff}}^2}{\tau^4} - \frac{\delta^2 T_{\mathrm{eff}}^2}{\tau^6}, &\qquad
+g_{vvv} &= \frac{3T_{\mathrm{eff}}^3}{4\tau^4} - \frac{3\delta T_{\mathrm{eff}}^3}{\tau^6} + \frac{3\delta^2 T_{\mathrm{eff}}^3}{\tau^8}, \\
+g_{av} &= -\frac{T_{\mathrm{eff}}}{2\tau^2} + \frac{\delta T_{\mathrm{eff}}}{\tau^4}, &\qquad
+g_{aav} &= \frac{T_{\mathrm{eff}}}{\tau^4}, &\qquad
+g_{avv} &= \frac{T_{\mathrm{eff}}^2}{\tau^4} - \frac{2\delta T_{\mathrm{eff}}^2}{\tau^6}.
+\end{aligned}
+$$
+
+Combined with the prefactor $\mathcal{C}(v)$ via the product rule on $\log G = \log\mathcal{C}(v) + g(a, v)$ — using $h_p := -T_{\mathrm{eff}}/(2\tau^2)$, $h_{pp} := T_{\mathrm{eff}}^2/(2\tau^4)$, $h_{ppp} := -T_{\mathrm{eff}}^3/\tau^6$ for $h(v) := \log\mathcal{C}(v)$, and $L_k := h^{(k)} + g_{vv\cdots v}$ for the log-G $v$-partials — one obtains the closed-form $\{G_a, G_v, G_{aa}, G_{av}, G_{vv}, G_{aaa}, G_{aav}, G_{avv}, G_{vvv}\}$ in 18 multiply-add steps. All other partials ($G_z, G_{vz}, G_{aaz}, \ldots$) are zero.
+
+The bilinear and trilinear tensors at $\kappa^\star$ are then assembled from these partials: $B_{1,j,k} = \kappa^\star \cdot G_{\{a,v\}\{a,v\}}$ for $j, k \in \{0, 1\}$, all other $B$-entries zero (the variance and memory equations are linear); $C$ is similarly populated only on the $i = 1$ slice. Substituting into Kuznetsov 2004 eq. 3.20,
+
+$$
+\ell_1(\kappa^\star) \;=\; \frac{1}{2\omega^\star}\,\mathrm{Re}\!\Bigl[\langle p, C(q, q, \bar q)\rangle - 2\langle p, B(q, J^{-1} B(q, \bar q))\rangle + \langle p, B(\bar q, (2i\omega^\star I - J)^{-1} B(q, q))\rangle\Bigr], \tag{18}
+$$
+
+with $J q = i\omega^\star q$, $J^\top p = -i\omega^\star p$, $\langle p, q\rangle = 1$. The right- and left-eigenvector pair at $\pm i\omega^\star$ for the now-reduced Jacobian admits a clean closed form via Cramer's rule on $(J - i\omega^\star I)\,q = 0$, but the resulting expression for $\ell_1$ is a $\sim$30-term rational in $(G_y, G_v, G_{aa}, G_{av}, G_{vv}, G_{aaa}, G_{aav}, G_{avv}, G_{vvv}, \kappa_v, \alpha, \beta, \gamma)$ that is more useful as a numerical pipeline than as a printable formula. The implementation in `lyapunov_coefficient_lognormal_oi` evaluates it in ${\sim}50$ μs per $(\sigma_q, T_{\mathrm{eff}}, \alpha, \beta, \gamma)$ tuple, with results that match the FD-tensor pipeline of §4.2 to better than 0.6% relative on every parameter set tested (`tests/test_lognormal_lyapunov.py::test_ell1_matches_existing_numerical_lyapunov`).
+
+#### 4.3.4 Phase boundary in $(\sigma_q, \gamma)$ space
+
+The headline parametric result is a *two-dimensional phase diagram* over $(\sigma_q, \gamma)$ at fixed $(\mu_q, T_{\mathrm{eff}}, \alpha, \beta, \kappa_v)$. Three regimes coexist:
+
+| Region | Discriminant $D$ | $\ell_1$ | Dynamics |
+|---|---|---|---|
+| **No Hopf** | $D < 0$ or root non-positive | n/a | Equilibrium globally stable for all $\kappa$ |
+| **Supercritical** | $D \geq 0$, smallest positive root real | $\ell_1 < 0$ | Stable limit cycle for $\kappa > \kappa^\star$, amplitude $\propto \sqrt{\kappa - \kappa^\star}$ |
+| **Sub-critical** | $D \geq 0$, smallest positive root real | $\ell_1 > 0$ | Unstable cycle past $\kappa^\star$; hysteresis, abrupt regime jumps |
+
+At the canonical specification $(\mu_q = \log 100,\, T_{\mathrm{eff}} = 0.25\text{ yr},\, \kappa_v = 2,\, \theta_v = 0.04,\, \alpha = 0.05,\, \beta = 1)$, the phase diagram is rendered in `paper/figures/ell1_phase_boundary.pdf` (script: `notebooks/closed_form_ell1_derivation.py`). Qualitative features:
+
+- For *small* $\sigma_q$ (concentrated OI, e.g. monthly OPEX-clustering), the supercritical region extends to moderate $\gamma$, then collapses into the sub-critical wedge as $\gamma$ grows. Concentrated OI gives a sharp, locally concave $G(a)$ around ATM, which produces large $G_{aa}, G_{aaa}$ — these enter $\ell_1$ with a sign that depends sensitively on $\gamma$ via the $\langle p, B(q, J^{-1} B(q, \bar q))\rangle$ resolvent term.
+- For *large* $\sigma_q$ (broadly distributed OI, e.g. SPX with deep wings), the supercritical region narrows; very flat OI distributions produce small $G_{aa}$ and the system tends towards the sub-critical regime as soon as Hopf is reached.
+- Both regions persist on the same diagram — the existence of the contour $\ell_1(\sigma_q, \gamma) = 0$ is non-trivial and is the central parametric prediction.
+
+#### 4.3.5 Numerical verification at the canonical regime
+
+Within `tests/test_lognormal_lyapunov.py` the canonical regime $(\sigma_q = 0.10,\, T_{\mathrm{eff}} = 0.25,\, \kappa_v = 2,\, \alpha = 0.05,\, \beta = 1,\, \gamma = 1,\, \mu_q = \log 100,\, v^\star = 0.04)$ produces:
+
+| Quantity | Closed form (Eq. 17–18) | Numerical (FD on closed-form drift) | Relative agreement |
+|---|---|---|---|
+| $\kappa^\star$ | $17.8065068$ | $17.8065068$ | $< 10^{-9}$ (root-finding identical) |
+| $\omega^\star$ | $1.1774426$ rad/yr | $1.1774426$ | $< 10^{-9}$ |
+| $\ell_1$ | $-4.81461\times 10^{-1}$ | $-4.84302\times 10^{-1}$ | $0.59\%$ |
+| **Bifurcation type** | **Supercritical** | **Supercritical** | sign agree |
+
+The closed form is essentially noise-free; the residual $0.59\%$ in $\ell_1$ is the numerical FD-tensor error of the comparison pipeline, *not* a deficiency in the closed form (verified by varying $h$ in `build_bilinear_trilinear_tensors`: the closed-form value is invariant, the numerical value drifts as $O(h^2)$ until roundoff dominates near $h \sim 10^{-4}$). With the closed form available we no longer need the FD pipeline for parametric OI — and crucially, the *sign* of $\ell_1$ near the boundary contour is now structurally certain rather than statistically inferred.
+
+### 4.4 Numerical phase diagram
+
+The full $(\kappa, \sigma_v, \xi, \rho)$ phase diagram is computed by `python -m reflexive_options.experiments.hopf_phase_scan_4d` and rendered in Figure~\ref{fig:hopf-phase-diagram}. The scan sweeps $\kappa \in [0, 2]$ on a 401-point grid for each of $31 \times 21 \times 4 = 2{,}604$ cells over $(\xi, \rho, \sigma_v)$ at the §4.2 Hopf-exhibiting regime; $(\xi, \rho)$ enter the deterministic Jacobian via the leading shear-induced correction $a_{\mathrm{eff}}(\kappa) = a(\kappa) + \tfrac{1}{2} \xi^2 \rho\, G_v$ (an Engel–Lamb–Rasmussen-style projection of the small-noise stochastic Hopf onto the eigenvalue envelope). The full Khasminskii $\Lambda(\kappa; \xi, \rho)$ via Algorithm 2 is too expensive at this resolution; the deterministic projection captures the qualitative geometry — including the no-Hopf wedge at high $\xi$ and strong negative $\rho$ — at $\sim$16 s wall-clock on a single M-series core. The figure substantiates the §4.2 claim that real options markets sit *near but not across* $\kappa^\star$ throughout the SPX-relevant $(\xi, \rho)$ corner.
 
 ---
 
@@ -254,7 +370,7 @@ Implementation: `src/reflexive_options/theory/stationary.py`. Tests: `tests/test
 
 ## 8. Open items (theory)
 
-1. Closed-form $\ell_1$ for log-normal OI in moneyness (parametric calibration target).
+1. ~~Closed-form $\ell_1$ for log-normal OI in moneyness~~ — **resolved** in §4.3; closed form (Eq. 17–18) implemented in `lyapunov_coefficient_lognormal_oi`, supercritical at the canonical regime, parametric phase boundary in $(\sigma_q, \gamma)$ space rendered in `paper/figures/ell1_phase_boundary.pdf`.
 2. Closed-form $\Lambda(\kappa)$ for the stochastic-Hopf shift (Engel–Lamb–Rasmussen-style asymptotics adapted to the Heston multiplicative-noise structure).
 3. Formal Hawkes-$n$ ↔ SV-eigenvalue reduction (most ambitious; not blocking for the v1 paper).
 

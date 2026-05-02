@@ -33,6 +33,9 @@ dependencies = [
     "diptest>=0.7",
 ]
 
+[project.scripts]
+hopf-phase-scan = "reflexive_options.experiments.hopf_phase_scan_4d:main"
+
 [project.optional-dependencies]
 # Legacy install path for `pip install -e ".[dev]"`. PEP 735 [dependency-groups]
 # below is the canonical group used by uv; this mirror exists only so plain pip
@@ -87,11 +90,15 @@ package = true
 testpaths = ["tests"]
 python_files = "test_*.py"
 addopts = "-ra --strict-markers --cov=reflexive_options --cov-report=term-missing"
+markers = [
+    "benchmark: performance benchmark (slow, skipped on CI)",
+    "slow: slow test (e.g. full reproducibility receipt re-run; ~30-60 s)",
+]
 
 [tool.coverage.run]
 branch = true
 source = ["src/reflexive_options"]
-omit = ["src/reflexive_options/third_party/*"]
+omit = ["src/reflexive_options/third_party/*", "tests/benchmarks/*"]
 
 [tool.coverage.report]
 fail_under = 85

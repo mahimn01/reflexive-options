@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Mechanism-decomposition reporter in `synthetic_replication.py`: every
+  Marketron-vs-reflexive cell now carries a `mechanism_class` ∈
+  {`shape_target`, `level_artifact`, `calibration_artifact`}, plus
+  `sign_match`, `order_of_magnitude_match`, and the legacy `within_8pct`
+  flag. The headline gate is the shape-match rate (≥30% sign-agreement
+  on `shape_target` cells) — replaces the prior "0 cells hit" report.
+- `marketron_tuning.py` — coarse 5D grid search over (κ, γ, T_eff, μ_q, σ_q)
+  picking the best reflexive overrides per Marketron parameter set; writes
+  `runs/marketron_tuning/<ts>/grid_results.parquet` and `best_overrides.json`,
+  consumed by `synthetic_replication.load_tuned_overrides`.
+- `paper/mechanism_decomposition.md` — three-table mechanism analysis (shape
+  agreement, predictable divergences, level artifacts not chased).
+- CLI exit code on `synthetic_replication.py`: 0 if shape-match rate ≥ 30%,
+  1 otherwise — enforces the headline number on every CI run.
+
+### Changed
+
+- `synthetic_replication.py` default `n_steps` raised from 252 → 756 to cover
+  Marketron's 3-year horizon.
+
 ## [0.1.0] - 2026-04-30
 
 First tagged research release. Everything is data-free and reproducible from

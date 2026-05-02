@@ -637,3 +637,453 @@ def compute_lambda_correction(
         seed=seed,
     )
     return Lambda
+
+
+# ---------------------------------------------------------------------------
+# Closed-form Lyapunov coefficient for log-normal OI in moneyness
+# (paper/theory.md §4.3). The aggregator G(a, v) — with a = log S — admits
+# the closed form (Briggs 2003 Erf-Gaussian identity)
+#
+#   G(a, v) = (κ_u e^{-q T} / sqrt(2π τ²)) · e^{-a} · exp(-(a - m)² / (2 τ²))
+#   τ²(v)   = σ_q² + v T
+#   m(v)    = μ_q − (r − q + v/2) T
+#
+# because the Gaussian OI density in log-strike multiplied by the BS gamma
+# (itself Gaussian in log-strike at fixed v, T) integrates analytically.
+#
+# All third-order partials of G at an arbitrary (a*, v*) are then explicit
+# rational expressions, which we expose as `G_lognormal_oi_partials`. These
+# replace the finite-difference tensor builder for the parametric case and
+# eliminate the ℓ_1 numerical-noise issue.
+#
+# G has no z-dependence, so G_z = 0 and Jacobian (3) loses one entry. With
+# σ² = v in the Heston backbone (∂_y σ² = 0, ∂_v σ² = 1), the characteristic
+# polynomial reduces to a quadratic in κ:
+#
+#   H(κ) := c_1 c_2 − c_0 = G_y² (α + κ_v) κ²
+#                          + (G_v β γ − G_y (α + κ_v)²) κ
+#                          + (α κ_v (α + κ_v) − β γ / 2) = 0,
+#
+# whose positive root is the closed-form Hopf threshold κ*.
+# ---------------------------------------------------------------------------
+
+
+def _norm_pdf(x: float) -> float:
+    return float(np.exp(-0.5 * x * x) / np.sqrt(2.0 * np.pi))
+
+
+def G_lognormal_oi(
+    log_spot: float,
+    variance: float,
+    *,
+    mu_q: float,
+    sigma_q: float,
+    T_eff: float,
+    coupling_units: float = 1.0,
+    rate: float = 0.0,
+    dividend: float = 0.0,
+) -> float:
+    """Closed-form aggregate dealer-gamma G(a, v) for log-normal OI in moneyness.
+
+    Integrates the log-normal OI density q(log K) = N(μ_q, σ_q²) against the
+    Black-Scholes gamma at maturity T_eff, vol σ = √v, sign convention s ≡ +1
+    (SqueezeMetrics SPX default). The product of two Gaussians in log K
+    integrates analytically to a Gaussian in a := log S, modulated by 1/S = e^{-a}.
+
+    Args:
+        log_spot: a = log S.
+        variance: v ≥ 0.
+        mu_q: log-normal OI center in log-strike.
+        sigma_q: log-normal OI std in log-strike (must be > 0).
+        T_eff: representative maturity in years (must be > 0).
+        coupling_units: the κ_units constant outside the integral.
+        rate: risk-free rate r.
+        dividend: dividend yield q (note: collides with OI density q; we use 'dividend').
+
+    Returns:
+        G(log_spot, variance) as a float in USD-per-unit-return.
+    """
+    if sigma_q <= 0.0:
+        raise ValueError(f"sigma_q must be > 0, got {sigma_q}")
+    if T_eff <= 0.0:
+        raise ValueError(f"T_eff must be > 0, got {T_eff}")
+    if variance < 0.0:
+        raise ValueError(f"variance must be ≥ 0, got {variance}")
+
+    tau2 = sigma_q * sigma_q + variance * T_eff
+    m = mu_q - (rate - dividend + 0.5 * variance) * T_eff
+    prefactor = coupling_units * np.exp(-dividend * T_eff - log_spot) / np.sqrt(2.0 * np.pi * tau2)
+    return float(prefactor * np.exp(-((log_spot - m) ** 2) / (2.0 * tau2)))
+
+
+def G_lognormal_oi_partials(
+    *,
+    a_star: float,
+    v_star: float,
+    mu_q: float,
+    sigma_q: float,
+    T_eff: float,
+    coupling_units: float = 1.0,
+    rate: float = 0.0,
+    dividend: float = 0.0,
+) -> dict[str, float]:
+    """All partials of G(a, v) at (a_star, v_star) up to third order.
+
+    Returned dict keys (numbered 'a' ↔ y in paper notation):
+        'G', 'G_a', 'G_v', 'G_z',
+        'G_aa', 'G_av', 'G_vv', 'G_az', 'G_vz', 'G_zz',
+        'G_aaa', 'G_aav', 'G_avv', 'G_vvv',
+        'G_aaz', 'G_avz', 'G_vvz', 'G_azz', 'G_vzz', 'G_zzz'.
+
+    All z-partials are identically 0 (G has no z-dependence in this
+    parameterization — see paper/theory.md §4.3).
+
+    Derivation: G(a, v) = C(v) · e^{-(a - m(v))² / (2 τ²(v))} with
+        C(v)   = κ_u e^{-q T} / sqrt(2π τ²(v))
+        m(v)   = μ_q − (r − q + v/2) T
+        τ²(v)  = σ_q² + v T
+    Partials in a are Hermite-polynomial multiples of G; partials in v use
+    chain rule through (m, τ²). Verified symbolically against sympy in
+    notebooks/closed_form_ell1_derivation.py.
+    """
+    if sigma_q <= 0.0:
+        raise ValueError(f"sigma_q must be > 0, got {sigma_q}")
+    if T_eff <= 0.0:
+        raise ValueError(f"T_eff must be > 0, got {T_eff}")
+
+    # Shorthand
+    Tt = T_eff
+    sq2 = sigma_q * sigma_q
+    tau2 = sq2 + v_star * Tt
+    inv_tau2 = 1.0 / tau2
+    m = mu_q - (rate - dividend + 0.5 * v_star) * Tt
+    delta = a_star - m  # appears everywhere
+    G0 = G_lognormal_oi(
+        a_star,
+        v_star,
+        mu_q=mu_q,
+        sigma_q=sigma_q,
+        T_eff=Tt,
+        coupling_units=coupling_units,
+        rate=rate,
+        dividend=dividend,
+    )
+
+    # --- a-derivatives at fixed v ---
+    # f(a) = -a - (a - m)² / (2 τ²)  (the log of G as function of a alone)
+    # f'(a) = -1 - (a - m)/τ²
+    # f''(a) = -1/τ²
+    # f'''(a) = 0.
+    # G_a = G * f'(a); G_aa = G * (f'² + f''); G_aaa = G * (f'³ + 3 f' f'' + f''').
+    fp = -1.0 - delta * inv_tau2
+    fpp = -inv_tau2
+    fppp = 0.0
+    G_a = G0 * fp
+    G_aa = G0 * (fp * fp + fpp)
+    G_aaa = G0 * (fp**3 + 3.0 * fp * fpp + fppp)
+
+    # --- v-derivatives via chain rule ---
+    # log G = log C(v) + g(a, v),  g(a, v) = -a - (a - m(v))² / (2 τ²(v))
+    # Let h(v) = log C(v) = -q T - 0.5 log(2π τ²(v)) + log κ_u
+    # h'(v)   = -0.5 · T / τ²        (since dτ²/dv = T)
+    # h''(v)  = +0.5 · T² / τ⁴
+    # h'''(v) = -T³ / τ⁶
+    # m'(v)   = -T/2;  m''(v) = m'''(v) = 0.
+    Tt2 = Tt * Tt
+    Tt3 = Tt2 * Tt
+    inv_tau4 = inv_tau2 * inv_tau2
+    inv_tau6 = inv_tau4 * inv_tau2
+
+    hp = -0.5 * Tt * inv_tau2
+    hpp = 0.5 * Tt2 * inv_tau4
+    hppp = -Tt3 * inv_tau6
+
+    # g(a, v) = -a - δ²/(2 τ²) where δ = a - m(v); δ_v = +T/2; (τ²)_v = T.
+    # All v-partials below are derived term-by-term and verified against sympy
+    # in `notebooks/closed_form_ell1_derivation.py`.
+    #
+    # g_v   = -δ T / (2 τ²)  +  δ² T / (2 τ⁴)
+    # g_vv  = -T² / (4 τ²)   +  δ T² / τ⁴   −  δ² T² / τ⁶
+    # g_vvv = (3/4) T³ / τ⁴  −  3 δ T³ / τ⁶  +  3 δ² T³ / τ⁸
+    inv_tau8 = inv_tau4 * inv_tau4
+    gp_v = -0.5 * delta * Tt * inv_tau2 + 0.5 * delta * delta * Tt * inv_tau4
+    gpp_v = -0.25 * Tt2 * inv_tau2 + delta * Tt2 * inv_tau4 - delta * delta * Tt2 * inv_tau6
+    gppp_v = (
+        0.75 * Tt3 * inv_tau4 - 3.0 * delta * Tt3 * inv_tau6 + 3.0 * delta * delta * Tt3 * inv_tau8
+    )
+
+    # log G v-partials L_k := ∂^k log G / ∂v^k at (a*, v*).
+    L1 = hp + gp_v
+    L2 = hpp + gpp_v
+    L3 = hppp + gppp_v
+
+    G_v = G0 * L1
+    G_vv = G0 * (L1 * L1 + L2)
+    G_vvv = G0 * (L1**3 + 3.0 * L1 * L2 + L3)
+
+    # --- mixed a, v derivatives ---
+    # ∂g/∂a = fp.
+    # ∂²g/(∂a ∂v) = d/dv[fp] = -[δ_v / τ² + δ · (-T) / τ⁴] = -T/(2 τ²) + δ T / τ⁴.
+    # ∂³g/(∂a² ∂v) = d/dv[fpp] = d/dv[-1/τ²] = T / τ⁴.
+    # ∂³g/(∂a ∂v²) = d/dv[g_av] = T²/(2 τ⁴) + T (T/2 / τ⁴ - 2 δ T / τ⁶)
+    #             = T² / τ⁴ - 2 T² δ / τ⁶.
+    g_av = -0.5 * Tt * inv_tau2 + delta * Tt * inv_tau4
+    g_aav = Tt * inv_tau4
+    g_avv = Tt2 * inv_tau4 - 2.0 * Tt2 * delta * inv_tau6
+
+    # G mixed via the product rule on log G = log C + g  (note ∂h/∂a = 0):
+    #   G_av  = G [ (∂a log G)(∂v log G) + ∂²log G/(∂a ∂v) ]
+    #         = G [ fp · L1 + g_av ]
+    #   G_aav = G [ (∂a log G)² ∂v log G + 2 ∂a log G · ∂²log G/(∂a ∂v)
+    #             + ∂² log G/∂a² · ∂v log G + ∂³ log G/(∂a² ∂v) ]
+    #         = G [ fp² L1 + 2 fp g_av + fpp L1 + g_aav ]
+    #   G_avv = G [ ∂a log G · (∂v log G)² + 2 ∂v log G · ∂²log G/(∂a ∂v)
+    #             + ∂a log G · ∂² log G/∂v² + ∂³log G/(∂a ∂v²) ]
+    #         = G [ fp L1² + 2 L1 g_av + fp L2 + g_avv ]
+    G_av = G0 * (fp * L1 + g_av)
+    G_aav = G0 * (fp * fp * L1 + 2.0 * fp * g_av + fpp * L1 + g_aav)
+    G_avv = G0 * (fp * L1 * L1 + 2.0 * L1 * g_av + fp * L2 + g_avv)
+
+    # G_z and all z-mixed partials are zero
+    return {
+        "G": G0,
+        "G_a": G_a,
+        "G_v": G_v,
+        "G_z": 0.0,
+        "G_aa": G_aa,
+        "G_av": G_av,
+        "G_vv": G_vv,
+        "G_az": 0.0,
+        "G_vz": 0.0,
+        "G_zz": 0.0,
+        "G_aaa": G_aaa,
+        "G_aav": G_aav,
+        "G_avv": G_avv,
+        "G_vvv": G_vvv,
+        "G_aaz": 0.0,
+        "G_avz": 0.0,
+        "G_vvz": 0.0,
+        "G_azz": 0.0,
+        "G_vzz": 0.0,
+        "G_zzz": 0.0,
+    }
+
+
+def kappa_star_lognormal_oi(
+    *,
+    G_y: float,
+    G_v: float,
+    kappa_v: float,
+    alpha: float,
+    beta: float,
+    gamma: float,
+) -> tuple[float, float]:
+    """Closed-form Hopf threshold κ* for the log-normal OI parameterization.
+
+    With G_z = 0 and σ² = v (Heston backbone), the Routh-Hurwitz discriminant
+    H(κ) = c_1 c_2 − c_0 reduces to a quadratic in κ:
+
+        H(κ) = A_2 κ² + A_1 κ + A_0,
+        A_2  = G_y² · (α + κ_v),
+        A_1  = G_v · β γ − G_y · (α + κ_v)²,
+        A_0  = α κ_v (α + κ_v) − β γ / 2.
+
+    Positive real roots, if any, are returned together with the corresponding
+    Hopf frequency ω* = √c_1(κ*).
+
+    Args:
+        G_y: ∂G/∂a at the equilibrium (= ∂G/∂y in deviation variables).
+        G_v: ∂G/∂v at the equilibrium.
+        kappa_v: Heston mean-reversion speed (must be > 0).
+        alpha: memory-channel decay (must be > 0).
+        beta: memory-channel intake.
+        gamma: leverage feedback (≥ 0).
+
+    Returns:
+        (kappa_star, omega_star). If no positive real root with ω*² > 0 exists,
+        raises ValueError.
+    """
+    if kappa_v <= 0.0:
+        raise ValueError(f"kappa_v must be > 0, got {kappa_v}")
+    if alpha <= 0.0:
+        raise ValueError(f"alpha must be > 0, got {alpha}")
+
+    A_total = alpha + kappa_v  # Σ of decay rates
+    L = beta * gamma  # leverage flux through (z, v) loop
+    if abs(G_y) < 1e-300:
+        # H(κ) collapses to G_v L κ + (α κ_v A − L/2) = 0  (linear in κ)
+        if abs(G_v * L) < 1e-300:
+            raise ValueError("Hopf condition degenerate: G_y = 0 and G_v β γ = 0")
+        kappa_star = (0.5 * L - alpha * kappa_v * A_total) / (G_v * L)
+        if kappa_star <= 0.0:
+            raise ValueError(f"linear Hopf root non-positive: κ* = {kappa_star}")
+    else:
+        A2 = G_y * G_y * A_total
+        A1 = G_v * L - G_y * A_total * A_total
+        A0 = alpha * kappa_v * A_total - 0.5 * L
+        disc = A1 * A1 - 4.0 * A2 * A0
+        if disc < 0.0:
+            raise ValueError(
+                f"no real Hopf root: discriminant {disc:.3e} < 0; check G_y, G_v signs"
+            )
+        sqrt_disc = float(np.sqrt(disc))
+        roots = ((-A1 - sqrt_disc) / (2.0 * A2), (-A1 + sqrt_disc) / (2.0 * A2))
+        positive = [r for r in roots if r > 0.0]
+        if not positive:
+            raise ValueError(f"no positive Hopf root: roots = {roots}")
+        # Prefer the smallest positive root (first crossing as κ ramps up).
+        kappa_star = float(min(positive))
+
+    # ω*² = c_1(κ*) = -a κ_v - a α + κ_v α
+    a_star_kappa = kappa_star * G_y
+    omega_sq = -a_star_kappa * (kappa_v + alpha) + kappa_v * alpha
+    if omega_sq <= 0.0:
+        raise ValueError(
+            f"ω*² = {omega_sq:.3e} ≤ 0 at κ* = {kappa_star}; "
+            "Hopf candidate is in a stable region (Routh-Hurwitz violated)"
+        )
+    return kappa_star, float(np.sqrt(omega_sq))
+
+
+def _build_lognormal_tensors(
+    partials: dict[str, float],
+    *,
+    kappa: float,
+    kappa_v: float,
+    alpha: float,
+    beta: float,
+    gamma: float,
+) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
+    """Assemble (J, B, C) for the 3D reflexive skeleton at coupling κ.
+
+    State order is (y, u, z) := (a − a*, v − v*, z − z*).
+
+    Drift components (paper/theory.md eq. 5):
+        f_1(y, u, z) = μ - σ²(y, u)/2 + κ G(y, u, z)        ≈ κ G − u/2 + ...
+        f_2(y, u, z) = -κ_v u + γ z
+        f_3(y, u, z) = -α z + β y
+
+    With σ² = v (so σ²(y, u) = θ_v + u, contributing only the constant -θ_v/2
+    that the equilibrium balances and the linear term -u/2 already in J), the
+    quadratic / cubic Taylor coefficients of f_1 come entirely from κ G(y, u, z).
+    f_2 and f_3 are linear so contribute zero to B and C.
+
+    Returns (J, B, C) where:
+        J[i, j]       = ∂f_i / ∂x_j               at x = 0
+        B[i, j, k]    = ∂² f_i / ∂x_j ∂x_k        at x = 0  (symmetric in j,k)
+        C[i, j, k, l] = ∂³ f_i / ∂x_j ∂x_k ∂x_l   at x = 0  (symmetric in j,k,l)
+    """
+    G_a = partials["G_a"]
+    G_v = partials["G_v"]
+    G_aa = partials["G_aa"]
+    G_av = partials["G_av"]
+    G_vv = partials["G_vv"]
+    G_aaa = partials["G_aaa"]
+    G_aav = partials["G_aav"]
+    G_avv = partials["G_avv"]
+    G_vvv = partials["G_vvv"]
+    # All G_z, G_zz, etc. are 0 by construction.
+
+    # Jacobian of (y, u, z): linearisation of f_1, f_2, f_3.
+    a_lin = kappa * G_a  # ∂f_1/∂y
+    b_lin = kappa * G_v - 0.5  # ∂f_1/∂u  (the -1/2 from -∂_v σ²/2 = -1/2)
+    J = np.array(
+        [
+            [a_lin, b_lin, 0.0],
+            [0.0, -kappa_v, gamma],
+            [beta, 0.0, -alpha],
+        ],
+        dtype=np.float64,
+    )
+
+    # B: only f_1 contributes; second partials of f_1 = κ · second partials of G,
+    # and σ² = v has no quadratic terms.
+    B = np.zeros((3, 3, 3), dtype=np.float64)
+    B[0, 0, 0] = kappa * G_aa  # ∂²f_1/∂y² = κ G_aa
+    B[0, 0, 1] = B[0, 1, 0] = kappa * G_av  # ∂²f_1/∂y∂u
+    B[0, 1, 1] = kappa * G_vv  # ∂²f_1/∂u²
+    # All other entries (involving z, or in f_2/f_3) are 0.
+
+    # C: only f_1 contributes.
+    C = np.zeros((3, 3, 3, 3), dtype=np.float64)
+    C[0, 0, 0, 0] = kappa * G_aaa  # ∂³f_1/∂y³
+    # ∂³f_1/∂y² ∂u = κ G_aav (3 perms: (y,y,u), (y,u,y), (u,y,y))
+    for j, k, m in [(0, 0, 1), (0, 1, 0), (1, 0, 0)]:
+        C[0, j, k, m] = kappa * G_aav
+    # ∂³f_1/∂y ∂u² = κ G_avv (3 perms)
+    for j, k, m in [(0, 1, 1), (1, 0, 1), (1, 1, 0)]:
+        C[0, j, k, m] = kappa * G_avv
+    C[0, 1, 1, 1] = kappa * G_vvv  # ∂³f_1/∂u³
+
+    return J, B, C
+
+
+def lyapunov_coefficient_lognormal_oi(
+    *,
+    mu_q: float,
+    sigma_q: float,
+    T_eff: float,
+    kappa_v: float,
+    theta_v: float,
+    alpha: float,
+    beta: float,
+    gamma: float,
+    a_star: float,
+    v_star: float | None = None,
+    coupling_units: float = 1.0,
+    rate: float = 0.0,
+    dividend: float = 0.0,
+) -> tuple[float, float, float]:
+    """Closed-form first Lyapunov coefficient ℓ_1 at the Hopf point κ*.
+
+    Pipeline:
+        1. Compute G(a*, v*) and all third-order partials in closed form
+           via `G_lognormal_oi_partials`.
+        2. Solve the (now-quadratic) Routh-Hurwitz condition H(κ*) = 0 for
+           the smallest positive root via `kappa_star_lognormal_oi`.
+        3. Assemble (J, B, C) at κ* (`_build_lognormal_tensors`) and feed
+           them to the existing Kuznetsov 2004 formula via
+           `compute_lyapunov_coefficient`.
+
+    Defaulting v_star = θ_v matches the equilibrium of the variance-OU
+    when γ z* = 0 (i.e. y* = 0 is the natural ATM equilibrium).
+
+    Returns:
+        (kappa_star, omega_star, ell_1).
+
+    Sign convention: ℓ_1 < 0 ⇒ supercritical (stable limit cycle for κ > κ*),
+    ℓ_1 > 0 ⇒ sub-critical (unstable cycle, hysteresis).
+    """
+    if v_star is None:
+        v_star = theta_v
+
+    partials = G_lognormal_oi_partials(
+        a_star=a_star,
+        v_star=v_star,
+        mu_q=mu_q,
+        sigma_q=sigma_q,
+        T_eff=T_eff,
+        coupling_units=coupling_units,
+        rate=rate,
+        dividend=dividend,
+    )
+
+    kappa_star, omega_star = kappa_star_lognormal_oi(
+        G_y=partials["G_a"],
+        G_v=partials["G_v"],
+        kappa_v=kappa_v,
+        alpha=alpha,
+        beta=beta,
+        gamma=gamma,
+    )
+
+    J, B, C = _build_lognormal_tensors(
+        partials,
+        kappa=kappa_star,
+        kappa_v=kappa_v,
+        alpha=alpha,
+        beta=beta,
+        gamma=gamma,
+    )
+    ell_1 = compute_lyapunov_coefficient(J, B, C, omega=omega_star)
+    return kappa_star, omega_star, ell_1
