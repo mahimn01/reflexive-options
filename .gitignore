@@ -69,10 +69,23 @@ logs/
 *.log
 # Paper figures: vector outputs are committed (they're publication artifacts
 # pinned by the pre-registration commit hash). Raster PNGs are also committed
-# at 300 DPI for slide deck use. SVG intermediates are excluded — regenerate
-# from notebooks/ or experiments/.
+# at 300 DPI for slide deck use. SVG intermediates and debug *_check.png are
+# excluded — regenerate from notebooks/ or experiments/.
 paper/figures/*.svg
+paper/figures/*_check.png
 !paper/figures/.gitkeep
+
+# LaTeX build artifacts — regenerate via `make pdf` from paper/main.tex.
+# main.pdf IS committed as the publication-of-record artifact for this version.
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.fdb_latexmk
+paper/*.fls
+paper/*.log
+paper/*.out
+paper/*.synctex.gz
+paper/*.toc
 
 # Secrets
 .env

@@ -23,7 +23,7 @@ The 2D reduction (without $z_t$) has an upper-triangular Jacobian and
 admits only a saddle-node onset, recovering the discrete-time recursion of
 Dai (arXiv:2511.22766, 2025); the 3D extension is what unlocks the Hopf.
 The closest model-structure precedent (Halperin–Itkin Marketron,
-arXiv:2508.09863, 2025) explicitly defers the bifurcation analysis we
+arXiv:2508.09863, 2025) does not perform the bifurcation analysis we
 provide. Each evaluation ingredient — sliced-Wasserstein-2 distance, block
 bootstrap, arbitrage filter, commit-anchored pre-registration — is
 borrowed; the configuration is, to our knowledge, not previously published

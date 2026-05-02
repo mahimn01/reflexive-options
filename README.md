@@ -12,7 +12,7 @@ A full implementation of:
    $$\frac{dS}{S} = (\mu + \kappa \cdot G(S, t, v))\, dt + \sigma(S, t, v)\, dW_S$$
    where $G(S, t, v)$ aggregates net market-maker gamma exposure from the open-interest grid (Garleanu-Pedersen-Poteshman 2009 demand-pressure mapping) and $\kappa$ is the feedback coupling strength. When $\kappa = 0$, the system reduces to standard time-dependent Heston.
 
-2. **Three non-reflexive baselines** for clean comparison:
+2. **Four non-reflexive baselines** for clean comparison:
    - Time-dependent Heston (5–10 piecewise-constant regimes)
    - Local-stochastic vol (LSV)
    - 3/2 stochastic vol (smile-shape robustness)
@@ -79,6 +79,19 @@ tests/                    # pytest suite
 notebooks/                # Tutorial walkthroughs
 ```
 
+## Manuscript
+
+The full LaTeX paper lives in `paper/main.tex` with bibliography at `paper/references.bib`. To rebuild the PDF:
+
+```bash
+cd paper
+make pdf
+```
+
+The Makefile runs `pdflatex` → `bibtex` → `pdflatex` → `pdflatex` (the standard four-pass cycle for cleveref + natbib cross-references). Output: `paper/main.pdf`. Other targets: `make clean`, `make watch` (latexmk live preview).
+
+The arXiv submission metadata (subjects, MSC codes, license, comments) lives in `paper/arxiv_metadata.txt`.
+
 ## Status
 
 | Component | Status |
@@ -91,21 +104,22 @@ notebooks/                # Tutorial walkthroughs
 | Surface generator + arbitrage filter (~85k surfaces/sec) | **implemented + tested** |
 | ATLAS vendored (Mamba + BC + EWC + RAT) | **vendored (~3,700 LOC, 8 smoke tests pass)** |
 | Gymnasium RL env + state/action/reward + curriculum | **implemented + tested** |
-| Hopf bifurcation analysis (Theorem 1 + numerical $\ell_1$ + stochastic shift $\Lambda$) | **derived + computed: $\kappa^* \approx 0.8964$, $\omega^* \approx 0.5724$, $\ell_1 \approx -0.025$ (supercritical), $\Lambda \approx +0.0185$** |
+| Hopf bifurcation analysis (Theorem 1 + closed-form $\ell_1$ + stochastic shift $\Lambda$) | **derived + computed (closed-form-OI regime, §4.3.5): $\kappa^* = 17.81$, $\omega^* = 1.18$, $\ell_1 = -0.48$ (supercritical); $\Lambda$ computed via `lambda_correction_canonical` at the §4.2 dimensionless regime and SPX-representative $(\xi, \rho) = (0.3, -0.7)$** |
 | Fokker-Planck stationary density vs Heston (analytical + MC) | **derived: H_tail confirmed, H_skew confirmed, H_bimod refuted (honest finding documented)** |
 | κ-sensitivity transfer experiment (BC-trained MLP, ~15-20 min/run) | **implemented + tested** |
 | Marketron replication infrastructure | **implemented + tested (0 cells hit, mechanism mismatch — documented)** |
 | Pre-registration document | **drafted (2,624 words, commit-anchored)** |
-| Test suite | **116/116 passing, 82.54% branch coverage** [^cov] |
+| Test suite | **329/329 passing, ≥85% branch coverage** [^cov] |
 | CI (GitHub Actions) | **green on Python 3.12 / 3.13 / 3.14** |
 
-[^cov]: Coverage measured by the most recent `bash scripts/verify.sh` run; gated at >=80% in CI via `[tool.coverage.report] fail_under = 80`.
+[^cov]: Coverage measured by the most recent `bash scripts/verify.sh` run (89.05% as of v0.3.0); gated at >=85% in CI via `[tool.coverage.report] fail_under = 85`.
 
-**v0.2 follow-ups in flight** (in-progress, not yet complete):
-- Closed-form first Lyapunov coefficient $\ell_1$ for log-normal open-interest in moneyness — currently numerical via finite-difference Taylor tensors (Theory §4.1 open item 1).
-- 4D phase scan extending the $(\kappa, \xi)$ scan to $(\kappa, \xi, \alpha, \gamma)$ to chart the Hopf locus across the memory-channel decay and leverage-feedback strength axes.
-- Reproducibility receipt — packaged `make reproduce` artifact bundling the full pipeline output with hash-pinned dependencies, mirroring the Open RL Benchmark (Huang et al. arXiv:2402.03046, 2024) tracking discipline for our specific run set.
-- H4 spectral-peak detector — Welch-PSD-based detector for the Hopf-frequency $\omega^\star \pm 20\%$ spectral peak in absolute returns, per the H4 decision rule in `paper/pre_registration.md` §6.
+**v0.3 shipped** (2026-04-22):
+- Closed-form first Lyapunov coefficient $\ell_1$ for log-normal open-interest in moneyness (`paper/theory.md` §4.3, `theory/bifurcation.lyapunov_coefficient_lognormal_oi`); matches the FD-tensor pipeline to <0.6% relative.
+- 4D phase scan extending the $(\kappa, \xi)$ scan to $(\kappa, \xi, \rho, \sigma_v)$ — `experiments/hopf_phase_scan_4d.py`, rendered to `paper/figures/hopf_phase_diagram.pdf`.
+- H4 spectral-peak detector with adaptive Welch window, dual signal ($|r_t|$ and realised-variance proxy), IAAFT surrogate null — pre-registration amendments A1–A5 in `paper/pre_registration_amendments.md`.
+- GP-posterior slope CI for the κ-sensitivity protocol (amendment A6) and TOST equivalence on the dimensionless elasticity (amendment A7).
+- LaTeX manuscript: `paper/main.tex` + `paper/references.bib` + `paper/Makefile`. Build with `make pdf` from `paper/`.
 
 **Known open items** (post-v1):
 - Joint VIX/SPX simulation (Marketron explicitly fails this; we don't address it in v1).
@@ -123,7 +137,7 @@ The repo's CI gauntlet (mirrored locally by `bash scripts/verify.sh`):
 ruff check src tests           # lint + flake8-bandit (S) security rules
 ruff format --check src tests  # formatter conformance
 mypy src                       # project-tuned strict mode (see pyproject.toml)
-pytest --cov-fail-under=80     # branch coverage hard gate
+pytest --cov-fail-under=85     # branch coverage hard gate
 ```
 
 - **Reproducibility receipt**: `tests/test_reproducibility.py` re-runs every experiment and asserts the v0.1.0 numbers reproduce within tolerance. Refresh with `bash scripts/generate_repro_baseline.sh`.
@@ -150,8 +164,8 @@ CI (`.github/workflows/ci.yml`) runs on every push and pull request to
 the locked environment with `uv sync --locked --all-extras --group dev`,
 then executes ruff check, ruff format --check, mypy, and pytest with
 branch coverage. The pipeline blocks merge unless every job is green and
-total coverage stays at or above 80% (`[tool.coverage.report] fail_under
-= 80`). Coverage is uploaded to Codecov via the OIDC-based v5 action.
+total coverage stays at or above 85% (`[tool.coverage.report] fail_under
+= 85`). Coverage is uploaded to Codecov via the OIDC-based v5 action.
 
 ## Releases
 
@@ -162,7 +176,23 @@ is `0.1.0`.
 
 ## Reproducibility
 
-Every figure in the paper is produced by a script in `experiments/` with deterministic seeds. The pre-registration in `paper/pre_registration.md` is committed before empirical evaluation; subsequent results either confirm or refute the pre-registered hypotheses.
+Every figure in the paper is produced by a script in `src/reflexive_options/experiments/` with deterministic seeds. The pre-registration in `paper/pre_registration.md` is committed before empirical evaluation; subsequent results either confirm or refute the pre-registered hypotheses.
+
+### Pre-registration timestamping (OpenTimestamps)
+
+`paper/pre_registration.md.ots` is the OpenTimestamps proof binding the SHA256 of `paper/pre_registration.md` into the Bitcoin blockchain. To verify the timestamp on a fresh clone:
+
+```bash
+uv run ots verify paper/pre_registration.md.ots
+```
+
+To regenerate the proof after a substantive pre-reg amendment (each amendment must be flagged in `paper/pre_registration_amendments.md` first):
+
+```bash
+uv run ots stamp paper/pre_registration.md
+```
+
+If `opentimestamps-client` cannot be installed in a reviewer's environment, the chain-of-custody anchor falls back to the git tag `prereg-anchor-vX` whose commit hash is the immutable reference.
 
 ## Citation
 

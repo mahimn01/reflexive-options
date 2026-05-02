@@ -10,7 +10,7 @@
     46
   ],
   "stochastic_rel_tolerance": 0.05,
-  "generated_at_utc": "2026-05-02T06:26:44+00:00",
+  "generated_at_utc": "2026-05-02T18:19:29+00:00",
   "tooling": {
     "python": "3.14.3",
     "platform": "macOS-26.3.1-arm64-arm-64bit-Mach-O",
@@ -121,7 +121,7 @@
       },
       "blake2b_hash": "7f2d5c35b3c853c3fca398d1227e2b0bb1ff4191c3de35cac128c463935779dd",
       "tolerance": "exact",
-      "timestamp_utc": "2026-05-02T06:26:29+00:00",
+      "timestamp_utc": "2026-05-02T18:19:13+00:00",
       "tooling": {
         "python": "3.14.3",
         "platform": "macOS-26.3.1-arm64-arm-64bit-Mach-O",
@@ -959,7 +959,7 @@
       },
       "blake2b_hash": "0dff31dd45d622283a4c614071ddf210340162dcac632845d5e6ab09f8d9030d",
       "tolerance": "exact",
-      "timestamp_utc": "2026-05-02T06:26:29+00:00",
+      "timestamp_utc": "2026-05-02T18:19:13+00:00",
       "tooling": {
         "python": "3.14.3",
         "platform": "macOS-26.3.1-arm64-arm-64bit-Mach-O",
@@ -1084,7 +1084,7 @@
       },
       "blake2b_hash": "b0d4b9f7189fdbf8463d57844d6149c147cd5cb2517ce704dd21416a1d477998",
       "tolerance": "relative_5pct",
-      "timestamp_utc": "2026-05-02T06:26:31+00:00",
+      "timestamp_utc": "2026-05-02T18:19:15+00:00",
       "tooling": {
         "python": "3.14.3",
         "platform": "macOS-26.3.1-arm64-arm-64bit-Mach-O",
@@ -1171,13 +1171,13 @@
           50.118624797067824,
           23.850134824137292
         ],
-        "slope_at_anchor": 432865819503.2377,
-        "slope_ci_high": 9572420249431.55,
-        "slope_ci_low": -10708987749210.879
+        "slope_at_anchor": -631811954216.031,
+        "slope_ci_high": 241747359125243.2,
+        "slope_ci_low": -243010983033675.25
       },
-      "blake2b_hash": "2d03647d60ff2e58019b858955c4b0742c48ab4bb91db628ea25e0cd0f948c6c",
+      "blake2b_hash": "959a6eccb5a2d95d2481748afc67e83b60727f779b2a409a1f4313541756f725",
       "tolerance": "relative_5pct",
-      "timestamp_utc": "2026-05-02T06:26:44+00:00",
+      "timestamp_utc": "2026-05-02T18:19:29+00:00",
       "tooling": {
         "python": "3.14.3",
         "platform": "macOS-26.3.1-arm64-arm-64bit-Mach-O",
@@ -1215,9 +1215,9 @@
           34.98452773862796,
           18.039662152732795
         ],
-        "slope_at_anchor": 11244606770348.717,
-        "slope_ci_high": 5311527212170.936,
-        "slope_ci_low": 20001535171043.508
+        "slope_at_anchor": 9113554530090.285,
+        "slope_ci_high": 402269512709633.56,
+        "slope_ci_low": 401335650887441.0
       },
       "seeds_used": [
         42,

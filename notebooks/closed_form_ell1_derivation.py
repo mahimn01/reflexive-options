@@ -22,7 +22,13 @@ Total runtime ≈ 30s; figures saved to paper/figures/ell1_phase_boundary.pdf.
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
+
+# Pin matplotlib's PDF /CreationDate so figure regenerations are byte-stable.
+# See verification_v5_repro.md §3 — without this, every regen drifts the PDF
+# hash even though the rendered drawing is bit-identical.
+os.environ.setdefault("SOURCE_DATE_EPOCH", "0")
 
 import matplotlib
 

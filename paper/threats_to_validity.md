@@ -22,7 +22,7 @@ Halperin–Itkin didn't do."
 
 **Defence.** That is the correct framing of our contribution and we adopt
 it explicitly. We position our paper as *the bifurcation analysis the
-Marketron authors deferred*, with the additional ingredients (Heston
+Marketron authors do not perform*, with the additional ingredients (Heston
 variance backbone, GPP-style dealer-gamma drift from the option open-
 interest grid, first Lyapunov coefficient $\ell_1$, Khasminskii stochastic
 shift $\Lambda$) clearly laid out in the comparison table at
@@ -33,9 +33,9 @@ against an adversarial Marketron-side review.
 
 ---
 
-## 2. He, Li & Zheng (2025, NeurIPS) — adversarial deep-hedging
+## 2. He, Sutter & Gonon (2025, NeurIPS) — adversarial deep-hedging
 
-He, Li & Zheng's *Distributional Adversarial Attacks and Training in Deep
+He, Sutter & Gonon's *Distributional Adversarial Attacks and Training in Deep
 Hedging* (arXiv:2508.14757) sweeps a Wasserstein-ball radius
 $\delta \in \{0, 0.01, 0.03, 0.05, 0.1, 0.3, 0.5\}$ in their Table 1; the
 visual similarity to a $\kappa$-sweep is high.
@@ -45,7 +45,7 @@ visual similarity to a $\kappa$-sweep is high.
 **Defence.** They do not. Three load-bearing differences, enumerated in
 `related_work.md` §2.1 and recapitulated for clarity:
 
-| Axis | He, Li & Zheng (2025) | Patel (2026) |
+| Axis | He, Sutter & Gonon (2025) | Patel (2026) |
 | --- | --- | --- |
 | Number of agents | One per grid point ($\delta$); separate adversarial training at each | One agent ($\pi_{\kappa_0}$) deployed across $\kappa \in [0, 2\kappa_0]$ |
 | Headline summary | Table of per-point hedging losses | Slope-at-anchor $\tilde{\rho} = \partial \hat{m}/\partial \kappa\rvert_{\kappa_0}$ with bootstrap CI |
@@ -77,7 +77,7 @@ analysis. The combinatorial differences are:
 | Axis | Ning et al. (2021/2024) | Patel (2026) |
 | --- | --- | --- |
 | Distance | $W_1$ | Sliced-$W_2$ |
-| Object | Single-day surface marginals | 21-business-day rolling-window vectors (1323-dim path-distribution objects) |
+| Object | Single-day surface marginals | 21-business-day rolling-window vectors (1617-dim path-distribution objects) |
 | Arbitrage handling | Constraint inside the model | Hard pre-filter on metric input (window dropped if any daily surface fails butterfly / calendar / Lee-bound checks) |
 | CI structure | Single point estimate | Stationary block-bootstrap (Politis–Romano 1994) per regime, $B = 1000$ resamples, mean block length 21 days |
 
@@ -168,7 +168,7 @@ Pre-submission action: re-run a final ego search across q-fin.CP /
 q-fin.MF / q-fin.ST / stat.ML arXiv listings for January–April 2026
 immediately before submission.
 
-### 6.4 Sample-complexity concern — $W_2$ in 1323 dimensions
+### 6.4 Sample-complexity concern — $W_2$ in 1617 dimensions
 
 Classical $W_2$ has $n^{-1/d}$ convergence rate. Our reliance on the
 sliced-$W_2$ curse-of-dimension escape ($n^{-1/2}$ in any dimension per
@@ -185,7 +185,7 @@ budget.
 
 The four most dangerous attack vectors are explicitly addressed by:
 (i) framing relative to Marketron as "the bifurcation analysis they
-deferred" with a clean comparison table; (ii) leading the
+do not perform" with a clean comparison table; (ii) leading the
 $\kappa$-sensitivity related-work paragraph with He et al. (2025) and
 enumerating the three differentiations; (iii) reporting Ning's $W_1$ as a
 baseline secondary metric alongside our SW2; (iv) dropping "first in

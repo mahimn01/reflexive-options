@@ -4,7 +4,7 @@ This is the single source of truth for symbols used across the codebase, theory 
 
 ## State variables
 
-The reflexive simulator is **3-dimensional**: $(S_t, v_t, z_t)$. The memory variable $z_t$ is required for the Hopf bifurcation theorem (the 2D skeleton has an upper-triangular Jacobian and cannot Hopf — see `paper/theory.md` §3.2).
+The reflexive simulator is **3-dimensional**: $(S_t, v_t, z_t)$. The memory variable $z_t$ is required for the Hopf bifurcation theorem (the 2D skeleton has an upper-triangular Jacobian and cannot Hopf — see `paper/theory.md` §1.1).
 
 | Symbol | Meaning | Range / units |
 |--------|---------|---------------|

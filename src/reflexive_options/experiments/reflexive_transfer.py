@@ -71,6 +71,7 @@ from reflexive_options.rl.rewards import RewardConfig
 from reflexive_options.rl.state import StateConfig
 from reflexive_options.simulator.gamma_aggregator import GammaAggregator
 from reflexive_options.simulator.reflexive import ReflexiveSimulator
+from reflexive_options.theory.inference import tost_equivalence
 from reflexive_options.theory.sensitivity import kappa_sensitivity_curve
 from reflexive_options.types import (
     HestonParams,
@@ -490,6 +491,22 @@ def run_experiment(cfg: TransferConfig, run_dir: Path) -> dict[str, object]:
             rng_seed=cfg.seed,
         )
 
+    # A7: convert raw slope to dimensionless elasticity then apply TOST. The
+    # locked ±0.1 TOST margin (pre_registration.md §3 H2) is on the
+    # elasticity, not the raw slope — see paper/pre_registration_amendments.md A7.
+    anchor_metric_idx = int(np.argmin(np.abs(result.kappa_grid - cfg.kappa_anchor)))
+    m_at_anchor = float(result.metric_values[anchor_metric_idx])
+    m_scale = abs(m_at_anchor) if m_at_anchor != 0.0 else 1.0
+    elasticity = result.slope_at_anchor * cfg.kappa_anchor / m_scale
+    elasticity_se = result.slope_se * cfg.kappa_anchor / m_scale
+    if elasticity_se > 0.0:
+        is_equivalent, max_p = tost_equivalence(
+            estimate=elasticity, standard_error=elasticity_se, margin=0.1, alpha=0.05
+        )
+    else:
+        # Degenerate (e.g. constant metric); the test is undefined.
+        is_equivalent, max_p = False, 1.0
+
     metrics: dict[str, object] = {
         "kappa_anchor": cfg.kappa_anchor,
         "kappa_grid": result.kappa_grid.tolist(),
@@ -498,7 +515,17 @@ def run_experiment(cfg: TransferConfig, run_dir: Path) -> dict[str, object]:
         "slope_at_anchor": result.slope_at_anchor,
         "slope_ci_low": result.slope_ci_low,
         "slope_ci_high": result.slope_ci_high,
+        "slope_se": result.slope_se,
+        "slope_method": result.method,
         "ci_excludes_zero": (result.slope_ci_low > 0) or (result.slope_ci_high < 0),
+        # A7: elasticity-scale outputs (the units on which the locked TOST margin is set).
+        "metric_at_anchor": m_at_anchor,
+        "elasticity": elasticity,
+        "elasticity_se": elasticity_se,
+        "tost_margin": 0.1,
+        "tost_alpha": 0.05,
+        "tost_is_equivalent": is_equivalent,
+        "tost_max_p_value": max_p,
         "rng_seed": cfg.seed,
         "rng_state": str(rng),
         "checkpoint_path": str(ckpt_path),

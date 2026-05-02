@@ -1,0 +1,14 @@
+# Event windows recomputed exactly per pre-reg §2 spec
+# (±60 NYSE trading days around each t_event, inclusive — 121 trading days
+# total per window).
+#
+# Computed using pandas_market_calendars 5.3.2 (NYSE official holiday
+# calendar). See verification_v4_prereg.md V4-B8 — this file is the
+# authoritative source; paper/pre_registration.md §2 should reference it
+# rather than the hand-edited dates that differ by ~2 trading days.
+#
+# Format: event_name, t_event, window_start, window_end, n_trading_days
+
+Volmageddon,        2018-02-05, 2017-11-07, 2018-05-02, 121
+COVID crash,        2020-03-16, 2019-12-17, 2020-06-10, 121
+Yen carry unwind,   2024-08-05, 2024-05-08, 2024-10-29, 121

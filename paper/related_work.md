@@ -40,14 +40,14 @@ present paper.
 | Stochastic Hopf shift $\Lambda$ via Khasminskii | No | Yes (Khasminskii sphere process; Engel–Lamb–Rasmussen 2024 toolkit) |
 
 We position our contribution as *the bifurcation analysis the Marketron
-authors deferred*. The structural similarity (continuous-time, memory
+authors do not perform*. The structural similarity (continuous-time, memory
 channel, options-aware) is high and the differentiation is mathematical
 rather than philosophical. See `threats_to_validity.md` §1 for the framing
 strategy.
 
 ### 1.2 Dealer-gamma axis precedent — Dai (2025)
 
-Bin Dai, *Beta-Dependent Gamma Feedback and Endogenous Volatility
+Haoying Dai, *Beta-Dependent Gamma Feedback and Endogenous Volatility
 Amplification in Option Markets*, arXiv:2511.22766, November 2025.
 
 Closest precedent on the *dealer-gamma axis*. Explicit market-maker
@@ -170,9 +170,9 @@ Cite as conceptual ancestors; no novelty conflict.
 
 ## 2. RL for derivatives + sim-to-sim robustness ($\kappa$-sensitivity curve)
 
-### 2.1 Closest precedent — He, Li & Zheng (2025, NeurIPS)
+### 2.1 Closest precedent — He, Sutter & Gonon (2025, NeurIPS)
 
-Wenliang He, Yu Li & Yu Zheng, *Distributional Adversarial Attacks and
+Guangyi He, Tobias Sutter & Lukas Gonon, *Distributional Adversarial Attacks and
 Training in Deep Hedging*, arXiv:2508.14757, NeurIPS 2025; OpenReview
 forum vBtfIafffU.
 
@@ -182,7 +182,7 @@ Table 1 sweeps a Wasserstein-ball radius $\delta \in \{0, 0.01, 0.03,
 0.05, 0.1, 0.3, 0.5\}$ with hedging-loss reported per grid point;
 Theorem 3.3 mentions an asymptotic sensitivity expansion in $\delta$.
 
-| Ingredient | He–Li–Zheng (2025, NeurIPS) | Patel (2026) |
+| Ingredient | He, Sutter & Gonon (2025, NeurIPS) | Patel (2026) |
 | --- | --- | --- |
 | RL agent (sequential decision) | Yes (deep hedging) | Yes (Mamba+PPO+EWC, ATLAS-vendored) |
 | Finance / market-simulator domain | Yes (option hedging) | Yes (option hedging in reflexive simulator) |
@@ -316,7 +316,7 @@ Cite as the closest RL-hedging-with-robustness paper without the slope.
 
 ### 3.1 Closest precedent — Ning, Jaimungal, Zhang & Bergeron (2021, SIAM SIFIN 2024)
 
-Brian Ning, Sebastian Jaimungal, Xuancheng Zhang & Maxime Bergeron,
+Brian Ning, Sebastian Jaimungal, Xiaorong Zhang & Maxime Bergeron,
 *Arbitrage-Free Implied Volatility Surface Generation with Variational
 Autoencoders*, arXiv:2108.04941, 2021; *SIAM Journal on Financial
 Mathematics* 15(1), 2024, also DOI 10.1137/21M1443546.
@@ -330,7 +330,7 @@ on average Wasserstein.
 | --- | --- | --- |
 | Wasserstein distance between IV distributions | Yes ($W_1$) | Yes (sliced $W_2$) |
 | IV surface as the state object | Yes | Yes |
-| 21-day rolling-window path-distribution object | No (single-day surface marginals) | Yes (1323-dim windows) |
+| 21-day rolling-window path-distribution object | No (single-day surface marginals) | Yes (1617-dim windows) |
 | Arbitrage filter on metric input | Partial (handled inside the model, not as a pre-filter on the metric) | Yes (hard filter; window dropped if any daily surface fails) |
 | Post-hoc external evaluation (vs training loss) | Yes | Yes |
 | Block-bootstrap CIs reported per regime | No | Yes |
@@ -577,7 +577,7 @@ what we add.
 
 | Source | Identifies pre-registration gap? | Proposes commit-hash anchoring? |
 | --- | --- | --- |
-| Sun et al., *Reinforcement Learning in Finance: A Review*, arXiv:2411.12746, 2024 | Yes (reproducibility flagged) | No |
+| Bai, Gao, Wan, Zhang & Song, *A Review of Reinforcement Learning in Financial Applications*, arXiv:2411.12746, 2024 | Yes (reproducibility flagged) | No |
 | *Reinforcement Learning in Financial Decision Making: A Systematic Review*, arXiv:2512.10913, December 2025 | Yes (fragmented metrics, limited reproducibility) | No |
 | Hambly, Xu & Yang (2023), *Mathematical Finance*, "Recent Advances in RL in Finance" | Yes (calls for benchmarking) | No |
 
@@ -614,7 +614,7 @@ the specific four-way intersection in this subfield.
 - Engel, Lamb & Rasmussen (2024): https://link.springer.com/article/10.1007/s00440-024-01301-4
 
 **RL for derivatives + sim-to-sim robustness:**
-- He, Li & Zheng (2025): https://arxiv.org/abs/2508.14757 ; OpenReview vBtfIafffU
+- He, Sutter & Gonon (2025): https://arxiv.org/abs/2508.14757 ; OpenReview vBtfIafffU
 - Hou et al. (2025) elliptic uncertainty: https://arxiv.org/abs/2510.19950
 - Murray, Wood, Buehler et al. (2022): https://arxiv.org/abs/2207.07467
 - Subbaswamy, Adams & Saria (2022): https://proceedings.neurips.cc/paper_files/paper/2022/file/6b7f9d9c1217a748391800871ff7d17d-Paper-Conference.pdf
@@ -639,5 +639,5 @@ the specific four-way intersection in this subfield.
 - Camerer et al. (2018): https://www.nature.com/articles/s41562-018-0399-z
 - NeurIPS Paper Checklist: https://neurips.cc/public/guides/PaperChecklist
 - Open RL Benchmark (Huang et al. 2024): https://arxiv.org/abs/2402.03046
-- Sun et al. (2024) RL-in-finance review: https://arxiv.org/abs/2411.12746
+- Bai et al. (2024) RL-in-finance review: https://arxiv.org/abs/2411.12746
 - RL-in-finance systematic review (December 2025): https://arxiv.org/abs/2512.10913

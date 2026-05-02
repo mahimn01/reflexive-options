@@ -31,6 +31,7 @@ dependencies = [
     "tqdm>=4.66",
     "pyyaml>=6.0",
     "diptest>=0.7",
+    "scikit-learn>=1.8.0",
 ]
 
 [project.scripts]
@@ -48,6 +49,7 @@ dev = [
     "pre-commit==4.3.0",
     "ipykernel==6.30.1",
     "jupyter==1.1.1",
+    "opentimestamps-client==0.7.2",
 ]
 mlx = [
     "mlx>=0.15",
@@ -70,6 +72,7 @@ dev = [
     "pre-commit==4.3.0",
     "ipykernel==6.30.1",
     "jupyter==1.1.1",
+    "opentimestamps-client==0.7.2",
 ]
 
 [project.urls]
@@ -185,6 +188,7 @@ module = [
     "ripser.*",
     "mystic.*",
     "scipy.*",
+    "sklearn.*",
 ]
 ignore_missing_imports = true
 follow_imports = "silent"

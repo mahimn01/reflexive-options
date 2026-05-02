@@ -7,8 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-22
+
 ### Added
 
+**Manuscript**
+- `paper/main.tex` — 9-page (body) LaTeX manuscript per
+  `paper/MANUSCRIPT_SKELETON.md` 8-page workshop layout, with full proofs
+  of Theorem 1 (Hopf bifurcation), the closed-form $\kappa^\star$ and
+  $\ell_1$ for log-normal open-interest in moneyness, the
+  $(\xi,\rho,\sigma_v)$ phase diagram, the pre-registered evaluation
+  framework, and the mechanism decomposition vs. Marketron. Compiles
+  cleanly under TeXLive 2024+ via `make pdf`.
+- `paper/references.bib` — 62 BibTeX entries; 61 cited in the manuscript,
+  one (`baxendale1994`) included for the Khasminskii-stochastic-Hopf
+  citation chain.
+- `paper/Makefile` — `make pdf` (pdflatex + bibtex + pdflatex × 2),
+  `make clean`, `make watch` targets.
+- `paper/arxiv_metadata.txt` — arXiv submission metadata: title, author,
+  primary `q-fin.MF` + cross-list `q-fin.CP, q-fin.PR, q-fin.ST, math.DS`,
+  MSC 2020 codes `91G80, 37G15, 60H10, 91G60, 93E20`, CC-BY-4.0 license.
+- `paper/pre_registration_amendments.md` — pre-data amendments A1–A7
+  (H4 Welch window adaptation, dual-signal H4 on $|r_t|$ and $\widehat{v}_t$,
+  IAAFT surrogate null replacing iid permutation, GP-posterior slope CI
+  for κ-sensitivity, and TOST equivalence on the dimensionless elasticity).
+- `paper/threats_to_validity.md`, `paper/related_work.md`,
+  `paper/mechanism_decomposition.md` (three-table mechanism analysis),
+  `paper/notation.md`, `paper/abstract.md`, `paper/SUBMISSION_READINESS.md`,
+  and `paper/MANUSCRIPT_SKELETON.md`.
+
+**Mechanism decomposition + simulator hardening**
 - Mechanism-decomposition reporter in `synthetic_replication.py`: every
   Marketron-vs-reflexive cell now carries a `mechanism_class` ∈
   {`shape_target`, `level_artifact`, `calibration_artifact`}, plus
@@ -19,15 +47,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   picking the best reflexive overrides per Marketron parameter set; writes
   `runs/marketron_tuning/<ts>/grid_results.parquet` and `best_overrides.json`,
   consumed by `synthetic_replication.load_tuned_overrides`.
-- `paper/mechanism_decomposition.md` — three-table mechanism analysis (shape
-  agreement, predictable divergences, level artifacts not chased).
 - CLI exit code on `synthetic_replication.py`: 0 if shape-match rate ≥ 30%,
   1 otherwise — enforces the headline number on every CI run.
+
+**Theory**
+- Closed-form first Lyapunov coefficient $\ell_1$ for log-normal OI in
+  moneyness (`theory/bifurcation.lyapunov_coefficient_lognormal_oi`),
+  matching the FD-tensor pipeline to <0.6% relative; canonical regime
+  $\kappa^\star = 17.81$, $\omega^\star = 1.18$, $\ell_1 = -0.48$
+  (supercritical).
+- Closed-form Hopf threshold $\kappa^\star$ as the smallest positive root
+  of the §4.3.2 quadratic.
+- $(\sigma_q, \gamma)$ closed-form phase boundary rendered to
+  `paper/figures/ell1_phase_boundary.pdf`.
+- 4D phase scan `experiments/hopf_phase_scan_4d.py` rendered to
+  `paper/figures/hopf_phase_diagram.pdf`.
+- H4 spectral-peak detector with adaptive Welch window, dual-signal
+  ($|r_t|$ and realised-variance proxy $\widehat{v}_t$), IAAFT surrogate
+  null per Schreiber & Schmitz (1996); rendered to
+  `paper/figures/h4_detector_power.pdf`.
+- GP-posterior slope CI for the κ-sensitivity protocol
+  (`theory/sensitivity.py`), replacing the spline-derivative + iid
+  bootstrap that under-covered out-of-span function classes.
 
 ### Changed
 
 - `synthetic_replication.py` default `n_steps` raised from 252 → 756 to cover
   Marketron's 3-year horizon.
+- Test suite expanded from 252 → **329 tests**; coverage 85.12% → **89.05%**
+  (gate at 85% in CI).
+- Pre-registration amendment set is now A1–A7 (was A1–A4 at v0.2.x).
 
 ## [0.1.0] - 2026-04-30
 

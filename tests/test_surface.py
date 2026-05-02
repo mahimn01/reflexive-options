@@ -8,7 +8,11 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 
-from reflexive_options.surface.generator import generate_surface, make_standard_grid
+from reflexive_options.surface.generator import (
+    generate_surface,
+    make_pre_reg_grid,
+    make_standard_grid,
+)
 from reflexive_options.surface.io import load_surfaces, save_surfaces
 from reflexive_options.types import SDEState, SurfaceGrid
 
@@ -33,6 +37,32 @@ def test_make_standard_grid_custom_dims() -> None:
 def test_make_standard_grid_rejects_bad_spot() -> None:
     with pytest.raises(ValueError):
         make_standard_grid(spot=-1.0)
+
+
+def test_make_pre_reg_grid_matches_locked_spec() -> None:
+    """Pre-registration §4 locks the grid at 11 log-moneyness points with
+    Δk = 0.04 (covering [-0.20, +0.20]) and 7 maturities {7, 14, 30, 60, 90,
+    180, 365} days. Verify the factory returns exactly that.
+    """
+    grid = make_pre_reg_grid()
+
+    # Strike axis
+    assert grid.n_strikes == 11
+    np.testing.assert_allclose(grid.log_moneyness[0], -0.20)
+    np.testing.assert_allclose(grid.log_moneyness[-1], 0.20)
+    # Δk = 0.04 between every consecutive pair
+    deltas = np.diff(grid.log_moneyness)
+    np.testing.assert_allclose(deltas, 0.04, atol=1e-12)
+
+    # Maturity axis
+    assert grid.n_maturities == 7
+    expected_days = np.array([7.0, 14.0, 30.0, 60.0, 90.0, 180.0, 365.0])
+    np.testing.assert_allclose(grid.maturities * 365.0, expected_days, atol=1e-12)
+
+    # Per-window dim = 21 × 7 × 11 = 1617
+    rolling_window_len = 21
+    per_window_dim = rolling_window_len * grid.n_maturities * grid.n_strikes
+    assert per_window_dim == 1617
 
 
 def test_generate_surface_calls_simulator_method() -> None:

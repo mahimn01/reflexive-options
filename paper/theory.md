@@ -6,7 +6,7 @@ This document is the canonical writeup of the analytical contributions of the pa
 
 ## 1. The model
 
-A complete comparison against the closest precedents — Halperin and Itkin's Marketron framework (arXiv:2508.09863, August 2025), Dai's gamma-squeeze recursion (arXiv:2511.22766, November 2025), Brock–Hommes-style heterogeneous-agent dynamics (Brock, Hommes & Wagener, *JEDC* 2009; He, Li & Zheng, *Economic Modelling* 2009; Chiarella, He & Hommes, UTS QFRC RP 268, 2006), the He–Li–Zheng adversarial deep-hedging line (arXiv:2508.14757, NeurIPS 2025), and the Ning–Jaimungal Wasserstein-on-surfaces work (arXiv:2108.04941, *SIAM SIFIN* 2024) — is in `related_work.md`. Each has 1–2 of the ingredients we combine; none has all.
+A complete comparison against the closest precedents — Halperin and Itkin's Marketron framework (arXiv:2508.09863, August 2025), Dai's gamma-squeeze recursion (arXiv:2511.22766, November 2025), Brock–Hommes-style heterogeneous-agent dynamics (Brock, Hommes & Wagener, *JEDC* 2009; He, Li & Zheng, *Economic Modelling* 2009; Chiarella, He & Hommes, UTS QFRC RP 268, 2006), the He–Sutter–Gonon adversarial deep-hedging line (arXiv:2508.14757, NeurIPS 2025), and the Ning–Jaimungal Wasserstein-on-surfaces work (arXiv:2108.04941, *SIAM SIFIN* 2024) — is in `related_work.md`. Each has 1–2 of the ingredients we combine; none has all.
 
 Let $S_t$ be the underlying spot price, $v_t$ the instantaneous variance, and $z_t$ a memory variable encoding low-pass-filtered price history. The reflexive system is
 
@@ -81,7 +81,7 @@ with
 $$
 c_2 = -a + \kappa_v + \alpha, \qquad
 c_1 = -a\kappa_v - a\alpha + \kappa_v\alpha - \kappa\, G_z\, \beta, \qquad
-c_0 = -a\kappa_v\alpha + \beta\bigl(\kappa\, G_z\, \kappa_v - b\,\gamma\bigr).
+c_0 = -a\kappa_v\alpha - \beta\bigl(\kappa\, G_z\, \kappa_v + b\,\gamma\bigr).
 $$
 
 A 3D system Hopf's iff (Liu's criterion, equivalent to Routh–Hurwitz with one zero):
@@ -105,7 +105,7 @@ At $\kappa = \kappa^\star$ the Jacobian has a pure imaginary eigenvalue pair $\l
 > **Theorem 1.** *Let the deterministic system (1a–c) (with Brownian terms removed) satisfy:*
 >
 > - **(A1)** *$G \in C^3$ and $\sigma^2 \in C^3$ in their arguments, with $\sigma^2$ bounded below by a positive constant.*
-> - **(A2)** *There exists a unique equilibrium $(S^\star, \theta_v, z^\star)$ given by (2) for every $\kappa$ in some interval $[0, \kappa_{\max}]$.*
+> - **(A2)** *There exists a locally unique equilibrium $(S^\star, \theta_v, z^\star)$ given by (2) for every $\kappa$ in some interval $[0, \kappa_{\max}]$, in some open neighborhood of which the linearization (3) is non-degenerate. Multiple equilibria may exist globally; our analysis is local.*
 > - **(A3)** *The map $\kappa \mapsto (a(\kappa), G_z, G_v)$ is $C^3$.*
 > - **(A4)** *There exists $\kappa^\star \in (0, \kappa_{\max})$ satisfying (5) with $\omega^\star := \sqrt{c_1(\kappa^\star)} > 0$.*
 > - **(A5)** *The first Lyapunov coefficient $\ell_1(\kappa^\star) \neq 0$ (Kuznetsov 2004, eq. 3.20).*
@@ -136,7 +136,7 @@ The implementation in `src/reflexive_options/theory/bifurcation.py` does the num
 
 The default `BifurcationConfig` in `experiments/bifurcation_scan.py` is dimensionally tuned to the empirical dealer-gamma magnitudes ($G_x \sim 10^{-3}$, $G_z \sim 10^{-3}$ per USD-of-dollar-gamma) and *does not exhibit a Hopf within the literature-prior κ range*. The structural reason: the memory channel decay $\alpha = 252$/yr (≈ 1-day half-life) is fast relative to $\kappa_v = 2$/yr, and the small first-derivative magnitudes mean the cross-coupling $\kappa G_z \beta$ in $c_1$ never overpowers $\kappa_v \alpha$. This matches the empirical observation that real options markets sit *near* but not *across* $\kappa^\star$ — consistent with HBB's $n \approx 1$ critical regime (§6).
 
-For a worked numerical example we instead use a representative *dimensionless* regime where $\{G_x, G_v, G_z\} = \{0.5, -0.5, -0.5\}$, $\alpha = 0.5$/yr (multi-day memory), $\beta = 1$, $\gamma = 0.5$, $\kappa_v = 2$/yr, and quadratic / cubic Taylor coefficients $G_{xx} = -0.1$, $G_{xxx} = -0.2$ (representative of a smooth, locally concave dealer-gamma functional around ATM in a long-gamma regime). The deterministic skeleton then satisfies:
+For a worked numerical example we instead use a representative *dimensionless* regime where $\{G_x, G_v, G_z\} = \{0.5, -0.5, -0.5\}$, $\alpha = 0.5$/yr (multi-day memory), $\beta = 1$, $\gamma = 0.5$, $\kappa_v = 2$/yr, and quadratic / cubic Taylor coefficients $G_{xx} = -0.1$, $G_{xxx} = -0.2$ (representative of a smooth, locally concave dealer-gamma functional around ATM in a long-gamma regime). For this example we use a *constant-vol surrogate* ($\partial_v \sigma^2 = 0$) rather than the Heston $\sigma^2 = v$ of §1; this isolates the $\kappa$-dependence of the bifurcation from the Itô-correction term in $b(\kappa) = \kappa G_v - \tfrac{1}{2}\partial_v \sigma^2$ and lets the $\{G_x, G_v, G_z, \kappa_v, \alpha, \beta, \gamma\}$ prescribed values stand alone. The §4.3 closed-form analysis returns to the $\sigma^2 = v$ Heston backbone. The deterministic skeleton then satisfies:
 
 | Quantity | Value |
 |---|---|
@@ -215,6 +215,8 @@ $$
 \boxed{\;\kappa^\star \;=\; \frac{G_y\, A^2 - G_v\, L \;-\; \sqrt{(G_v L - G_y A^2)^2 - 4\,G_y^2 A\,(MA - L/2)}}{2\,G_y^2\,A}.\;} \tag{17}
 $$
 
+*Footnote.* When the $-$ branch yields a non-positive root (or violates $c_2 > 0$, $c_0 > 0$), the implementation falls back to the $+$ branch; we report the smallest positive root that satisfies the Routh–Hurwitz positivity conditions.
+
 The Hopf frequency follows immediately from $\omega^\star = \sqrt{c_1(\kappa^\star)} = \sqrt{-\kappa^\star G_y \cdot A + M}$ once $\kappa^\star$ is in hand. The discriminant in (17) provides the *first* parametric phase boundary: when $D := (G_v L - G_y A^2)^2 - 4\,G_y^2 A\,(MA - L/2) < 0$, the system has no Hopf at any $\kappa$ — the deterministic skeleton is unconditionally stable.
 
 #### 4.3.3 Closed-form first Lyapunov coefficient $\ell_1$
@@ -253,11 +255,7 @@ The headline parametric result is a *two-dimensional phase diagram* over $(\sigm
 | **Supercritical** | $D \geq 0$, smallest positive root real | $\ell_1 < 0$ | Stable limit cycle for $\kappa > \kappa^\star$, amplitude $\propto \sqrt{\kappa - \kappa^\star}$ |
 | **Sub-critical** | $D \geq 0$, smallest positive root real | $\ell_1 > 0$ | Unstable cycle past $\kappa^\star$; hysteresis, abrupt regime jumps |
 
-At the canonical specification $(\mu_q = \log 100,\, T_{\mathrm{eff}} = 0.25\text{ yr},\, \kappa_v = 2,\, \theta_v = 0.04,\, \alpha = 0.05,\, \beta = 1)$, the phase diagram is rendered in `paper/figures/ell1_phase_boundary.pdf` (script: `notebooks/closed_form_ell1_derivation.py`). Qualitative features:
-
-- For *small* $\sigma_q$ (concentrated OI, e.g. monthly OPEX-clustering), the supercritical region extends to moderate $\gamma$, then collapses into the sub-critical wedge as $\gamma$ grows. Concentrated OI gives a sharp, locally concave $G(a)$ around ATM, which produces large $G_{aa}, G_{aaa}$ — these enter $\ell_1$ with a sign that depends sensitively on $\gamma$ via the $\langle p, B(q, J^{-1} B(q, \bar q))\rangle$ resolvent term.
-- For *large* $\sigma_q$ (broadly distributed OI, e.g. SPX with deep wings), the supercritical region narrows; very flat OI distributions produce small $G_{aa}$ and the system tends towards the sub-critical regime as soon as Hopf is reached.
-- Both regions persist on the same diagram — the existence of the contour $\ell_1(\sigma_q, \gamma) = 0$ is non-trivial and is the central parametric prediction.
+At the canonical specification $(\mu_q = \log 100,\, T_{\mathrm{eff}} = 0.25\text{ yr},\, \kappa_v = 2,\, \theta_v = 0.04,\, \alpha = 0.05,\, \beta = 1)$, the phase diagram is rendered in `paper/figures/ell1_phase_boundary.pdf` (script: `notebooks/closed_form_ell1_derivation.py`). The supercritical region ($\ell_1 < 0$) is a *narrow band* bounded by two $\ell_1 = 0$ contours in $(\sigma_q, \gamma)$ space. For very small $\sigma_q$ ($\lesssim 0.05$) the band collapses entirely — concentrated OI gives $\ell_1 > 0$ across the tested $\gamma$ range. For moderate $\sigma_q$ ($\sim 0.10$) the supercritical band is restricted to a small interval $\gamma \in [\gamma_{\mathrm{low}}, \gamma_{\mathrm{high}}]$ of order unity. As $\sigma_q$ grows, the band first widens then narrows again. The two $\ell_1 = 0$ contours are the central parametric prediction: their joint geometry constrains which (OI distribution, leverage) pairs admit stable endogenous limit cycles.
 
 #### 4.3.5 Numerical verification at the canonical regime
 
@@ -288,7 +286,7 @@ $$
 \lambda_1(\kappa, \varepsilon) = \alpha(\kappa) + \varepsilon^2 \cdot \Lambda(\kappa) + O(\varepsilon^4),
 $$
 
-where $\alpha(\kappa)$ is the deterministic real part (zero at $\kappa^\star_{\mathrm{det}}$) and $\Lambda$ is computed via Engel–Lamb–Rasmussen (2024). Their shear-induced corrections give $|\Lambda| \sim (\rho \xi)^{2/3}$ — high vol-of-vol and strong correlation push the bifurcation around significantly. We compute $\Lambda$ numerically via Khasminskii's sphere process (Algorithm 2 in `~/Documents/reflexivity-research/hopf_bifurcation_brief.md` §6).
+where $\alpha(\kappa)$ is the deterministic real part (zero at $\kappa^\star_{\mathrm{det}}$) and $\Lambda$ is computed via Engel–Lamb–Rasmussen (2024). Engel–Lamb–Rasmussen (2024) predict an asymptotic shear-driven scaling $|\Lambda| \sim (\rho\xi)^{2/3}$ in the limit of small noise. The numerical $\Lambda$ values produced by our finite-budget Khasminskii estimator (`stochastic_hopf_shift_numeric`) are not strongly $(\rho\xi)$-dependent in the tested regime — empirically $\Lambda$ is roughly constant across $(\rho\xi) \in [0.07, 0.42]$ at the §4.2 representative parameter set, with relative variation $\approx 27\%$ over a 6× change in $(\rho\xi)$. We do not claim to have validated the asymptotic scaling; the reported $\Lambda$ is a finite-noise two-point estimate at $(\varepsilon_1, \varepsilon_2) = (0.05, 0.20)$. A definitive small-noise asymptotic check would require a dedicated experiment we defer. We compute $\Lambda$ numerically via Khasminskii's sphere process (Algorithm 2 in `~/Documents/reflexivity-research/hopf_bifurcation_brief.md` §6).
 
 ---
 
@@ -333,6 +331,8 @@ Heston base parameters $(\kappa_v, \theta_v, \xi, \rho, v_0) = (2.0,\, 0.04,\, 0
 | Anderson–Darling p-value | — | — | $< 10^{-3}$ |
 
 Excess kurtosis is $\sim\!10^5\!\times$ larger and the Hill index drops by two orders of magnitude. **H_tail is supported at the anchor**, with the caveat that Hill is noisy when tails are not strictly Pareto and excess kurtosis is therefore the cleaner statistic. Across the $\kappa$ grid the Hill index is non-monotonic — it drops sharply at small $\kappa$ then rebounds at $\kappa = 5\cdot 10^{-12}$ — consistent with explosive paths being increasingly censored by the variance-truncation scheme (Lord–Koekkoek–van Dijk 2010) under positive feedback rather than a genuine return to thinner tails. Excess kurtosis is monotone in $\kappa$ over the stable sub-range $\{0, 10^{-13}, 5\cdot 10^{-13}\}$.
+
+**Caveats.** The Hill index is defined for distributions with regularly-varying tails; the reflexive simulator's tails are not strictly Pareto, so Hill is at best a rough indicator. The excess-kurtosis estimate ($4.5\!\times\!10^4$ at the anchor) is finite by construction at any sample size but does not converge as $N\to\infty$ if the underlying 4th moment is infinite — and the heaviest-tail regimes here may have unbounded population kurtosis. We retain the comparison to Heston as a *qualitative* signal that reflexivity reshapes the tail (the AD test rejects same-distribution at $p < 10^{-3}$), but the specific numerical magnitudes of the Hill index and excess kurtosis should not be taken as point estimates of population quantities.
 
 ### 7.3 Hypothesis H_skew — sign of skewness tracks $\mathrm{sgn}(G_x)$
 

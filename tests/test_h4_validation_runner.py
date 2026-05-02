@@ -41,16 +41,21 @@ def test_run_validation_tiny_config_returns_finite_results(tmp_path: Path) -> No
     result = run_validation(cfg, base_seed=1)
     assert isinstance(result, H4ValidationResult)
     assert result.t_grid.tolist() == [256, 1024]
-    assert result.power_vs_t.shape == (2,)
-    assert result.power_vs_snr.shape == (2,)
-    assert np.all(np.isfinite(result.power_vs_t))
-    assert np.all(np.isfinite(result.power_vs_snr))
-    assert 0.0 <= result.h0_fpr <= 1.0
-    assert 0.0 <= result.h0_mean_p <= 1.0
+    # Per A2: per-signal dicts keyed by signal name.
+    for sig in cfg.signals:
+        assert result.power_vs_t[sig].shape == (2,)
+        assert result.power_vs_snr[sig].shape == (2,)
+        assert np.all(np.isfinite(result.power_vs_t[sig]))
+        assert np.all(np.isfinite(result.power_vs_snr[sig]))
+        assert 0.0 <= result.h0_fpr[sig] <= 1.0
+        assert 0.0 <= result.h0_mean_p[sig] <= 1.0
+    assert result.joint_power_vs_t.shape == (2,)
+    assert result.joint_power_vs_snr.shape == (2,)
+    assert 0.0 <= result.h0_joint_fpr <= 1.0
     # At fixed-SNR amplitude 0.4, longer T should give >= power than shorter.
-    assert result.power_vs_t[1] >= result.power_vs_t[0] - 0.5
+    assert result.joint_power_vs_t[1] >= result.joint_power_vs_t[0] - 0.5
     # Higher SNR should give >= power than lower.
-    assert result.power_vs_snr[1] >= result.power_vs_snr[0] - 0.5
+    assert result.joint_power_vs_snr[1] >= result.joint_power_vs_snr[0] - 0.5
 
 
 def test_plot_power_curves_writes_pdf(tmp_path: Path) -> None:
@@ -71,10 +76,12 @@ def test_plot_power_curves_writes_pdf(tmp_path: Path) -> None:
 
 
 def test_main_quick_writes_metrics_and_figure(tmp_path: Path, monkeypatch: object) -> None:
-    """End-to-end: `python -m reflexive_options.experiments.h4_validation --quick`."""
-    # The run dir layout is repo-relative (`runs/h4_validation/...`); we
-    # don't redirect it, but we verify the latest run's contents are sane.
-    args = ["h4_validation", "--quick", "--seed", "999"]
+    """End-to-end: `python -m reflexive_options.experiments.h4_validation --quick`.
+
+    Uses --signals abs_returns to keep wall-clock under 60 s in CI; the dual-
+    signal A2 plumbing is exercised by `test_run_validation_tiny_config_returns_finite_results`.
+    """
+    args = ["h4_validation", "--quick", "--seed", "999", "--signals", "abs_returns"]
     with mock.patch.object(sys, "argv", args):
         run_main()
 
@@ -89,10 +96,16 @@ def test_main_quick_writes_metrics_and_figure(tmp_path: Path, monkeypatch: objec
 
     metrics = json.loads((latest / "metrics.json").read_text())
     assert "t_grid" in metrics
-    assert "power_vs_t" in metrics
-    assert "power_vs_snr" in metrics
-    assert "h0_fpr_at_alpha_005" in metrics
-    assert 0.0 <= metrics["h0_fpr_at_alpha_005"] <= 1.0
+    # A2 schema: per-signal columns + joint columns.
+    assert "joint_power_vs_t" in metrics
+    assert "joint_power_vs_snr" in metrics
+    assert "signals" in metrics
+    assert "h0_joint_fpr_at_alpha_per_signal" in metrics
+    assert 0.0 <= metrics["h0_joint_fpr_at_alpha_per_signal"] <= 1.0
+    for sig in metrics["signals"]:
+        assert f"power_vs_t__{sig}" in metrics
+        assert f"power_vs_snr__{sig}" in metrics
+        assert f"h0_fpr__{sig}" in metrics
 
 
 def test_interp_threshold_returns_first_crossing() -> None:

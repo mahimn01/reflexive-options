@@ -91,4 +91,22 @@ def make_standard_grid(
     return SurfaceGrid(log_moneyness=k.astype(np.float64), maturities=T)
 
 
-__all__ = ["generate_surface", "make_standard_grid"]
+def make_pre_reg_grid() -> SurfaceGrid:
+    """Return the surface grid locked in paper/pre_registration.md §4.
+
+    Strikes: 11 log-moneyness points, Δk = 0.04, k ∈ [-0.20, +0.20].
+    Maturities: {7, 14, 30, 60, 90, 180, 365} days.
+
+    This is the *exact* grid that any empirical evaluation must use; the
+    `make_standard_grid` defaults are tuned to the simulator's ATM IV and
+    DO NOT match the pre-reg.
+
+    Per-window dimensionality: 21 (rolling-window length) × 7 (maturities) ×
+    11 (strikes) = 1617 floats per surface-window.
+    """
+    log_moneyness = np.linspace(-0.20, 0.20, 11, dtype=np.float64)
+    maturities = np.array([7.0, 14.0, 30.0, 60.0, 90.0, 180.0, 365.0], dtype=np.float64) / 365.0
+    return SurfaceGrid(log_moneyness=log_moneyness, maturities=maturities)
+
+
+__all__ = ["generate_surface", "make_pre_reg_grid", "make_standard_grid"]

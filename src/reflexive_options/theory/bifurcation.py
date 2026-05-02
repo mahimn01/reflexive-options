@@ -891,6 +891,16 @@ def kappa_star_lognormal_oi(
     Positive real roots, if any, are returned together with the corresponding
     Hopf frequency ω* = √c_1(κ*).
 
+    Liu's full Hopf criterion requires three things at the candidate κ*:
+        (i)   H(κ*) = 0                  ← the quadratic root
+        (ii)  c_2(κ*) > 0                ← positive linear coefficient
+        (iii) c_0(κ*) > 0                ← positive constant coefficient
+
+    Failing (ii) or (iii) means the candidate sits at an unstable equilibrium
+    where the eigenvalue real-parts cross zero in a non-Hopf manner. We raise
+    `ValueError` in either case so a bad candidate cannot silently propagate
+    into the Lyapunov-coefficient pipeline.
+
     Args:
         G_y: ∂G/∂a at the equilibrium (= ∂G/∂y in deviation variables).
         G_v: ∂G/∂v at the equilibrium.
@@ -901,6 +911,7 @@ def kappa_star_lognormal_oi(
 
     Returns:
         (kappa_star, omega_star). If no positive real root with ω*² > 0 exists,
+        OR Routh-Hurwitz positivity (c_2 > 0 ∧ c_0 > 0) fails at the candidate,
         raises ValueError.
     """
     if kappa_v <= 0.0:
@@ -934,9 +945,28 @@ def kappa_star_lognormal_oi(
         # Prefer the smallest positive root (first crossing as κ ramps up).
         kappa_star = float(min(positive))
 
+    # Routh-Hurwitz positivity at the candidate κ* — Liu's criterion (V1-W2).
+    # With G_z = 0 and σ² = v: a(κ) = κ G_y, b(κ) = κ G_v − ½.
+    #   c_2 = -trace(J) = -a + κ_v + α
+    #   c_0 = -det(J)   = -a κ_v α + β(κ G_z κ_v − b γ)
+    #               = -a κ_v α − b β γ            (since G_z = 0)
+    a_at_star = kappa_star * G_y
+    b_at_star = kappa_star * G_v - 0.5
+    c_2 = -a_at_star + kappa_v + alpha
+    c_0 = -a_at_star * kappa_v * alpha - b_at_star * beta * gamma
+    if c_2 <= 0.0:
+        raise ValueError(
+            f"κ* candidate violates Routh-Hurwitz positivity: c_2 = {c_2:.3e} ≤ 0 "
+            f"at κ* = {kappa_star} (Liu's criterion)"
+        )
+    if c_0 <= 0.0:
+        raise ValueError(
+            f"κ* candidate violates Routh-Hurwitz positivity: c_0 = {c_0:.3e} ≤ 0 "
+            f"at κ* = {kappa_star} (Liu's criterion)"
+        )
+
     # ω*² = c_1(κ*) = -a κ_v - a α + κ_v α
-    a_star_kappa = kappa_star * G_y
-    omega_sq = -a_star_kappa * (kappa_v + alpha) + kappa_v * alpha
+    omega_sq = -a_at_star * (kappa_v + alpha) + kappa_v * alpha
     if omega_sq <= 0.0:
         raise ValueError(
             f"ω*² = {omega_sq:.3e} ≤ 0 at κ* = {kappa_star}; "

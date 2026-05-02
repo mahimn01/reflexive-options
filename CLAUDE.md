@@ -62,6 +62,14 @@ first error.
 
 `paper/pre_registration.md` is committed *before* empirical evaluation against real SPX data. Once data is acquired (Phase 0 of `~/Documents/reflexivity-research/TODO.md`), the analysis pipeline is run exactly as specified. Any deviation must be flagged in the paper.
 
+The pre-reg's chain-of-custody anchor is `paper/pre_registration.md.ots` — an OpenTimestamps proof binding the file's SHA256 into the Bitcoin blockchain. Verify with:
+
+```bash
+uv run ots verify paper/pre_registration.md.ots
+```
+
+After any amendment to the locked pre-reg text, regenerate the proof (`uv run ots stamp paper/pre_registration.md`) and document the change in `paper/pre_registration_amendments.md`.
+
 ## Running things
 
 ```bash

@@ -255,7 +255,16 @@ def _make_canonical_reflexive_sim(
 
 
 def test_detect_pure_sinusoid_at_omega_star() -> None:
-    """High-SNR sinusoid at exactly ω* should fire decisively (in_band, p < 0.01)."""
+    """High-SNR sinusoid at exactly ω*: legacy permutation null fires decisively (p<0.01).
+
+    Pinned to the v0.1.0 baseline (`null_method='permutation'`,
+    `nperseg_override=1024`). The IAAFT default (amendment A5) preserves the
+    linear ACF of the input — including the in-band peak — so a near-pure
+    sinusoid is a degenerate case where IAAFT surrogates inherit the
+    spectral peak structure of the input and the p-value drifts upward.
+    See `test_iaaft_default_no_false_fire_on_white_noise` and
+    `test_iaaft_supercritical_reflexive_still_fires` for IAAFT-path tests.
+    """
     x = _sinusoid_with_noise(
         T=DEFAULT_T,
         sampling_rate=SAMPLING_RATE,
@@ -269,6 +278,8 @@ def test_detect_pure_sinusoid_at_omega_star() -> None:
         sampling_rate=SAMPLING_RATE,
         omega_star=DEFAULT_OMEGA_STAR,
         n_permutations=200,
+        null_method="permutation",
+        nperseg_override=1024,
         rng=np.random.default_rng(11),
     )
     assert res.in_band, (
@@ -293,6 +304,8 @@ def test_no_detect_white_noise() -> None:
         sampling_rate=SAMPLING_RATE,
         omega_star=DEFAULT_OMEGA_STAR,
         n_permutations=300,
+        null_method="permutation",
+        nperseg_override=1024,
         rng=np.random.default_rng(23),
     )
     # Either the in-band peak is dominated by some other random bin, or the
@@ -319,6 +332,8 @@ def test_no_detect_sinusoid_outside_band() -> None:
         sampling_rate=SAMPLING_RATE,
         omega_star=DEFAULT_OMEGA_STAR,
         n_permutations=200,
+        null_method="permutation",
+        nperseg_override=1024,
         rng=np.random.default_rng(31),
     )
     assert not res.in_band, (
@@ -329,7 +344,9 @@ def test_no_detect_sinusoid_outside_band() -> None:
 def test_p_value_calibrated() -> None:
     """Under H_0 (white noise) the empirical p-value distribution is approximately uniform.
 
-    KS test against U[0, 1]; want p > 0.05 (i.e. null *not* rejected).
+    Pinned to legacy `null_method='permutation'` + `nperseg_override=1024`
+    (the v0.1.0 baseline before amendment A5). KS test against U[0, 1]; want
+    p > 0.05 (i.e. null *not* rejected).
     """
     rng = np.random.default_rng(0)
     n_runs = 60
@@ -341,6 +358,8 @@ def test_p_value_calibrated() -> None:
             sampling_rate=SAMPLING_RATE,
             omega_star=DEFAULT_OMEGA_STAR,
             n_permutations=100,
+            null_method="permutation",
+            nperseg_override=1024,
             rng=np.random.default_rng(int(rng.integers(1_000_000))),
         )
         p_values[i] = res.p_value
@@ -376,6 +395,8 @@ def test_power_increases_with_T_at_fixed_snr() -> None:
                 sampling_rate=SAMPLING_RATE,
                 omega_star=DEFAULT_OMEGA_STAR,
                 n_permutations=80,
+                null_method="permutation",
+                nperseg_override=1024,
                 rng=np.random.default_rng(seed + 5_000),
             )
             if res.in_band and res.p_value < 0.05:
@@ -392,7 +413,12 @@ def test_power_increases_with_T_at_fixed_snr() -> None:
 
 
 def test_stuart_landau_oscillator_triggers() -> None:
-    """Stuart-Landau (canonical limit-cycle SDE) at supercritical μ triggers the detector."""
+    """Stuart-Landau (canonical limit-cycle SDE) at supercritical μ triggers the detector.
+
+    Pinned to legacy `null_method='permutation'` + `nperseg_override=1024`.
+    Stuart-Landau is a degenerate test for IAAFT — the limit-cycle has near-
+    pure-sinusoid spectrum which IAAFT preserves by construction.
+    """
     omega_rad_per_yr = 2.0 * np.pi * 4.0  # 4 cycles/year
     omega_cyc = 4.0
     x = _stuart_landau_path(
@@ -408,6 +434,8 @@ def test_stuart_landau_oscillator_triggers() -> None:
         sampling_rate=SAMPLING_RATE,
         omega_star=omega_cyc,
         n_permutations=200,
+        null_method="permutation",
+        nperseg_override=1024,
         rng=np.random.default_rng(7),
     )
     assert res.in_band, f"SL at supercritical μ failed in_band: peak={res.peak_freq}"
@@ -481,6 +509,8 @@ def test_reflexive_supercritical_triggers() -> None:
         welch_window=1024,
         welch_overlap=0.5,
         n_permutations=200,
+        null_method="permutation",
+        nperseg_override=1024,
         rng=np.random.default_rng(123),
     )
     assert res.in_band, (
@@ -510,6 +540,8 @@ def test_reflexive_subcritical_does_not_trigger() -> None:
         welch_window=1024,
         welch_overlap=0.5,
         n_permutations=200,
+        null_method="permutation",
+        nperseg_override=1024,
         rng=np.random.default_rng(456),
     )
     # The discriminant per the H4 decision rule: in_band must be True for a
@@ -537,6 +569,8 @@ def test_no_detect_heston_squared_returns() -> None:
         welch_window=1024,
         welch_overlap=0.5,
         n_permutations=200,
+        null_method="permutation",
+        nperseg_override=1024,
         rng=np.random.default_rng(42),
     )
     assert not res.in_band, f"Heston squared-returns incorrectly in-band: peak_freq={res.peak_freq}"

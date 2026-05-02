@@ -33,10 +33,16 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
+
+# Pin matplotlib's PDF /CreationDate so figure regenerations are byte-stable.
+# See verification_v5_repro.md §3 — without this, every regen drifts the PDF
+# hash even though the rendered drawing is bit-identical.
+os.environ.setdefault("SOURCE_DATE_EPOCH", "0")
 
 import numpy as np
 from numpy.typing import NDArray
