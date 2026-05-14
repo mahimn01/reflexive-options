@@ -102,6 +102,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Added `N815` to ruff ignore list (paper-faithful dataclass attribute names like
   `log_A`, `B_ci_low` follow the OLS-fit notation of paper §3.4).
 
+### Tests added
+- `test_n_sv_at_brent_root_is_machine_epsilon` (`tests/test_hawkes_equivalence.py`) —
+  validates the §3.9 claim that the n_SV residual at machine-precision κ★ is < 1e-12
+  (i.e., truncation in the 4-decimal published value, not solver noise). At
+  κ★_brent = 0.8964305216085703 the measured residual is 1.998e-15 (machine-ε on a
+  3×3 matrix); at the published κ★_4 = 0.8964 the residual is 3.851e-05, both
+  consistent with the paper's framing.
+- `experiments/hawkes_sv_equivalence.py` now also records `kappa_star_brent`,
+  `n_sv_at_kappa_star_brent`, and `criticality_residual_brent` in `metrics.json`,
+  so future audits can verify the §3.9 precision claim from the run artefacts
+  directly. (The pre-existing `kappa_star_grid = 0.8981928` is the first
+  sign-change index of the 1001-pt κ-grid, bounded by grid resolution ≈ 1.79e-3 —
+  not a bug, but uninformative for the precision claim; the new Brent field
+  resolves the audit gap flagged by L5-G P2-2.)
+
 ### Notes
 - **Pre-registration lock preserved.** All amendments file (A1–A7) is closed at commit
   `63078f5`; the A8 claim that briefly appeared in main.tex was an unrealised proposal,

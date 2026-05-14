@@ -35,22 +35,16 @@ Dealer-Gamma Feedback and a Pre-Registered Evaluation Framework}
 
 \begin{abstract}
 We introduce a 3D reflexive stochastic-volatility SDE $(S_t, v_t, z_t)$
-in which the spot is coupled to its own option market via a
+coupling the spot to its own option market via a
 G\^arleanu--Pedersen--Poteshman dealer-gamma drift, prove a Hopf
-bifurcation theorem with a closed-form first Lyapunov coefficient $\ell_1$
-and Hopf threshold $\kappa^\star$ for log-normal open-interest, and
-pre-register a sliced-Wasserstein-2 evaluation framework for
-RL/generative-model option-market emulators. The pre-registration is
-anchored to a git commit hash with an OpenTimestamps Bitcoin proof. The
-framework's locked SW2 ordering rule is demonstrated end-to-end on
-synthetic ground truth: a behaviour-cloned agent inside the simulator
-yields the expected ranking
-$\mathrm{SW2}(\kappa_0) < \mathrm{SW2}(2\kappa_0) <
-\mathrm{SW2}(\text{Heston})$ with non-overlapping 95\% block-bootstrap CIs.
-The 2D reduction has an upper-triangular Jacobian admitting only
-saddle-node onset (recovering \citealp{dai2025gamma}); the 3D extension is
-what unlocks the Hopf, distinguishing this work from
-\citet{halperin2025marketron}'s Marketron quasi-particle SDE.
+bifurcation theorem with closed-form first Lyapunov coefficient $\ell_1$
+and threshold $\kappa^\star$ for log-normal open-interest, and pre-register
+a sliced-$W_2$ evaluation framework for RL/generative-model option-market
+emulators (anchored to a git commit hash with an OpenTimestamps Bitcoin
+proof; locked SW2 ordering demonstrated on synthetic ground truth). We
+additionally prove a Hawkes--SV equivalence at the Hopf boundary
+identifying the empirical \citet{hardiman2013} branching ratio
+$n\approx 1$ with $\kappa = \kappa^\star$.
 \end{abstract}
 
 \section{Introduction and contributions}
@@ -89,17 +83,14 @@ models proliferate \citep{choudhary2024funvol,issa2023signature,
 jin2025diffusion,cohenreisingerwang}, evaluators that discriminate
 \emph{realism} from \emph{regime-shift sensitivity} on the \emph{same}
 agent across an environmental sweep---with pre-committed multiple-testing
-corrections---are scarce. Reflexivity itself is the high-stakes corner of
-GenAI in finance: an emulator that reproduces 2018-Volmageddon- or
-2024-yen-carry-style cycles must capture endogenous feedback, not just
-backbone SV. The closed-form $\kappa^\star$ and $\ell_1$ pin down where
-that feedback flips a stable Heston regime into an attracting limit cycle.
-\citet{halperin2025marketron} share the model-structural axis but do not
-perform the bifurcation analysis; \citet{dai2025gamma} share the
-dealer-gamma axis but produce only a saddle-node onset;
-\citet{hesuttergonon2025} share the RL-with-environmental-sweep idea but
-train separate agents per grid point. The full preprint with proofs and
-appendix A is on arXiv [anonymous repository link].
+corrections---are scarce. The closed-form $\kappa^\star$ and $\ell_1$
+pin down where dealer-gamma feedback flips a stable Heston regime into
+an attracting limit cycle. \citet{halperin2025marketron} share the
+model-structural axis but do not perform the bifurcation analysis;
+\citet{dai2025gamma} share the dealer-gamma axis but produce only a
+saddle-node onset; \citet{hesuttergonon2025} share the
+RL-with-environmental-sweep idea but train separate agents per grid
+point. Full preprint with proofs and appendix A on arXiv [anonymous].
 
 \section{The reflexive model}
 \label{sec:model}
@@ -182,6 +173,51 @@ regime $(\sigma_q{=}0.10, T_{\mathrm{eff}}{=}0.25, \kappa_v{=}2,
 $\kappa^\star = 17.81$, $\omega^\star = 1.18$~rad/yr,
 $\ell_1 = -4.81\times 10^{-1}$ (supercritical).
 
+\paragraph{Codim-2 and mean-field nods.} A $71\times 97$ grid scan in
+$(\sigma_q,\gamma)\in[0.05,0.40]\times[0.20,5.00]$ closes the codim-2
+structure: the Bautin curve $\ell_1=0$ partitions the region with
+sub-critical dominating $\sim\!5{:}1$, and the saddle-node coupling
+$\kappa_{\mathrm{SN}}\leq -1.31$ at every cell, so the
+\emph{Bogdanov--Takens locus is empty in the canonical scan window}
+(Theorem~2, full version on arXiv). The McKean--Vlasov
+mean-field limit ($n_{\mathrm{dealers}}\to\infty$) gives a strictly
+multiplicative threshold correction $\kappa^\star_{\mathrm{MV}}/\kappa^\star_{\mathrm{single}}
+= \sqrt{1+(\omega^\star\tau_G)^2}\geq 1$ depending only on the
+dimensionless product of the Hopf frequency and the dealer-gamma
+autocorrelation time (Theorem~3, full version on arXiv); operationally
+negligible
+($\sim\!3\times 10^{-4}$) at fast hedging, $2.7\%$ at $\tau_G\approx 50$
+trading days. Single-dealer therefore over-predicts instability whenever
+$\tau_G > 1/\omega^\star$.
+
+\paragraph{Hawkes--SV equivalence at the Hopf boundary.} The empirical
+\citet{hardiman2013} Hawkes branching ratio $n\approx 1$ is now the
+criticality endpoint of $\kappa^\star$. For an exponential-kernel Hawkes
+$\lambda(t) = \mu + \sum_i \alpha\,e^{-\beta(t-t_i)}$ with $n=\alpha/\beta$,
+the diffusive limit \citep[Theorem~2]{bacrydelattrehoffmannmuzy2013} gives
+$d\bar\lambda = -\beta(1-n)\bar\lambda\,dt + \sigma_\lambda\,dW$, i.e.\
+$\lambda_{\max}^{(\mathrm{Hawkes})} = -\beta(1-n)$. For our 3D skeleton
+with Jacobian $J(\kappa)$, define the SV-equivalent branching ratio
+$n_{\mathrm{SV}}(\kappa) := 1 + \lambda_{\max}(\kappa)/\beta_0$ with
+gauge $\beta_0 := \max_{\kappa\in[0,\kappa^\star]}(-\lambda_{\max}(\kappa))$.
+
+\begin{theorem}[Hawkes--SV equivalence at the Hopf boundary]
+\label{thm:hawkes-sv}
+(1)~$n_{\mathrm{SV}}(\kappa^\star) = 1$ exactly. (2)~$n_{\mathrm{SV}}$ is
+monotonically non-decreasing on $[\kappa_{\mathrm{NS}},\kappa^\star]$, where
+$\kappa_{\mathrm{NS}}$ is the node-spiral transition. (3)~For exponential-kernel
+univariate Hawkes the form is identical to (2); the two coincide at
+criticality $n=1\Leftrightarrow\lambda_{\max}=0$ \emph{independently of
+the kernel shape} \citep[\S2.4]{bacrymastromatteomuzy2015}.
+\end{theorem}
+\noindent Empirical implication: \citeauthor{hardiman2013}'s $n\approx 1$
+on E-mini 1998--2011 corresponds to $\kappa = \kappa^\star$ exactly, under
+any reflexive SV calibration whose deterministic skeleton matches the
+empirical event-rate ACF in the diffusive limit. The Phase~4 test is then
+$n_{\mathrm{SV}}(\kappa_0)\approx 1$ at the SPX-calibrated $\kappa_0$,
+within the Hardiman 5\%-CI band (proof and global-equivalence scope on
+arXiv).
+
 \section{Numerical phase diagram}
 \label{sec:phase}
 
@@ -211,15 +247,10 @@ across} the Hopf boundary---the structural mechanism we conjecture for the
 empirical $n\approx 1$ branching ratio of \citet{hardiman2013}, in the
 endogenous-feedback tradition of
 \citet{brockhommes1998,filimonov2012,bouchaud2011endo}. Khasminskii-style
-sphere-process estimates of the stochastic-Hopf shift $|\Lambda|$ on a
-$6\times 6$ $(\xi,\rho)$ grid yield $|\Lambda|\in[5\times 10^{-2},
-9\times 10^{-2}]$ with empirical scaling exponent $\hat B = 0.082$
-(95\% CI $[-0.010, 0.168]$); the \citet{engellambrasmussen2024} prediction
-$B = 2/3$ is rejected at $p \ll 0.01$ at this trivial-$G$ equilibrium,
-where the deterministic shear-stretch term ELR's leading-order analysis
-activates is identically zero. Operationally,
-$|\Lambda|\cdot\varepsilon^2\ll 1$ at calibration-noise scale: the
-deterministic $\kappa^\star$ is the relevant threshold.
+sphere-process estimates of the stochastic-Hopf shift give $|\Lambda|\in
+[5\times 10^{-2}, 9\times 10^{-2}]$ on a $6\times 6$ $(\xi,\rho)$ grid;
+$|\Lambda|\cdot\varepsilon^2\ll 1$ at calibration-noise scale, so the
+deterministic $\kappa^\star$ is the operative threshold.
 
 \section{Pre-registered evaluation framework}
 \label{sec:eval}
@@ -234,7 +265,10 @@ pre-spec $+$ applied to RL-for-finance].
 \paragraph{Primitives \& hypotheses.}
 (i) Sliced-$W_2$ \citep{bonneel2015sliced} over arbitrage-free 21-day
 surface windows---the realism metric. (ii) $\kappa$-sensitivity slope at
-calibrated $\kappa_0$---the reflexivity-importance scalar.
+calibrated $\kappa_0$---the reflexivity-importance scalar. The closed-form
+$\kappa^\star$ elasticity $\eta_{\mu_q}=+703$ makes calibration of the OI
+mean to within $\sim 5$~bp of ATM in log-strike the binding observational
+requirement for $\pm 5\%$ tolerance on $\kappa^\star$.
 \textbf{H1} (primary realism): a model-free RL agent $\pi_{\kappa_0}$
 trained inside the reflexive simulator beats four non-reflexive baselines
 on sliced-$W_2$ over rolling 21-day windows at Volmageddon, COVID, and the
@@ -246,27 +280,12 @@ sample-complexity follows \citet{manole2022sw}.
 elasticity with GP-posterior slope CI under the pre-registered RBF +
 WhiteKernel kernel (A6) and elliptic uncertainty sets \citep{ma2025robust}.
 \textbf{H4} (Hopf-frequency): Welch-PSD peak in $|r_t|$ at
-$\omega^\star\pm 20\%$ vs IAAFT \citep{schreiberschmitz1996} null. IAAFT
-calibration on Heston and AR(1) $H_0$ bounds empirical FPR at $\leq 7\%$
-at $\alpha=0.05$. On Stuart--Landau positive controls at
-$\omega^\star=1$~cyc/yr, the detector achieves $\geq 80\%$ power at
-$T \geq 512$ daily samples for $8/9$ $(\mu,\sigma)$ configurations
-(\cref{fig:h4-detector-power})---direct evidence of functionality on the
-canonical Hopf normal form to which our skeleton reduces by
-Hartman--Grobman near $\kappa^\star$. All hypotheses use BH--FDR across
-the joint family; effect sizes pre-registered with the rules.
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.92\textwidth]{figures/h4_detector_power_v2.pdf}
-\caption{\textbf{H4 detector power.} \emph{Left:} Stuart--Landau positive
-control reaches $\geq 80\%$ power at $T_{\min}=512$ for 8/9 configs.
-\emph{Right:} bare-OI reflexive simulator power is bounded by IAAFT's
-preservation of linear ACF at trivial-OI (in-band $\sim\!86\%$,
-$p$-rejection $\sim\!20\%$); discrimination requires non-trivial OI or
-larger $T$.}
-\label{fig:h4-detector-power}
-\end{figure}
+$\omega^\star\pm 20\%$ vs IAAFT \citep{schreiberschmitz1996} null; IAAFT
+calibration bounds FPR at $\leq 7\%$ at $\alpha=0.05$, and on
+Stuart--Landau positive controls the detector achieves $\geq 80\%$ power
+at $T \geq 512$ daily samples for $8/9$ $(\mu,\sigma)$ configurations.
+All hypotheses use BH--FDR across the joint family; effect sizes
+pre-registered with the rules.
 
 \paragraph{Synthetic-pipeline validation.} Before empirical contact, we
 exercise the locked pipeline on three synthetic sources:
@@ -298,15 +317,20 @@ is predictable under risk-neutral drift and constitutes a falsifiable
 Phase~4 prediction.
 
 We have introduced a 3D reflexive SV simulator, proved a Hopf bifurcation
-theorem with closed-form $\ell_1$ for log-normal OI, computed numerical
-and closed-form phase boundaries, and pre-registered the sliced-$W_2$
-+ Hopf-frequency evaluation pipeline at a verifiable git commit hash with
-an OpenTimestamps Bitcoin-anchored proof. Synthetic-ground-truth
-validation of the locked H1 protocol delivers the predicted ordering. The
-empirical SPX calibration is the Phase~4 follow-up; results---confirming
-or refuting H1--H4---are pre-committed to publication. Full appendix A
-(closed-form $\ell_1$, 13 symbols), SW2 sample-complexity, and code at
-[anonymous repository link].
+theorem with closed-form $\ell_1$ for log-normal OI, closed the codim-2
+Bautin/BT structure (BT-empty in the canonical scan window) and the
+McKean--Vlasov mean-field correction $\kappa^\star_{\mathrm{MV}}/
+\kappa^\star_{\mathrm{single}} = \sqrt{1+(\omega^\star\tau_G)^2}$ (full
+statements on arXiv), and identified the empirical
+\citet{hardiman2013} branching ratio with $\kappa^\star$ via the
+Hawkes--SV equivalence at criticality (\cref{thm:hawkes-sv}). The
+sliced-$W_2$ + Hopf-frequency evaluation pipeline is pre-registered at a
+verifiable git commit hash with an OpenTimestamps Bitcoin-anchored proof;
+synthetic-ground-truth validation of the locked H1 protocol delivers the
+predicted ordering. The empirical SPX calibration is the Phase~4
+follow-up; results---confirming or refuting H1--H4---are pre-committed to
+publication. Full appendix A (closed-form $\ell_1$, 13 symbols), proofs,
+SW2 sample-complexity, and code at [anonymous repository link].
 
 \newpage
 \bibliographystyle{plainnat}

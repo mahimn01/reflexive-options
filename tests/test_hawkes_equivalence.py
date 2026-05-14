@@ -22,8 +22,13 @@ from __future__ import annotations
 import numpy as np
 import pytest
 from numpy.typing import NDArray
+from scipy.optimize import brentq
 
-from reflexive_options.theory.bifurcation import jacobian_3d
+from reflexive_options.theory.bifurcation import (
+    jacobian_3d,
+    jacobian_eigenvalues,
+    routh_hurwitz_H,
+)
 from reflexive_options.theory.hawkes_equivalence import (
     hawkes_branching_ratio_curve,
     n_sv_at_kappa,
@@ -113,6 +118,83 @@ def test_n_sv_monotonic_in_complex_pair_regime() -> None:
     # n_SV(κ★) should be ≈ 1.
     assert result.n_sv[0] < 0.5, f"n_SV at κ = 0.2 should be far below 1, got {result.n_sv[0]:.3f}"
     assert abs(result.n_sv[-1] - 1.0) < 5e-3, f"n_SV at κ★ should be ≈ 1, got {result.n_sv[-1]:.3f}"
+
+
+def test_n_sv_at_brent_root_is_machine_epsilon() -> None:
+    """High-precision validation of the §3.9 truncation-vs-noise claim.
+
+    The paper claims:
+        |n_SV(κ★_4) - 1| = 3.85e-5 at the published 4-decimal κ★_4 = 0.8964
+        is *truncation in κ★_4*, not eigenvalue-solver noise; at the
+        higher-precision Brent root κ★ ≈ 0.8964305216, the residual drops
+        to < 1e-15 (the machine-ε floor on a 3×3 matrix).
+
+    This test pins both halves of that claim:
+
+      (a) at the published 4-decimal κ★_4, |n_SV - 1| < 1e-3 (matches the
+          published 3.85e-5 residual);
+      (b) at the Brent-located κ★ (xtol=1e-14, rtol=1e-15), |n_SV - 1| <
+          1e-12 — a tight bound; should actually be < 1e-15 if the eigen
+          machinery is clean.
+
+    A failure at (b) at the < 1e-12 level is a real finding: either the
+    n_SV implementation has a numerical bug or the §3.9 definitional
+    identity claim is wrong.
+    """
+
+    # Solve H(κ) = c_1·c_2 - c_0 = 0 via Brent at machine-precision tolerances.
+    def H(k: float) -> float:
+        eig = jacobian_eigenvalues(_jac_constant_vol(k))
+        _, _, _, h = routh_hurwitz_H(eig)
+        return h
+
+    # H changes sign across κ★ ≈ 0.896 — bracket it well inside the canonical
+    # window. H(0.85) > 0 (stable), H(0.90) < 0 (past Hopf).
+    assert H(0.85) > 0.0, "expected H(0.85) > 0 in canonical regime"
+    assert H(0.90) < 0.0, "expected H(0.90) < 0 in canonical regime"
+
+    kappa_star_brent = float(brentq(H, 0.85, 0.90, xtol=1e-14, rtol=1e-15))
+
+    # Sanity: Brent root must round-to-4-decimals to 0.8964.
+    assert round(kappa_star_brent, 4) == _KAPPA_STAR_PAPER, (
+        f"Brent root {kappa_star_brent:.10f} does not round to {_KAPPA_STAR_PAPER}"
+    )
+
+    # Compute β₀ from the canonical scan (same as the experiment runner).
+    grid = np.linspace(0.0, 2.0 * _KAPPA_STAR_PAPER, 1001).astype(np.float64)
+    result = hawkes_branching_ratio_curve(grid, _jac_constant_vol)
+    beta_zero = result.beta_zero
+    assert beta_zero > 0.0
+
+    # (a) Published 4-decimal residual: |n_SV(0.8964) - 1| < 1e-3.
+    n_at_paper = n_sv_at_kappa(_KAPPA_STAR_PAPER, _jac_constant_vol, beta_zero=beta_zero)
+    residual_paper = abs(n_at_paper - 1.0)
+    assert residual_paper < 1e-3, (
+        f"published 4-decimal residual exceeded bound: |n_SV({_KAPPA_STAR_PAPER}) - 1| = "
+        f"{residual_paper:.3e}, expected < 1e-3"
+    )
+    # Also check it is *not* tiny (it should be ~3.85e-5, the truncation in 0.8964).
+    assert residual_paper > 1e-6, (
+        f"published 4-decimal residual unexpectedly tiny ({residual_paper:.3e}); "
+        "either the truncation-vs-noise framing is wrong or β₀ has shifted"
+    )
+
+    # (b) High-precision Brent residual: |n_SV(κ★_brent) - 1| < 1e-12 (tight).
+    n_at_brent = n_sv_at_kappa(kappa_star_brent, _jac_constant_vol, beta_zero=beta_zero)
+    residual_brent = abs(n_at_brent - 1.0)
+    assert residual_brent < 1e-12, (
+        f"§3.9 machine-ε claim FAILS: |n_SV(κ★_brent={kappa_star_brent:.12f}) - 1| = "
+        f"{residual_brent:.3e}, expected < 1e-12. Truncation-vs-noise framing in the "
+        "paper is unsupported — either the n_SV implementation has a numerical bug or "
+        "the definitional-identity claim is wrong."
+    )
+
+    # Truncation dominance: the high-precision residual is many orders of
+    # magnitude smaller than the published-4-decimal residual.
+    assert residual_brent < residual_paper / 1e6, (
+        f"residual_brent ({residual_brent:.3e}) not strictly dominated by truncation "
+        f"in 4-decimal κ★ ({residual_paper:.3e}); truncation-vs-noise claim weakened"
+    )
 
 
 def test_n_sv_input_validation() -> None:

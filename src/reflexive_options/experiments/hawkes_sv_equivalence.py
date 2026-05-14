@@ -30,6 +30,7 @@ os.environ.setdefault("SOURCE_DATE_EPOCH", "0")
 import matplotlib
 import numpy as np
 from numpy.typing import NDArray
+from scipy.optimize import brentq
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -41,10 +42,15 @@ from reflexive_options.experiments._common import (
     save_metrics,
     timed,
 )
-from reflexive_options.theory.bifurcation import jacobian_3d
+from reflexive_options.theory.bifurcation import (
+    jacobian_3d,
+    jacobian_eigenvalues,
+    routh_hurwitz_H,
+)
 from reflexive_options.theory.hawkes_equivalence import (
     HawkesEquivalenceResult,
     hawkes_branching_ratio_curve,
+    n_sv_at_kappa,
 )
 
 # ---------------------------------------------------------------------------
@@ -105,24 +111,52 @@ def run(cfg: HawkesSVConfig) -> tuple[HawkesEquivalenceResult, dict[str, object]
     )
     n_at_2_kappa_star = float(np.interp(2.0 * _KAPPA_STAR, result.kappa_grid, result.n_sv))
 
+    # High-precision κ★ via Brent on H(κ) = c_1·c_2 - c_0. The grid-located
+    # κ★ is bounded by the κ-grid resolution (≈ 1.79e-3 at n_kappa=1001), so
+    # for the §3.9 truncation-vs-noise audit we record the Brent root too.
+    def _H(k: float) -> float:
+        eig = jacobian_eigenvalues(_jacobian_at(k))
+        _, _, _, h = routh_hurwitz_H(eig)
+        return h
+
+    kappa_star_brent: float | None
+    n_sv_at_kappa_star_brent: float | None
+    criticality_residual_brent: float | None
+    try:
+        kappa_star_brent = float(brentq(_H, 0.85, 0.90, xtol=1e-14, rtol=1e-15))
+        n_sv_at_kappa_star_brent = n_sv_at_kappa(
+            kappa_star_brent, _jacobian_at, beta_zero=result.beta_zero
+        )
+        criticality_residual_brent = abs(n_sv_at_kappa_star_brent - 1.0)
+    except (ValueError, RuntimeError):
+        kappa_star_brent = None
+        n_sv_at_kappa_star_brent = None
+        criticality_residual_brent = None
+
     metrics: dict[str, object] = {
         "kappa_star_paper": _KAPPA_STAR,
         "kappa_star_grid": result.kappa_star,
+        "kappa_star_brent": kappa_star_brent,
         "beta_zero": result.beta_zero,
         "kappa_at_beta_zero": result.kappa_at_beta_zero,
         "n_sv_at_kappa_star": n_at_kappa_star,
+        "n_sv_at_kappa_star_brent": n_sv_at_kappa_star_brent,
         "n_sv_at_2_kappa_star": n_at_2_kappa_star,
         "criticality_residual": abs(n_at_kappa_star - 1.0),
+        "criticality_residual_brent": criticality_residual_brent,
         "n_kappa": cfg.n_kappa,
         "kappa_max": kappa_max,
     }
     print(f"  κ★ (paper)             = {_KAPPA_STAR:.6f}")
     print(f"  κ★ (grid)              = {result.kappa_star}")
+    print(f"  κ★ (Brent, machine ε)  = {kappa_star_brent}")
     print(f"  β₀                     = {result.beta_zero:.6f}")
     print(f"  κ at β₀                = {result.kappa_at_beta_zero:.6f}")
     print(f"  n_SV(κ★)               = {n_at_kappa_star:.6f}  (target 1.0)")
+    print(f"  n_SV(κ★_brent)         = {n_sv_at_kappa_star_brent}  (target 1.0)")
     print(f"  n_SV(2·κ★)             = {n_at_2_kappa_star:.6f}  (past Hopf)")
     print(f"  |n_SV(κ★) − 1|          = {metrics['criticality_residual']:.3e}")
+    print(f"  |n_SV(κ★_brent) − 1|    = {criticality_residual_brent}")
     return result, metrics
 
 
