@@ -1117,3 +1117,313 @@ def lyapunov_coefficient_lognormal_oi(
     )
     ell_1 = compute_lyapunov_coefficient(J, B, C, omega=omega_star)
     return kappa_star, omega_star, ell_1
+
+
+# ---------------------------------------------------------------------------
+# Codim-2 bifurcation analysis (paper §3.6).
+#
+# Two codim-2 phenomena live on the boundary of the Hopf region:
+#
+#   1. Bautin (degenerate Hopf): ℓ_1(σ_q, γ) = 0 along a 1-dimensional locus
+#      in (σ_q, γ) space at fixed (μ_q, T_eff, α, β, κ_v, θ_v). Crossing this
+#      locus toggles the supercritical → sub-critical transition. Operationally:
+#      stable limit cycle → hysteresis + abrupt jumps. Local 2D normal form
+#      after centre-manifold reduction (Kuznetsov 2004 §8.3):
+#
+#          ẋ = β_1 x − ω y + a₁ x (x² + y²) + b₁ x (x² + y²)²,
+#          ẏ = ω x + β_1 y + a₁ y (x² + y²) + b₁ y (x² + y²)²,
+#
+#      with ℓ_1 = a₁/ω. The second Lyapunov coefficient ℓ_2 = b₁/ω fixes the
+#      sign of the cusp.
+#
+#   2. Bogdanov-Takens (BT): saddle-node curve coalesces with the Hopf curve.
+#      Equivalently, the Routh-Hurwitz polynomial H(κ) = 0 AND c_0(κ) = 0
+#      simultaneously at the same κ (the Jacobian acquires a double-zero
+#      eigenvalue). With c_0 linear in κ in the closed-form parameterization
+#      (G_z = 0, σ² = v), the saddle-node κ is
+#
+#          κ_SN = ½ β γ / (G_y α κ_v + G_v β γ),
+#
+#      and BT is the codim-2 condition H(κ_SN) = 0 ∧ κ_SN > 0 in (σ_q, γ).
+#      Local normal form (Kuznetsov 2004 §8.4):
+#
+#          ẋ = y,    ẏ = β_1 + β_2 x + x² ± xy,
+#
+#      generating saddle-node, Hopf, and homoclinic curves emanating from the
+#      BT point — the canonical "burst-relax" generator. For the canonical
+#      log-normal-OI specification, κ_SN < 0 throughout the physical
+#      (σ_q, γ) range because G_v < 0 dominates the denominator, so BT does
+#      not occur at any (σ_q, γ) > 0 — the dealer-gamma + leverage parameter
+#      regime is structurally Hopf-only.
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class BautinScanResult:
+    """Output of `bautin_curve_scan` over a (σ_q, γ) grid.
+
+    `ell_1_grid` carries NaN where no Hopf root exists (discriminant < 0 or
+    Routh-Hurwitz positivity violated). `regime_grid` encodes the four
+    codim-2 regions:
+
+        0  no Hopf (no positive real root of H(κ) or RH positivity violated)
+        1  supercritical Hopf (ℓ_1 < 0)
+        2  Bautin tube (|ℓ_1| ≤ bautin_tol — the numerical degenerate locus)
+        3  sub-critical Hopf (ℓ_1 > 0)
+    """
+
+    sigma_q_grid: NDArray[np.float64]
+    gamma_grid: NDArray[np.float64]
+    ell_1_grid: NDArray[np.float64]  # shape (n_gamma, n_sigma_q)
+    kappa_star_grid: NDArray[np.float64]
+    omega_star_grid: NDArray[np.float64]
+    regime_grid: NDArray[np.int8]
+
+
+def kappa_saddle_node_lognormal_oi(
+    *,
+    G_y: float,
+    G_v: float,
+    kappa_v: float,
+    alpha: float,
+    beta: float,
+    gamma: float,
+) -> float:
+    """Saddle-node coupling κ_SN for the closed-form log-normal-OI Jacobian.
+
+    The constant Routh-Hurwitz coefficient is
+
+        c_0(κ) = -κ G_y α κ_v − (κ G_v − ½) β γ
+               = -κ (G_y α κ_v + G_v β γ) + ½ β γ,
+
+    linear in κ. A saddle-node bifurcation at the equilibrium occurs where
+    c_0(κ_SN) = 0 (the Jacobian determinant vanishes), giving
+
+        κ_SN = ½ β γ / (G_y α κ_v + G_v β γ).
+
+    For the natural log-normal OI specification (G_y > 0, G_v < 0), the
+    denominator can be of either sign; if G_v β γ dominates G_y α κ_v in
+    magnitude, κ_SN < 0 and the saddle-node is unphysical.
+
+    Returns:
+        κ_SN. Note this may be negative or non-finite — caller must check
+        sign before treating as a valid bifurcation locus.
+
+    Raises:
+        ValueError if the denominator is exactly zero (degenerate parameter
+        configuration).
+    """
+    if alpha <= 0.0:
+        raise ValueError(f"alpha must be > 0, got {alpha}")
+    if kappa_v <= 0.0:
+        raise ValueError(f"kappa_v must be > 0, got {kappa_v}")
+    denom = G_y * alpha * kappa_v + G_v * beta * gamma
+    if abs(denom) < 1e-300:
+        raise ValueError(
+            f"saddle-node denominator vanishes (G_y α κ_v + G_v β γ = {denom:.3e}); "
+            "BT-degenerate parameter configuration"
+        )
+    return 0.5 * beta * gamma / denom
+
+
+def bogdanov_takens_residual_lognormal_oi(
+    *,
+    sigma_q: float,
+    gamma: float,
+    mu_q: float,
+    T_eff: float,
+    kappa_v: float,
+    theta_v: float,
+    alpha: float,
+    beta: float,
+    a_star: float,
+    v_star: float | None = None,
+    coupling_units: float = 1.0,
+    rate: float = 0.0,
+    dividend: float = 0.0,
+) -> tuple[float, float]:
+    """Joint BT residual at (σ_q, γ): (κ_SN, H(κ_SN)).
+
+    Bogdanov-Takens occurs iff κ_SN > 0 AND H(κ_SN) = 0 simultaneously. Both
+    are needed: a positive saddle-node coupling that also annihilates the
+    Routh-Hurwitz quadratic.
+
+    Returns:
+        (kappa_SN, H_at_kappa_SN). `kappa_SN <= 0` means the saddle-node curve
+        is unphysical at this (σ_q, γ); `H_at_kappa_SN = 0` is the BT
+        condition itself.
+    """
+    if v_star is None:
+        v_star = theta_v
+    p = G_lognormal_oi_partials(
+        a_star=a_star,
+        v_star=v_star,
+        mu_q=mu_q,
+        sigma_q=sigma_q,
+        T_eff=T_eff,
+        coupling_units=coupling_units,
+        rate=rate,
+        dividend=dividend,
+    )
+    G_y = p["G_a"]
+    G_v = p["G_v"]
+    try:
+        k_sn = kappa_saddle_node_lognormal_oi(
+            G_y=G_y, G_v=G_v, kappa_v=kappa_v, alpha=alpha, beta=beta, gamma=gamma
+        )
+    except ValueError:
+        return float("nan"), float("nan")
+
+    A_total = alpha + kappa_v
+    L = beta * gamma
+    A2 = G_y * G_y * A_total
+    A1 = G_v * L - G_y * A_total * A_total
+    A0 = alpha * kappa_v * A_total - 0.5 * L
+    H_at = A2 * k_sn * k_sn + A1 * k_sn + A0
+    return float(k_sn), float(H_at)
+
+
+def bautin_curve_scan(
+    *,
+    sigma_q_grid: NDArray[np.float64],
+    gamma_grid: NDArray[np.float64],
+    mu_q: float,
+    T_eff: float,
+    kappa_v: float,
+    theta_v: float,
+    alpha: float,
+    beta: float,
+    a_star: float,
+    v_star: float | None = None,
+    coupling_units: float = 1.0,
+    rate: float = 0.0,
+    dividend: float = 0.0,
+    bautin_tol: float = 1e-3,
+) -> BautinScanResult:
+    """Sweep ℓ_1 over a (σ_q, γ) grid and classify each cell into the four
+    codim-2 regions of paper §3.6.
+
+    Args:
+        sigma_q_grid: ascending σ_q values (1D).
+        gamma_grid: ascending γ values (1D).
+        bautin_tol: cells with |ℓ_1| ≤ bautin_tol are flagged as belonging to
+            the (numerically thickened) Bautin curve. The default 1e-3 is a
+            sensible visual width at the canonical scale; reduce for a thinner
+            curve, increase to highlight the codim-1 transition zone.
+        Other args: as in `lyapunov_coefficient_lognormal_oi`.
+
+    Returns:
+        BautinScanResult with shape (n_gamma, n_sigma_q) arrays and a
+        regime classification suitable for direct rendering as a phase
+        diagram.
+
+    Raises:
+        ValueError if the grids are not strictly ascending.
+    """
+    sq = np.asarray(sigma_q_grid, dtype=np.float64)
+    gam = np.asarray(gamma_grid, dtype=np.float64)
+    if sq.ndim != 1 or gam.ndim != 1:
+        raise ValueError("sigma_q_grid and gamma_grid must be 1D")
+    if not (np.all(np.diff(sq) > 0) and np.all(np.diff(gam) > 0)):
+        raise ValueError("sigma_q_grid and gamma_grid must be strictly ascending")
+    if bautin_tol <= 0:
+        raise ValueError(f"bautin_tol must be > 0, got {bautin_tol}")
+
+    n_g = len(gam)
+    n_s = len(sq)
+    ell = np.full((n_g, n_s), np.nan, dtype=np.float64)
+    ks = np.full((n_g, n_s), np.nan, dtype=np.float64)
+    om = np.full((n_g, n_s), np.nan, dtype=np.float64)
+    regime = np.zeros((n_g, n_s), dtype=np.int8)
+
+    for i, g in enumerate(gam):
+        for j, s in enumerate(sq):
+            try:
+                k_star, omega_star, ell_1 = lyapunov_coefficient_lognormal_oi(
+                    mu_q=mu_q,
+                    sigma_q=float(s),
+                    T_eff=T_eff,
+                    kappa_v=kappa_v,
+                    theta_v=theta_v,
+                    alpha=alpha,
+                    beta=beta,
+                    gamma=float(g),
+                    a_star=a_star,
+                    v_star=v_star,
+                    coupling_units=coupling_units,
+                    rate=rate,
+                    dividend=dividend,
+                )
+            except ValueError:
+                regime[i, j] = 0  # no Hopf
+                continue
+            ks[i, j] = k_star
+            om[i, j] = omega_star
+            ell[i, j] = ell_1
+            if abs(ell_1) <= bautin_tol:
+                regime[i, j] = 2  # Bautin tube
+            elif ell_1 < 0:
+                regime[i, j] = 1  # supercritical
+            else:
+                regime[i, j] = 3  # sub-critical
+
+    return BautinScanResult(
+        sigma_q_grid=sq,
+        gamma_grid=gam,
+        ell_1_grid=ell,
+        kappa_star_grid=ks,
+        omega_star_grid=om,
+        regime_grid=regime,
+    )
+
+
+def find_bautin_anchors(
+    scan: BautinScanResult,
+    *,
+    n_anchors: int = 6,
+) -> list[tuple[float, float, float]]:
+    """Extract anchor (σ_q, γ, κ★) triples on the Bautin curve ℓ_1 = 0.
+
+    For each γ row of the scan grid, locate the σ_q at which ℓ_1 crosses zero
+    via linear interpolation between adjacent grid cells of opposite sign.
+    Returns up to `n_anchors` anchors evenly spaced over the γ range that
+    contains a sign change.
+
+    The returned κ★ at each anchor is also linearly interpolated, giving a
+    convenient summary table of the codim-2 locus.
+    """
+    sq = scan.sigma_q_grid
+    gam = scan.gamma_grid
+    ell = scan.ell_1_grid
+    ks = scan.kappa_star_grid
+
+    crossings: list[tuple[float, float, float]] = []
+    for i, g in enumerate(gam):
+        row = ell[i, :]
+        # Find first sign change in this row (ignore NaN cells)
+        for j in range(len(sq) - 1):
+            a, b = row[j], row[j + 1]
+            if not (np.isfinite(a) and np.isfinite(b)):
+                continue
+            if a == 0.0:
+                crossings.append((float(sq[j]), float(g), float(ks[i, j])))
+                break
+            if (a < 0) != (b < 0):  # sign change
+                t = -a / (b - a)
+                sq_cross = float(sq[j] + t * (sq[j + 1] - sq[j]))
+                k_a, k_b = ks[i, j], ks[i, j + 1]
+                if np.isfinite(k_a) and np.isfinite(k_b):
+                    k_cross = float(k_a + t * (k_b - k_a))
+                else:
+                    k_cross = float("nan")
+                crossings.append((sq_cross, float(g), k_cross))
+                break
+
+    if not crossings:
+        return []
+
+    # Subsample to n_anchors evenly across the γ range that has crossings.
+    if len(crossings) <= n_anchors:
+        return crossings
+    idx = np.linspace(0, len(crossings) - 1, n_anchors).round().astype(int)
+    return [crossings[i] for i in idx]

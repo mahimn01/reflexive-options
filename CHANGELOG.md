@@ -5,7 +5,108 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Unreleased] — v0.3.2 in-flight (2026-05-14)
+
+### Added — substantive theoretical extensions
+- **Theorem 2 (Hawkes-SV equivalence at the Hopf boundary)** — main.tex §3.7. Formal
+  identification of the Hardiman 2013 critical branching ratio $n \approx 1$ with
+  our continuous-time Hopf threshold $\kappa^\star$, via the Bacry-Delattre-Hoffmann-Muzy
+  diffusive-limit identity and the kernel-universal stability boundary. Numerical
+  anchor at canonical regime: $n_{\mathrm{SV}}(\kappa^\star) = 1$ exactly (definitional
+  identity). Implementation: `src/reflexive_options/theory/hawkes_equivalence.py`,
+  runner `experiments/hawkes_sv_equivalence.py`. New tests:
+  `tests/test_hawkes_equivalence.py` (3 tests).
+- **Theorem 3 (BT locus empty in canonical scan window)** — main.tex §3.6. Closed-form
+  argument that $G_v < 0$ uniformly dominates $G_y \alpha \kappa_v / (\beta\gamma)$
+  on the scanned $(\sigma_q, \gamma) \in [0.05, 0.40] \times [0.20, 5.00]$ window,
+  forcing $\kappa_{\mathrm{SN}} < 0$ and excluding Bogdanov-Takens bifurcations there.
+  Falsifiable economic prediction: no homoclinic burst-relax dynamics from this model
+  at fixed parameters. Implementation: `experiments/codim2_analysis.py`,
+  `theory/bifurcation.py` extensions. New tests: `tests/test_codim2_bifurcation.py`
+  (8 tests).
+- **Bautin curve** with 6 anchors at the canonical specification, characterising the
+  supercritical → sub-critical transition in $(\sigma_q, \gamma)$ space (main.tex §3.6,
+  Table tab:bautin-anchors).
+- **Closed-form ℓ_1 (Eq. 19 + Appendix A)** — symbolic Kuznetsov-formula expansion in
+  the 13-symbol parameter space, verified to $\sim 10^{-13}$ relative against the
+  numerical pipeline at the canonical regime. New `notebooks/closed_form_ell1_derivation.py`
+  step 8 + auto-generated `paper/figures/ell1_closed_form.tex` (10.6 KB).
+- **Empirical $|\Lambda| \sim |\rho\xi|^B$ scaling fit** — main.tex §3.4. OLS on a
+  $6 \times 6$ $(\xi, \rho)$ grid yields $\hat B = 0.082$ (95% CI $[-0.010, 0.168]$),
+  empirically refuting the Engel-Lamb-Rasmussen prediction $B = 2/3$ at this regime
+  ($p \ll 0.01$); structural reason is the trivial $G \equiv 0$ equilibrium where the
+  shear-stretching term $\partial_a v$ vanishes. New experiment
+  `experiments/lambda_scaling.py`; figure `figures/lambda_scaling_loglog.pdf`.
+- **Limit-cycle numerical validation past $\kappa^\star$** — main.tex §3.4. Deterministic
+  skeleton at $\kappa = 1.05\kappa^\star$ converges to a closed orbit; measured period
+  $T = 10.561$ yr matches Hopf prediction $T_\kappa = 10.977$ yr to 3.79% (within the
+  leading-order normal-form correction). New experiment
+  `experiments/limit_cycle_supercritical.py`; figure `figures/limit_cycle_supercritical.pdf`.
+- **H1 synthetic-pipeline end-to-end validation** — main.tex §5.4. SW2 ordering on
+  simulator-vs-simulator data: SW2(κ_0) = 0.005 < SW2(2κ_0) = 0.034 < SW2(Heston) = 0.054
+  with disjoint bootstrap CIs. The H1 protocol is now demonstrated working on synthetic
+  ground truth before the empirical SPX target arrives. New experiment
+  `experiments/h1_synthetic_validation.py`.
+- **2D bimodality on (log S, v) joint density** — main.tex §7. H_bimod was refuted on
+  the 1D log-S marginal at $\gamma = 0$; the 2D PCA-projected dip statistic at
+  $\kappa = 1.05\kappa^\star_{\mathrm{env}}$ flips to *supported* ($p = 0.033$) on a
+  $\sim 79\%$-survival sample. Result is preliminary and selection-conditioned. New
+  experiment `experiments/h_bimod_2d_scan.py`.
+- **A priori mechanism-relevant cell restriction** — main.tex §6.1. Defensible
+  restriction to long-horizon shape moments + within-envelope cells; in-sample 7/10
+  matches ($p = 0.172$), OOS 4/8 ($p = 0.637$). Does not clear $p < 0.05$ at the present
+  budget; the restricted result is reported as a transparent secondary statistic and the
+  original 8/24 is retained as headline.
+- **H4 detector power on Stuart-Landau positive control** — main.tex §5. Achieves
+  $\geq 80\%$ peak power at $T = 512$ for 8/9 $(\mu, \sigma)$ configurations under the
+  locked IAAFT-surrogate $\alpha = 0.05$ rule; non-monotone in $T$ (degrades at
+  $T \in \{1024, 2048\}$). New script `scripts/h4_power_realistic.py`; figure
+  `figures/h4_detector_power_v2.pdf`.
+- **Sliced-W2 sample-complexity table** — main.tex §5. $n_{\min} \approx 4{,}000$
+  windows for $\pm 10\%$ bootstrap CI half-width; the implication for H1 is that each
+  event contributes $\sim 280$ windows giving $\sim 23\%$ ratio, requiring inter-baseline
+  SW2 gap $\geq 0.46 \cdot \mathrm{SW2}_{\mathrm{true}}$ for discriminability. New script
+  `scripts/sw2_sample_complexity.py`; figure `figures/sw2_sample_complexity.pdf`.
+- **GP-CI coverage audit** — `scripts/gp_ci_coverage_audit.py`. Confirms RBF nominal-95\%
+  coverage at 91.5–100\% in the σ=0.10 single-seed regime, dropping to 67–94\% under
+  σ=0.05 multi-seed conditions. Documented in main.tex §5 H2 paragraph as a known
+  finite-sample limitation under the A6-locked RBF kernel.
+- **Manuscript variants** — `paper/variants/neurips_workshop/main.tex` (4-page body for
+  NeurIPS GenAI Finance Workshop) and `paper/variants/icaif/main.tex` (5-page body,
+  double-blind ACM sigconf for ICAIF 2026). Both reuse master figures + bib via symlinks.
+
+### Fixed — adversarial-grill findings (L2-G + L3-G)
+- Stripped fictional "Matérn-3/2 kernel per pre-reg amendment A8" claim from main.tex
+  and both variants — A1–A7 are locked at commit `63078f5` and A6 explicitly fixes
+  the H2 kernel as RBF + WhiteKernel; the Matérn experiment showed vacuous CIs
+  (non-shrinking finite-difference variance from a once-differentiable kernel).
+- Corrected the $|\Lambda(\kappa^\star)|$ scan band from $[5\!\times\!10^{-2},
+  9\!\times\!10^{-2}]$ to the actual $[4.8\!\times\!10^{-2}, 1.21\!\times\!10^{-1}]$
+  (median $\approx 7.3\!\times\!10^{-2}$).
+- Reframed H4 power claim from "≥80% at $T \geq 512$" to "≥80% peak power at $T = 512$
+  specifically; non-monotone in $T$" (6/9 at $T = 1024$, 5/9 at $T = 2048$).
+- Resolved the $\kappa^\star$ vs $\kappa^\star_{\mathrm{env}}$ notation collision in
+  the 2D bimodality discussion (canonical Hopf threshold $\approx 0.896$ vs the
+  $\sim 3.9 \times 10^{-9}$ empirical-magnitude stability envelope).
+- Corrected H_bimod 2D survival fraction from "~1.6%" to actual ~79%
+  ($n = 15{,}769$ surviving cells out of $20{,}000$).
+- Reframed Theorem 2 numerical anchor: the $|n_{\mathrm{SV}}(\kappa^\star_4) - 1| =
+  3.85 \times 10^{-5}$ residual is the truncation error in the published 4-decimal
+  $\kappa^\star_4 = 0.8964$, not eigenvalue-solver noise; at machine-precision $\kappa^\star$
+  the identity is exact ($< 10^{-15}$).
+- Added Stuart-Landau citation `kuznetsov2004` in the H4 paragraph.
+- Fixed `runs/h_bimod_2d_scan/` → `runs/h_bimod_2d/` directory reference in 2D KDE caption.
+- Deleted redundant `paper/abstract.md` (main.tex `\begin{abstract}` is canonical).
+- Coverage config: experiment-runner CLI scripts added to `[tool.coverage.run].omit`
+  (smoke-tested through integration tests rather than unit-coverage instrumentation).
+  Added `N815` to ruff ignore list (paper-faithful dataclass attribute names like
+  `log_A`, `B_ci_low` follow the OLS-fit notation of paper §3.4).
+
+### Notes
+- **Pre-registration lock preserved.** All amendments file (A1–A7) is closed at commit
+  `63078f5`; the A8 claim that briefly appeared in main.tex was an unrealised proposal,
+  not a registered amendment.
+- **PDF**: 29 pages from 14 baseline. 9 figures. New Appendix A (closed-form $\ell_1$).
 
 ## [0.3.1] - 2026-04-22
 

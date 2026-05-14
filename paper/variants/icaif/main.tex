@@ -1,0 +1,548 @@
+% ICAIF 2026 variant of
+%   Reflexivity in Options Markets: A Stochastic-Volatility Model with
+%   Dealer-Gamma Feedback, Hopf Bifurcation Calculus, and a Pre-Registered
+%   Evaluation Framework.
+% Compressed from paper/main.tex (23 pages, single-column article) to the
+% ACM SIGCONF 8-page double-blind format.
+\documentclass[sigconf, review, anonymous]{acmart}
+
+% --- ICAIF / ACM template metadata ---
+\copyrightyear{2026}
+\acmYear{2026}
+\setcopyright{none}
+\acmConference[ICAIF '26]{7th ACM International Conference on AI in Finance}{November 2026}{Anonymous Location}
+\acmISBN{}
+\acmDOI{}
+\settopmatter{printacmref=false, printccs=false, printfolios=true}
+\renewcommand\footnotetextcopyrightpermission[1]{}
+\pagestyle{plain}
+
+% acmart already loads: amsmath, amsthm, microtype, booktabs, graphicx,
+% natbib, hyperref. Adding anything that re-loads them creates a clash.
+\usepackage{mathtools}
+\usepackage{bm}
+\usepackage[capitalize, nameinlink]{cleveref}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{assumption}{Assumption}
+
+\begin{document}
+
+\title{Reflexivity in Options Markets: A Stochastic-Volatility Model
+with Dealer-Gamma Feedback, Hopf Bifurcation Calculus,
+and a Pre-Registered Evaluation Framework}
+
+\author{Anonymous Author(s)}
+\affiliation{%
+  \institution{Anonymous Institution}
+  \city{Anonymous}
+  \country{Anonymous}
+}
+\email{anonymous@example.org}
+% \orcid{0000-0000-0000-0000} % anonymized for double-blind review
+
+\renewcommand{\shortauthors}{Anonymous}
+
+\begin{abstract}
+We study a continuous-time Heston-like stochastic-volatility model in
+which the underlying spot price is coupled to its own option market
+through a dealer-gamma feedback channel, derived from the open-interest
+grid via a G\^arleanu--Pedersen--Poteshman \citep{garleanu2009demand}
+demand-pressure mapping. The model state is three-dimensional---spot
+$S_t$, instantaneous variance $v_t$, and a low-pass-filtered log-spot
+memory variable $z_t$---and reduces to standard time-dependent Heston
+\citep{heston1993} at zero coupling. We synthesise three previously
+separate ingredients: (i) a continuous-time SV backbone with explicit
+dealer-gamma drift; (ii) a formal Hopf bifurcation calculus on the
+deterministic skeleton with first Lyapunov coefficient $\ell_1$ and
+Khasminskii-style stochastic shift $\Lambda$; and (iii) a pre-registered
+sliced-Wasserstein-2 evaluation protocol for RL-trained derivatives
+agents. For a representative dimensionless calibration we obtain
+$\kappa^\star \approx 0.8964$, $\omega^\star \approx 0.5724$~rad/yr, and
+$\ell_1 \approx -0.025 < 0$ (supercritical: an attracting limit cycle
+in volatility is born for $\kappa > \kappa^\star$). The 2D reduction has
+an upper-triangular Jacobian and admits only saddle-node onset,
+recovering the discrete-time recursion of \citet{dai2025gamma}; the 3D
+extension is what unlocks the Hopf, distinguishing this work from
+\citet{halperin2025marketron}'s Marketron quasi-particle SDE. For
+log-normal open-interest in moneyness we obtain a closed-form Hopf
+threshold and a closed-form $\ell_1$, exposing a parametric phase
+boundary in $(\sigma_q, \gamma)$ space.
+\end{abstract}
+
+\begin{CCSXML}
+<ccs2012>
+   <concept>
+       <concept_id>10010147.10010257.10010258.10010260.10010271</concept_id>
+       <concept_desc>Computing methodologies~Modeling and simulation</concept_desc>
+       <concept_significance>500</concept_significance>
+   </concept>
+   <concept>
+       <concept_id>10003752.10003809.10010031</concept_id>
+       <concept_desc>Theory of computation~Stochastic processes</concept_desc>
+       <concept_significance>300</concept_significance>
+   </concept>
+   <concept>
+       <concept_id>10010147.10010178.10010179</concept_id>
+       <concept_desc>Computing methodologies~Reinforcement learning</concept_desc>
+       <concept_significance>300</concept_significance>
+   </concept>
+</ccs2012>
+\end{CCSXML}
+
+\ccsdesc[500]{Computing methodologies~Modeling and simulation}
+\ccsdesc[300]{Theory of computation~Stochastic processes}
+\ccsdesc[300]{Computing methodologies~Reinforcement learning}
+
+\keywords{Reflexivity, dealer gamma, Hopf bifurcation, stochastic
+volatility, pre-registration, sliced Wasserstein, RL for finance}
+
+\maketitle
+
+\section{Introduction}
+\label{sec:intro}
+
+Real options markets exhibit endogenous volatility cycles that pure
+stochastic-volatility (SV) models cannot reproduce. The empirical anchor
+is \citet{hardiman2013}, who fit Hawkes-process branching ratios to
+E-mini mid-price changes over 1998--2011 and find $n \approx 1$
+throughout---the precise critical edge between sub- and super-criticality
+of endogenous events. \citet{soros2009reflexivity} and
+\citet{bouchaud2011endo} are the conceptual antecedents;
+\citet{filimonov2012} formalised the reflexivity-quantification programme
+that \citet{hardiman2013} executed. We ask what continuous-time mechanism
+produces this critical reflexivity, and how the analytical structure that
+quantifies it should be evaluated against historical surface dynamics.
+
+We contribute the following.
+\begin{itemize}
+\item A 3D reflexive SV simulator $(S_t, v_t, z_t)$ with explicit
+dealer-gamma feedback derived from the option open-interest grid via the
+\citet{garleanu2009demand} demand-pressure mapping. The variance backbone
+is Heston \citep{heston1993}; the memory equation
+$\dot z = -\alpha z + \beta \log(S/S_0)$ closes the leverage feedback
+channel that the 2D reduction lacks.
+\item A Hopf bifurcation theorem (Theorem~\ref{thm:hopf}) for the
+deterministic skeleton at $\kappa^\star$ given by Liu's criterion, with
+closed-form first Lyapunov coefficient $\ell_1$ and closed-form Hopf
+threshold for log-normal open-interest in moneyness
+(Eqs.~\ref{eq:lognorm-kappastar}--\ref{eq:lognorm-ell1}).
+\item A numerical phase diagram in $(\xi, \rho, \sigma_v)$ together with
+the Khasminskii-style stochastic-Hopf shift $\Lambda$ and a parametric
+phase boundary in $(\sigma_q, \gamma)$ space.
+\item A pre-registration of the empirical evaluation pipeline
+(sliced-$W_2$ over 21-day surface windows, $\kappa$-sensitivity slope,
+Hopf-frequency spectral test) at a verifiable git commit hash with an
+OpenTimestamps Bitcoin-anchored proof, in the spirit of
+\citet{camerer2018} adapted for computational finance.
+\end{itemize}
+
+\paragraph{Closest precedents.} \citet{halperin2025marketron} (Marketron)
+share the model-structural axis but do not perform the bifurcation
+analysis. \citet{dai2025gamma} share the dealer-gamma axis but produce a
+saddle-node onset. \citet{hesuttergonon2025} (NeurIPS 2025) share the
+RL-with-environmental-sweep idea but train separate agents per grid point
+rather than reporting the slope at an anchor. The continuous-time HAM-Hopf
+precedents \citep{heli2009,chiarellahehommes2006} use delay-differential
+heterogeneous-belief models without an options-grid feedback channel;
+\citet{brockhommeswagener2009}'s ``more hedging instruments may
+destabilize markets'' result is the methodological template for
+derivative-driven Neimark--Sacker bifurcations. The hedger-flow-feedback
+foundations are
+\citet{freystremme1997,sircarpapanicolaou1998,platenschweizer1998}.
+
+\section{The reflexive model}
+\label{sec:model}
+
+Let $S_t$ be the underlying spot price, $v_t$ the instantaneous variance,
+and $z_t$ a memory variable encoding low-pass-filtered price history.
+The reflexive system is
+\begin{align}
+\frac{dS_t}{S_t} &= \bigl(\mu + \kappa\, G(S_t, z_t, v_t)\bigr)\, dt + \sigma(S_t, v_t)\, dW^S_t, \label{eq:reflexive-S}\\
+dv_t &= \bigl(\kappa_v(\theta_v - v_t) + \gamma\, z_t\bigr)\, dt + \xi \sqrt{v_t}\, dW^v_t, \label{eq:reflexive-v}\\
+dz_t &= \bigl(-\alpha\, z_t + \beta\, \log(S_t / S_0)\bigr)\, dt, \label{eq:reflexive-z}
+\end{align}
+with $d\langle W^S, W^v\rangle = \rho\, dt$, reflexive coupling
+$\kappa \geq 0$, leverage strength $\gamma \geq 0$, memory decay
+$\alpha > 0$, $\beta$ dimensionless, and $G$ the aggregate dealer-gamma
+exposure derived from the OI grid:
+\begin{equation}
+G(S, t) \;=\; \sum_{K, T} q_{K, T}\,\Gamma_{K, T}(S, t)\,\mathrm{sign}(K, T),
+\label{eq:G-aggregator}
+\end{equation}
+following the SqueezeMetrics dealer-net convention
+\citep{squeezemetrics2017}. When $\kappa = \gamma = 0$ the system collapses
+to standard Heston \citep{heston1993} (verified numerically). For variance
+we use the full-truncation Euler scheme of \citet{lordkoekkoekvandijk2010}.
+
+\paragraph{Why three states.} A 2D specification (drop $z_t$ and the
+$\gamma z$ term) has a Jacobian
+$J_{2D}=\bigl(\begin{smallmatrix}a(\kappa)&b(\kappa)\\0&-\kappa_v\end{smallmatrix}\bigr)$,
+upper triangular with real eigenvalues: only saddle-node /
+transcritical bifurcations are admissible. To Hopf, the feedback must flow
+in both directions; the leverage channel $\gamma z$ together with the
+auxiliary memory equation \eqref{eq:reflexive-z} is the minimal structural
+modification that supplies it---structurally analogous to the memory
+variable in Marketron \citep{halperin2025marketron} though with very
+different mechanistic content.
+
+\section{Hopf bifurcation theorem and closed-form \texorpdfstring{$\ell_1$}{ell-1}}
+\label{sec:hopf}
+
+\subsection{Equilibria, Jacobian, Liu criterion}
+\label{sec:hopf-jac}
+
+Drop the Brownian terms and work in log-deviation variables
+$(y, u, z) = (\log(S/S^\star), v - \theta_v, z - z^\star)$ around the
+equilibrium $(S^\star, \theta_v, z^\star)$ defined by
+\begin{equation}
+\mu - \tfrac{1}{2}\sigma^2(S^\star, \theta_v) + \kappa\, G(S^\star, z^\star, \theta_v) = 0, \quad z^\star = \tfrac{\beta}{\alpha}\log(S^\star/S_0).
+\end{equation}
+The deterministic skeleton becomes $\dot{\bm{x}} = J(\kappa)\bm{x}$ with
+\begin{equation}
+J(\kappa) = \begin{pmatrix}
+a(\kappa) & b(\kappa) & \kappa\, G_z \\
+0 & -\kappa_v & \gamma \\
+\beta & 0 & -\alpha
+\end{pmatrix},
+\label{eq:jacobian}
+\end{equation}
+where $a(\kappa) = \kappa G_x - \tfrac{1}{2}\partial_x\sigma^2$,
+$b(\kappa) = \kappa G_v - \tfrac{1}{2}\partial_v\sigma^2$. The
+characteristic polynomial is
+$P(\lambda;\kappa) = \lambda^3 + c_2\lambda^2 + c_1\lambda + c_0$ with
+$c_2 = -a + \kappa_v + \alpha$, $c_1 = -a\kappa_v - a\alpha + \kappa_v\alpha
+- \kappa G_z\beta$, $c_0 = -a\kappa_v\alpha - \beta(\kappa G_z\kappa_v + b\gamma)$.
+A 3D system Hopfs iff (Liu's criterion):
+\begin{equation}
+c_2 > 0,\ c_0 > 0,\ H(\kappa) := c_1 c_2 - c_0 = 0,\ H'(\kappa) \neq 0.
+\label{eq:hopf-condition}
+\end{equation}
+The Hopf threshold is
+$\kappa^\star = \{\kappa>0: H(\kappa) = 0,\ H'(\kappa)\neq 0,\ c_2,c_0 >0\}$.
+At $\kappa^\star$, $J$ has imaginary pair
+$\lambda_\pm = \pm i\omega^\star = \pm i\sqrt{c_1(\kappa^\star)}$ plus
+real eigenvalue $\lambda_3 = -c_2(\kappa^\star) < 0$.
+
+\subsection{Theorem 1}
+\label{sec:hopf-thm}
+
+\begin{theorem}[Hopf bifurcation in the gamma-coupled SV skeleton]
+\label{thm:hopf}
+Let the deterministic system (\ref{eq:reflexive-S}--\ref{eq:reflexive-z})
+satisfy:
+(A1) $G,\sigma^2 \in C^3$ with $\sigma^2$ bounded below by a positive
+constant;
+(A2) a locally unique equilibrium for every
+$\kappa \in [0, \kappa_{\max}]$ with non-degenerate linearisation
+(multiple equilibria may exist globally; analysis is local);
+(A3) $\kappa \mapsto (a(\kappa), G_z, G_v)$ in $C^3$;
+(A4) there exists $\kappa^\star \in (0, \kappa_{\max})$ satisfying
+\eqref{eq:hopf-condition} with $\omega^\star := \sqrt{c_1(\kappa^\star)} > 0$;
+(A5) $\ell_1(\kappa^\star) \neq 0$ \citep[eq.~3.20]{kuznetsov2004}.
+Then the equilibrium undergoes a Hopf bifurcation at $\kappa = \kappa^\star$:
+(1) for $\kappa$ in a one-sided neighbourhood of $\kappa^\star$ there is a
+unique smooth family of periodic orbits $\Gamma_\kappa$ of period
+$T_\kappa = 2\pi/\omega^\star + O(\kappa-\kappa^\star)$ and amplitude
+$\propto \sqrt{|\kappa-\kappa^\star|}$;
+(2) orbits are stable iff $\ell_1(\kappa^\star) < 0$ (supercritical);
+(3) on $\Gamma_\kappa$, $u_t = v_t-\theta_v$ oscillates with amplitude
+$\propto \sqrt{|\kappa-\kappa^\star|}$, providing endogenous volatility
+cycles.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+The eigenvalue pair $\lambda_\pm(\kappa)$ is smooth near $\kappa^\star$
+by the implicit function theorem on $P$. Routh--Hurwitz gives
+$\mathrm{Re}\,\lambda_\pm(\kappa^\star) = 0$, and $H'(\kappa^\star) \neq 0$
+translates to $\frac{d}{d\kappa}\mathrm{Re}\,\lambda_\pm \neq 0$. The
+centre manifold theorem \citep[Thm.~5.4]{kuznetsov2004} gives a 2D
+invariant manifold tangent to the eigenspace of $\pm i\omega^\star$;
+conjugation to Poincar\'e normal form and \citet[Thm.~3.3]{kuznetsov2004}
+yield (1)--(3).
+\end{proof}
+
+\paragraph{Numerical anchor.} For
+$\{G_x, G_v, G_z\}{=}\{0.5,{-}0.5,{-}0.5\}$, $\alpha{=}0.5$/yr,
+$\beta{=}1$, $\gamma{=}0.5$, $\kappa_v{=}2$/yr (constant-vol surrogate):
+$\kappa^\star {=} 0.8964$, $\omega^\star {=} 0.5724$~rad/yr,
+$\lambda_3 {=} -2.052$, $\ell_1 {=} -2.53\times 10^{-2}$ (supercritical).
+Integrating the deterministic skeleton at $\kappa = 1.05\,\kappa^\star$
+from random initial conditions, the trajectory converges to a closed
+orbit whose measured period $T_{\mathrm{measured}} = 10.561$~yr matches
+the linear prediction $2\pi/\omega^\star = 10.977$~yr to 3.79\%---within
+the leading-order $\mathcal{O}(\kappa-\kappa^\star)$ Hopf-normal-form
+correction.
+
+\subsection{Closed-form \texorpdfstring{$\kappa^\star$ and $\ell_1$}{kappa-star and ell-1} for log-normal OI}
+\label{sec:hopf-closed-form}
+
+For log-normal open-interest in log-strike,
+$q(\log K) \propto \exp(-(\log K - \mu_q)^2/(2\sigma_q^2))$, the
+Gaussian-product identity collapses the OI integral to
+\begin{equation}
+G(a, v) \;=\; \mathcal{C}(v)\cdot e^{-a}\cdot \exp\!\bigl(-\tfrac{(a - m(v))^2}{2\,\tau^2(v)}\bigr),
+\label{eq:G-closed-form}
+\end{equation}
+with $\mathcal{C}(v) = \kappa_u e^{-q_{\mathrm{div}}T_{\mathrm{eff}}}/\sqrt{2\pi\tau^2(v)}$,
+$\tau^2(v) = \sigma_q^2 + v\,T_{\mathrm{eff}}$,
+$m(v) = \mu_q - (r - q_{\mathrm{div}} + \tfrac{1}{2}v)T_{\mathrm{eff}}$.
+With $G_z = 0$ and $\sigma^2 = v$, $H(\kappa) = c_1 c_2 - c_0$
+degree-collapses from cubic to quadratic; writing $A = \alpha + \kappa_v$,
+$M = \alpha\kappa_v$, $L = \beta\gamma$, the Hopf threshold is
+\begin{equation}
+\boxed{\;\kappa^\star = \frac{G_y A^2 - G_v L \;-\; \sqrt{D}}{2\,G_y^2\, A},\;}
+\quad D := (G_v L - G_y A^2)^2 - 4 G_y^2 A\bigl(MA - \tfrac{L}{2}\bigr).
+\label{eq:lognorm-kappastar}
+\end{equation}
+The discriminant $D < 0$ implies no Hopf at any $\kappa$ and
+unconditional stability of the deterministic skeleton.
+
+The third-order partials of \eqref{eq:G-closed-form} are explicit rational
+functions of $(\delta := a^\star - m(v^\star), \tau^2, T_{\mathrm{eff}})$,
+so the bilinear and trilinear tensors $B$, $C$ at $\kappa^\star$ admit a
+closed form. Substituting into the Kuznetsov formula
+\begin{multline}
+\ell_1(\kappa^\star) = \tfrac{1}{2\omega^\star}\,\mathrm{Re}\bigl[\langle p, C(q,q,\bar q)\rangle \\
+- 2\langle p, B(q, J^{-1}B(q,\bar q))\rangle \\
++ \langle p, B(\bar q, (2i\omega^\star I - J)^{-1}B(q,q))\rangle\bigr],
+\label{eq:lognorm-ell1}
+\end{multline}
+with $Jq = i\omega^\star q$, $J^\top p = -i\omega^\star p$,
+$\langle p, q\rangle = 1$, yields a $\sim\!30$-term closed-form rational
+in the $G$-partials and $(\kappa_v, \alpha, \beta, \gamma)$, evaluated
+in $\sim\!50\,\mu$s per parameter tuple and matching the FD-tensor
+pipeline to $<0.6\%$. At the canonical regime ($\sigma_q{=}0.10$,
+$T_{\mathrm{eff}}{=}0.25$, $\kappa_v{=}2$, $\alpha{=}0.05$, $\beta{=}1$,
+$\gamma{=}1$, $\mu_q{=}\log 100$, $v^\star{=}0.04$):
+$\kappa^\star {=} 17.81$, $\omega^\star {=} 1.18$~rad/yr,
+$\ell_1 {=} -4.81 \times 10^{-1}$ (supercritical). With the closed form
+in hand, the sign of $\ell_1$ near the boundary contour is structurally
+certain rather than statistically inferred.
+
+\section{Numerical phase diagram}
+\label{sec:phase}
+
+The full $(\kappa, \xi, \rho, \sigma_v)$ phase diagram is computed by
+sweeping $\kappa \in [0, 2]$ on a 401-point grid for each of
+$31 \times 21 \times 4 = 2{,}604$ cells over $(\xi, \rho, \sigma_v)$ at
+the canonical Hopf-exhibiting regime; the pair $(\xi, \rho)$ enters via
+$a_{\mathrm{eff}}(\kappa) = a(\kappa) + \tfrac{1}{2}\xi^2\rho G_v$, an
+\citet{engellambrasmussen2024}-style projection of the small-noise
+stochastic Hopf onto the eigenvalue envelope. Wall-clock $\sim\!16$s on a
+single M-series core.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/hopf_phase_diagram.pdf}
+\caption{\textbf{Hopf threshold $\kappa^\star$ across $(\xi, \rho, \sigma_v)$.}
+\emph{Left:} heatmap at $\sigma_v = 0.50$. White cells: no Hopf in
+$\kappa \in [0, 2]$, concentrated in the high-$\xi$ / strongly-negative-$\rho$
+wedge where shear destabilises the eigenvalue envelope. \emph{Right:}
+four $\kappa^\star(\sigma_v)$ line cuts at SPX-like $(\xi, \rho)$
+probes.}
+\Description{Two-panel figure: a heatmap of the Hopf bifurcation threshold
+on the (vol-of-vol, correlation) plane, and four line cuts of the
+threshold against the variance-of-variance scale.}
+\label{fig:hopf-phase-diagram}
+\end{figure}
+
+The SPX-relevant $(\xi, \rho) \approx (0.30, -0.70)$ corner has
+$\kappa^\star$ in the $0.85$--$0.95$ band, sitting \emph{near but not
+across} the Hopf boundary---the structural mechanism we conjecture for
+the empirical $n \approx 1$ branching ratio of \citet{hardiman2013}.
+Khasminskii sphere-process estimates \citep{khasminskii1980,arnold1998}
+on a $6 \times 6$ $(\xi, \rho)$ grid give
+$|\Lambda(\kappa^\star)| \in [5\!\times\!10^{-2}, 9\!\times\!10^{-2}]$
+with empirical scaling exponent $\hat B = 0.082$ (95\% CI
+$[-0.010, 0.168]$); the \citet{engellambrasmussen2024} prediction $B = 2/3$
+is rejected at $p \ll 0.01$ at this trivial-$G$ equilibrium where ELR's
+shear-stretch term is identically zero. Operationally,
+$|\Lambda|\cdot\varepsilon^2 \ll 1$ at calibration-noise scale: the
+deterministic $\kappa^\star$ is the relevant threshold.
+
+\section{Pre-registered evaluation framework}
+\label{sec:eval}
+
+The pipeline is committed at git commit \texttt{[anonymized]} with an
+OpenTimestamps Bitcoin-anchored proof of the document hash, prior to any
+contact with empirical SPX data. This addresses the documented
+computational-reproducibility crisis in finance \citep{perignon2024repro}
+and adapts the \citet{camerer2018} pre-registration template to a
+computational-finance / RL-for-derivatives context. We do not claim
+``first pre-registration in finance''---the Pacific-Basin Finance Journal
+pathway \citep{faff2022prereg} and the AEA RCT Registry \citep{aearct}
+predate this work. The novelty is the four-way intersection of
+[pre-registration $+$ git commit-hash anchoring $+$ block-bootstrap /
+BH--FDR statistical pre-spec $+$ applied to RL-for-finance].
+
+\paragraph{Two evaluation primitives.}
+(i) Sliced-Wasserstein-2 \citep{bonneel2015sliced} over arbitrage-free
+21-day surface windows---the realism metric.
+(ii) $\kappa$-sensitivity slope at calibrated $\kappa_0$---the
+reflexivity-importance scalar.
+
+\paragraph{H1 (primary realism).} A model-free RL agent $\pi_{\kappa_0}$
+trained inside the reflexive simulator at $\kappa_0$ produces an
+IV-surface distribution closer in sliced-$W_2$ over arbitrage-free
+21-trading-day rolling windows to the empirical SPX surface than four
+non-reflexive baselines (time-dep Heston, LSV, 3/2 SV,
+gamma-aware-non-reflexive). Three event windows: Volmageddon
+(2018-02-05), COVID (2020-03-16), 2024 yen carry unwind (2024-08-05).
+Decision rule: 12 pairwise dominance checks (4 baselines $\times$ 3
+windows) with non-overlapping 95\% block-bootstrap CIs
+\citep{politisromano1994}. The arbitrage filter follows
+\citet{roper2010,gatheraljacquier2014} on butterfly / calendar-spread /
+Lee-bound \citep{lee2004} criteria; sliced-$W_2$ sample-complexity follows
+\citet{manole2022sw}.
+
+\paragraph{Sliced-$W_2$ sample-complexity audit.} A pre-data audit
+characterises the bootstrap-95\%-CI half-width on sliced-$W_2$ between
+two Heston populations differing only in their long-run variance
+($\theta_A = 0.04$ vs $\theta_B = 0.0576$). Each side draws from a
+$5{,}000$-day population; the ``true'' SW2 averaged over $10$
+slice-direction MC repeats on the full populations equals $0.0555$.
+For $n_{\mathrm{windows}} \in \{30, 100, 300, 1{,}000, 3{,}000\}$ we
+sub-sample, compute the SW2 estimate, and report the median
+bootstrap-CI half-width across $30$ outer seeds (\cref{tab:sw2-sample-complexity}).
+\begin{table}[h]
+\centering\small
+\begin{tabular}{rrrr}
+\toprule
+$n_{\mathrm{windows}}$ & median SW2 & half-width & ratio to SW2$_{\mathrm{true}}$ \\
+\midrule
+30   & 0.0611 & 0.0300 & 0.541 \\
+100  & 0.0545 & 0.0195 & 0.352 \\
+300  & 0.0548 & 0.0124 & 0.223 \\
+1{,}000 & 0.0534 & 0.0085 & 0.153 \\
+3{,}000 & 0.0553 & 0.0065 & 0.118 \\
+\bottomrule
+\end{tabular}
+\caption{Sliced-$W_2$ sample-complexity. The half-width follows
+$\mathrm{ratio}(n) \approx 1.64\,n^{-0.337}$ ($R^2 \geq 0.99$),
+extrapolating $n_{\mathrm{min}} \approx 4{,}000$ windows for the
+$\pm 10\%$ half-width target. Each H1 event window contributes
+$\sim\!280$ rolling windows, so the inter-baseline SW2 gap must exceed
+$\sim\!0.46\cdot\mathrm{SW2}_{\mathrm{true}}$ to be discriminable at 95\%
+in a single event---a real power constraint logged as a pre-data finding.}
+\label{tab:sw2-sample-complexity}
+\end{table}
+
+\paragraph{H2--H4 (secondary).} H2 is the $\kappa$-sensitivity slope
+$\tilde\rho = \partial\hat m/\partial\kappa\rvert_{\kappa_0}$---positive
+and statistically distinguishable from zero for the reflexive-trained
+agent, statistically indistinguishable for baselines (TOST equivalence
+on the dimensionless elasticity per A7, with the GP slope CI under the
+pre-registered RBF + WhiteKernel kernel of A6 and elliptic uncertainty
+sets \citep{ma2025robust}). H3 is post-FOMC RR25 and ATM-term-structure
+shifts. H4 is the Hopf-frequency Welch-PSD peak in $|r_t|$ at
+$\omega^\star \pm 20\%$ vs an IAAFT \citep{schreiberschmitz1996} surrogate
+null. IAAFT calibration on Heston and AR(1) $H_0$ generators bounds the
+empirical FPR at $\leq 7\%$ at $\alpha = 0.05$; on Stuart--Landau positive
+controls the detector achieves $\geq 80\%$ power at $T \geq 512$ daily
+samples for $8/9$ $(\mu, \sigma)$ configurations. All H1--H4 use BH--FDR
+across the joint family.
+
+\paragraph{Differentiation from precedents.} \citet{ning2024arbitrage}
+use $W_1$ on single-day surface marginals; we use sliced-$W_2$ on 21-day
+windows with a hard arbitrage pre-filter, block-bootstrap CIs, and
+per-regime reporting. \citet{hesuttergonon2025} sweep a Wasserstein-ball
+perturbation budget with a separate adversarially-trained agent at each
+grid point; we deploy a single agent across the $\kappa$ grid and report
+the slope at anchor with a GP-posterior CI \citep{ma2025robust} for the
+elliptic-uncertainty-set analogue. \citet{subbaswamy2022} (NeurIPS 2022)
+provide the closest theoretical precursor for slope-at-anchor robustness
+summaries; we operationalise it empirically and apply it to RL-for-finance
+\citep{bai2024rlfinance,huang2024openrlbench}.
+
+\subsection{Synthetic pipeline validation}
+\label{sec:eval-synthetic-validation}
+
+The H1 protocol is exercised end-to-end on simulator-vs-simulator data
+with no contact with empirical SPX. Three sources, each $n = 30$
+trajectories at the production budget: (a) the trained agent acts inside
+the SAME reflexive simulator at $\kappa_0$ (different seeds; expected
+indistinguishable from reference); (b) the agent at $4\cdot\kappa_0$
+(four-fold synthetic-anchor coupling change; expected measurably further);
+(c) Heston with no dealer-gamma coupling and a more aggressive
+$(\rho, \xi) = (-0.70, 0.30)$ backbone (different mechanism; expected
+furthest).
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lccc}
+\toprule
+Target source & SW2 vs $\kappa_0$ ref. & 95\% CI low & 95\% CI high \\
+\midrule
+(a) $\kappa_0$ deployed         & $0.00498$ & $0.00431$ & $0.0164$ \\
+(b) $2\!\times\!\kappa_0$ reflexive & $0.0337$  & $0.0300$  & $0.0402$ \\
+(c) Heston (mechanism)          & $0.0541$  & $0.0434$  & $0.0611$ \\
+\bottomrule
+\end{tabular}
+\caption{H1 synthetic-validation sliced-$W_2$ ordering. The expected
+ordering $\mathrm{SW2}(\mathrm{a}) < \mathrm{SW2}(\mathrm{b}) <
+\mathrm{SW2}(\mathrm{c})$ holds; the 95\% block-bootstrap CIs of (a)
+vs (b) and (b) vs (c) are both non-overlapping. All three pre-registered
+acceptance conditions are satisfied.}
+\label{tab:h1-synthetic-ordering}
+\end{table}
+
+\section{Mechanism decomposition}
+\label{sec:mechanism}
+
+The reflexive simulator and the Marketron quasi-particle SDE
+\citep{halperin2025marketron} are not the same mechanism: in our model
+the memory carrier is the low-pass-filtered log-price $z$ entering only
+the variance drift via $\gamma z$; in Marketron it is the unobservable $y$
+entering both drifts non-linearly through a potential $V_M(x)$. Even at
+zero coupling our model collapses to standard Heston while Marketron does
+not. We instead report mechanism decomposition: a 5D coarse-grid tuning
+over $(\kappa,\gamma,T_{\mathrm{eff}},\mu_q,\sigma_q)$, then per-cell
+classification into \texttt{shape\_target} / \texttt{level\_artifact} /
+\texttt{calibration\_artifact}.
+
+The headline shape-feature match rate is $8/24$ (33\%, one-sided binomial
+$p \approx 0.27$, $\geq 30\%$ gate passed), with long-horizon
+($\geq 0.5$~y) excess-kurt sign agreement on $5/6$ horizons. The
+skew-sign disagreement is predictable: under risk-neutral drift our
+long-horizon skew is dealer-gamma-plus-leverage-driven, while Marketron's
+positive long-horizon skew comes from \citet{bessembinder2018}
+compounding under calibrated drift. The two mechanisms are independent in
+parameterisation but agree on the long-horizon excess-kurt sign---the
+most robust agreement. An a-priori-restricted subset
+(\texttt{is\_mechanism\_relevant\_cell}, locked before per-cell outcomes
+were inspected: long-horizon, shape-only, within-envelope) gives $4/8$
+(50\%, $p = 0.637$) at the out-of-sample budget, driven primarily by
+Table~5 long-horizon skew flipping more strongly negative; the strengthened
+restriction does not reach $p < 0.05$ at the present per-set tuned-coupling
+sample size and the empirical Phase~4 evaluation will be needed to
+adjudicate.
+
+\section{Conclusions and future work}
+\label{sec:conclusions}
+
+We have introduced a 3D reflexive SV simulator $(S_t, v_t, z_t)$ with
+explicit dealer-gamma drift, proved a Hopf bifurcation theorem with
+closed-form first Lyapunov coefficient $\ell_1$ and Hopf threshold
+$\kappa^\star$ for log-normal open-interest in moneyness, computed a
+numerical $(\xi,\rho,\sigma_v)$ phase diagram and a $(\sigma_q,\gamma)$
+closed-form phase boundary, and pre-registered the empirical evaluation
+pipeline (sliced-$W_2$, $\kappa$-sensitivity slope, Hopf-frequency
+spectral test) at a verifiable git commit hash with an OpenTimestamps
+Bitcoin-anchored proof. The synthetic-pipeline validation demonstrates
+the locked H1 protocol returns the predicted ordering on data with known
+underlying physics. The empirical SPX calibration is the natural Phase~4
+follow-up, gated on data acquisition; results---confirming or refuting
+H1--H4---are pre-committed to publication regardless of direction. Open
+theoretical items: closed-form $\Lambda(\kappa)$ via
+Engel--Lamb--Rasmussen-style asymptotics adapted to Heston multiplicative
+noise (currently numerical only); a formal Hawkes-$n$ to
+SV-Jacobian-eigenvalue reduction relating $\kappa^\star$ to the empirical
+$n \approx 1$ \citep{hardiman2013,bondi2024hawkes,bacrymastromatteomuzy2015}.
+All experiments are reproducible per the [anonymous repository link];
+pre-registration anchored via OpenTimestamps.
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references}
+
+\end{document}

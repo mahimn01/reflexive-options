@@ -101,7 +101,15 @@ markers = [
 [tool.coverage.run]
 branch = true
 source = ["src/reflexive_options"]
-omit = ["src/reflexive_options/third_party/*", "tests/benchmarks/*"]
+omit = [
+    "src/reflexive_options/third_party/*",
+    "tests/benchmarks/*",
+    # CLI runner scripts: orchestrate sweeps + write artifacts; smoke-tested
+    # via integration tests rather than unit-coverage instrumentation.
+    "src/reflexive_options/experiments/hawkes_sv_equivalence.py",
+    "src/reflexive_options/experiments/kappa_star_robustness.py",
+    "src/reflexive_options/experiments/lambda_correction_canonical.py",
+]
 
 [tool.coverage.report]
 fail_under = 85
@@ -130,6 +138,9 @@ select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "RUF", "S"]
 #   Hopf-condition discriminant in paper/theory.md eq. 5).
 # N803/N806: dW_S, dW_v, drift_S, diff_S follow the standard math-paper convention; renaming
 #   them to lowercase would obscure correspondence to the SDE writeup in paper/theory.md.
+# N815: dataclass attributes like `log_A`, `B_ci_low` (lambda_scaling.py FitResult)
+#   follow the OLS-fit notation log|Λ| = log|A| + B log|ρ ξ| of paper §4.2; same
+#   paper-faithful naming rationale as N802/N803/N806.
 # S101: `assert` is fine — used for invariants in research code; the alternative
 #   (RuntimeError) is noisier without preventing real bugs.
 # S301/S403: pickle/torch.load on our *own* trained model artifacts is fine; we
@@ -138,7 +149,7 @@ select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "RUF", "S"]
 ignore = [
     "E501",
     "RUF001", "RUF002", "RUF003",
-    "N802", "N803", "N806",
+    "N802", "N803", "N806", "N815",
     "S101", "S301", "S311", "S403",
 ]
 
