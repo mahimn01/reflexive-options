@@ -305,3 +305,152 @@ def test_solve_stationary_rejects_unknown_component() -> None:
             seed=0,
             component="bogus",  # type: ignore[arg-type]
         )
+
+
+# ---------------------------------------------------------------------------
+# Targeted branch coverage for StationaryDensity + helpers
+# ---------------------------------------------------------------------------
+
+
+def test_stationary_density_skewness_property() -> None:
+    """skewness property exposes scipy.stats.skew on the stored samples."""
+    rng = np.random.default_rng(0)
+    # Mildly right-skewed lognormal samples.
+    samples = rng.lognormal(mean=0.0, sigma=0.5, size=4_000)
+    density = StationaryDensity(
+        grid=np.linspace(0.0, 5.0, 50),
+        density=np.zeros(50),
+        samples=samples,
+    )
+    assert density.skewness > 0.1
+    np.testing.assert_allclose(density.skewness, float(stats.skew(samples)))
+
+
+def test_hill_estimator_rejects_too_few_samples() -> None:
+    """Need at least 2 * k_largest samples; otherwise ValueError."""
+    density = StationaryDensity(
+        grid=np.zeros(5),
+        density=np.zeros(5),
+        samples=np.linspace(0.0, 1.0, 50),  # only 50 samples
+    )
+    with pytest.raises(ValueError, match="need at least"):
+        density.tail_index_hill(k_largest=100)  # needs 200 samples
+
+
+# NOTE: the "Hill threshold non-positive" guard at stationary.py:92 is
+# defensive and not reachable through the public API: `x = x[x > 0]` strips
+# every non-positive value before sorting, so `sorted_descending[k_largest]`
+# either raises IndexError (too few positives) or is a strictly positive
+# subnormal. We leave that branch uncovered rather than fabricating a
+# contrived scenario — see the report for the coverage justification.
+
+
+def test_solve_stationary_variance_component() -> None:
+    """`component='variance'` extracts the variance trajectory instead of log-spot."""
+    sim = _make_reflexive(coupling=0.0, leverage=0.0)
+    density = solve_stationary(
+        sim,
+        n_paths=200,
+        burn_in_steps=200,
+        sample_steps=400,
+        dt=1.0 / 252.0,
+        seed=0,
+        component="variance",
+    )
+    # Variance samples are strictly non-negative (Heston with reflection).
+    assert (density.samples >= 0).all()
+    # Mean variance should be in the same ballpark as θ_v = 0.04.
+    assert 0.005 < float(density.samples.mean()) < 0.2
+
+
+def test_solve_stationary_memory_component_is_not_implemented() -> None:
+    sim = _make_reflexive()
+    with pytest.raises(NotImplementedError, match="memory-variable extraction"):
+        solve_stationary(
+            sim,
+            n_paths=4,
+            burn_in_steps=10,
+            sample_steps=10,
+            dt=1.0 / 252.0,
+            seed=0,
+            component="memory",
+        )
+
+
+def test_heston_stationary_variance_density_rejects_non_positive_params() -> None:
+    """kappa, theta, xi must all be strictly positive (Feller setup)."""
+    grid = np.linspace(1e-4, 0.5, 100)
+    with pytest.raises(ValueError, match="must all be strictly positive"):
+        heston_stationary_variance_density(
+            grid,
+            HestonParams(kappa=0.0, theta=0.04, xi=0.3, rho=-0.5, v0=0.04),
+        )
+
+
+def test_heston_log_return_quantiles_rejects_out_of_range() -> None:
+    """Quantiles must lie strictly in (0, 1)."""
+    p = _heston()
+    with pytest.raises(ValueError, match="quantiles must lie strictly"):
+        heston_log_return_quantiles(p, dt=1.0 / 252.0, quantiles=np.array([0.5, 1.0]))
+
+
+def test_heston_log_return_quantiles_explicit_bracket() -> None:
+    """Caller-provided bracket override exercises the non-default branch."""
+    p = _heston(kappa=3.0, theta=0.04, xi=0.2, rho=-0.5, v0=0.04)
+    dt = 1.0 / 252.0
+    # Tight bracket around the expected median (~-0.5 v0 dt) so the bisection
+    # converges without expanding; this exercises the explicit-bracket branch.
+    sigma = float(np.sqrt(p.v0 * dt))
+    q = heston_log_return_quantiles(
+        p,
+        dt=dt,
+        quantiles=np.array([0.5]),
+        bracket=(-5.0 * sigma, 5.0 * sigma),
+    )
+    expected_median = -0.5 * p.v0 * dt
+    assert abs(q[0] - expected_median) < 5e-4
+
+
+def test_heston_log_return_quantiles_bracket_expansion() -> None:
+    """A symmetric bracket that does not initially straddle an extreme quantile
+    forces the bracket-expansion loop. We pick q very close to 1 and start
+    with a deliberately tight bracket.
+    """
+    p = _heston(kappa=3.0, theta=0.04, xi=0.2, rho=-0.5, v0=0.04)
+    dt = 1.0 / 252.0
+    sigma = float(np.sqrt(p.v0 * dt))
+    # Bracket [-0.1 σ, +0.1 σ] is too narrow for the 99% quantile, which sits
+    # near +2.33 σ; the expansion loop must double the bracket several times.
+    q = heston_log_return_quantiles(
+        p,
+        dt=dt,
+        quantiles=np.array([0.99]),
+        bracket=(-0.1 * sigma, 0.1 * sigma),
+    )
+    # The expanded bracket should still locate a sensible 99% quantile (positive,
+    # well above zero).
+    assert q[0] > 0.0
+
+
+def test_tail_index_vs_kappa_curve_rejects_non_monotone_grid() -> None:
+    """kappa_grid must be non-decreasing."""
+
+    def factory(_k: float) -> ReflexiveSimulator:
+        return _make_reflexive()
+
+    with pytest.raises(ValueError, match="kappa_grid must be non-decreasing"):
+        tail_index_vs_kappa_curve(
+            factory,
+            kappa_grid=np.array([0.0, 1e-12, 5e-13]),  # decreasing in the middle
+            dt=1.0 / 252.0,
+            n_paths=100,
+            burn_in_steps=20,
+            sample_steps=20,
+            hill_k=10,
+            seed=0,
+        )
+
+
+def test_detect_bimodality_rejects_too_few_samples() -> None:
+    with pytest.raises(ValueError, match="dip test requires at least 4"):
+        detect_bimodality(np.array([1.0, 2.0, 3.0]))

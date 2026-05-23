@@ -1,0 +1,55 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite both the paper and the software."
+title: "Reflexivity in Options Markets"
+abstract: >-
+  A continuous-time Heston-like stochastic-volatility model in which the
+  underlying spot price is coupled to its own option market through a
+  dealer-gamma feedback channel. Includes a 3D reflexive SDE simulator,
+  four non-reflexive baselines, an arbitrage-free surface filter, an RL
+  training infrastructure (ATLAS / Mamba + PPO + BC + EWC), a Hopf
+  bifurcation theorem with closed-form first Lyapunov coefficient for
+  log-normal open-interest in moneyness, and a pre-registered evaluation
+  framework (sliced Wasserstein-2 on IV surfaces, kappa-sensitivity slope,
+  Hopf-frequency spectral test).
+authors:
+  - family-names: "Patel"
+    given-names: "Mahimn"
+    affiliation: "Department of Economics, University of Toronto"
+    email: "mahimn.patel.k@gmail.com"
+    orcid: "https://orcid.org/0000-0000-0000-0000"
+version: "0.3.3"
+date-released: "2026-05-14"
+url: "https://github.com/mahimn01/reflexive-options"
+repository-code: "https://github.com/mahimn01/reflexive-options"
+license: "MIT"
+type: software
+keywords:
+  - stochastic volatility
+  - options markets
+  - Hopf bifurcation
+  - dealer gamma
+  - reflexivity
+  - Hawkes processes
+  - reinforcement learning
+  - Heston model
+  - limit cycles
+  - pre-registration
+preferred-citation:
+  type: article
+  title: "Reflexivity in Options Markets: A Stochastic-Volatility Model with Dealer-Gamma Feedback, Hopf Bifurcation Calculus, and a Pre-Registered Evaluation Framework"
+  authors:
+    - family-names: "Patel"
+      given-names: "Mahimn"
+      affiliation: "Department of Economics, University of Toronto"
+      email: "mahimn.patel.k@gmail.com"
+      orcid: "https://orcid.org/0000-0000-0000-0000"
+  year: 2026
+  month: 5
+  url: "https://github.com/mahimn01/reflexive-options"
+  notes: "Pre-registered at commit 268c061 via OpenTimestamps Bitcoin-anchored proof (paper/pre_registration.md.ots)."
+  keywords:
+    - stochastic volatility
+    - options markets
+    - Hopf bifurcation
+    - dealer gamma
+    - reflexivity

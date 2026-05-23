@@ -235,6 +235,35 @@ def test_blowup_detection_on_extreme_kappa() -> None:
     assert result.n_rejected > 0
 
 
+def test_stability_survivor_fraction_and_nan_check_disabled() -> None:
+    """Direct unit coverage for StabilityResult.survivor_fraction and the
+    `cfg.nan_inf_check=False` branch of detect_blowup.
+
+    With nan_inf_check disabled a NaN-containing path is NOT counted toward
+    `nan_or_inf` (the key is absent) but will still trigger spot/variance
+    blowup if those happen to overflow. We construct paths whose only failure
+    mode is a NaN to verify nan_or_inf is absent and survivor_fraction = 1.0.
+    """
+    from reflexive_options.simulator.stability import StabilityConfig
+
+    n_paths = 10
+    spots = np.full((n_paths, 5), 100.0, dtype=np.float64)
+    variances = np.full((n_paths, 5), 0.04, dtype=np.float64)
+    spots[0, 2] = np.nan  # only path 0 has a NaN; never exceeds spot/variance limits
+
+    cfg_no_nan = StabilityConfig(nan_inf_check=False)
+    result = detect_blowup(spots, variances, initial_spot=100.0, cfg=cfg_no_nan)
+    assert "nan_or_inf" not in result.reason_counts
+    assert result.n_rejected == 0
+    assert result.survivor_fraction == 1.0
+
+    # With default config (nan_inf_check=True) the NaN path IS rejected,
+    # and survivor_fraction drops to (n-1)/n.
+    result_default = detect_blowup(spots, variances, initial_spot=100.0)
+    assert result_default.n_rejected == 1
+    assert result_default.survivor_fraction == pytest.approx((n_paths - 1) / n_paths)
+
+
 # ---------------------------------------------------------------------------
 # step() interface
 # ---------------------------------------------------------------------------

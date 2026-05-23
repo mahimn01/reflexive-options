@@ -39,6 +39,26 @@ def test_make_standard_grid_rejects_bad_spot() -> None:
         make_standard_grid(spot=-1.0)
 
 
+def test_make_standard_grid_rejects_too_few_strikes() -> None:
+    """n_strikes < 3 is rejected (need at least 3 for a wing structure)."""
+    with pytest.raises(ValueError, match="n_strikes must be >= 3"):
+        make_standard_grid(spot=100.0, n_strikes=2)
+
+
+def test_make_standard_grid_with_explicit_maturities() -> None:
+    """When maturities is provided, it overrides n_maturities and the default vector."""
+    custom = np.array([0.01, 0.05, 0.5], dtype=np.float64)
+    grid = make_standard_grid(spot=100.0, maturities=custom)
+    assert grid.n_maturities == 3
+    np.testing.assert_allclose(grid.maturities, custom)
+
+
+def test_make_standard_grid_rejects_non_monotone_maturities() -> None:
+    """Maturities must be strictly positive and strictly increasing."""
+    with pytest.raises(ValueError, match="strictly positive and increasing"):
+        make_standard_grid(spot=100.0, maturities=np.array([0.1, 0.05, 0.5]))
+
+
 def test_make_pre_reg_grid_matches_locked_spec() -> None:
     """Pre-registration §4 locks the grid at 11 log-moneyness points with
     Δk = 0.04 (covering [-0.20, +0.20]) and 7 maturities {7, 14, 30, 60, 90,

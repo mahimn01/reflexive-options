@@ -1,0 +1,812 @@
+{
+  "commit": "c5e6867ee13e8890a12e0e87c9c80952184e7cba",
+  "deterministic_abs_tolerance": 1e-10,
+  "experiments": {
+    "codim2_analysis": {
+      "config": {
+        "T_eff": 0.25,
+        "a_star": 4.605170185988092,
+        "alpha": 0.05,
+        "bautin_tol": 0.05,
+        "beta": 1.0,
+        "coupling_units": 1.0,
+        "gamma_max": 5.0,
+        "gamma_min": 0.2,
+        "kappa_v": 2.0,
+        "mu_q": 4.605170185988092,
+        "n_anchors": 6,
+        "n_gamma": 97,
+        "n_sigma_q": 71,
+        "sigma_q_max": 0.4,
+        "sigma_q_min": 0.05,
+        "theta_v": 0.04,
+        "v_star": 0.04
+      },
+      "metrics": {
+        "bautin_anchor_0_gamma": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 0.55
+        },
+        "bautin_anchor_0_kappa_star": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 2.1497927324454498
+        },
+        "bautin_anchor_0_sigma_q": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 0.05979405743563652
+        },
+        "bautin_anchor_1_gamma": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 1.45
+        },
+        "bautin_anchor_1_kappa_star": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 29.44705901904773
+        },
+        "bautin_anchor_1_sigma_q": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 0.14265949040728784
+        },
+        "bautin_anchor_2_gamma": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 2.35
+        },
+        "bautin_anchor_2_kappa_star": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 52.58973221812289
+        },
+        "bautin_anchor_2_sigma_q": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 0.19949716346719062
+        },
+        "bautin_anchor_3_gamma": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 3.1999999999999997
+        },
+        "bautin_anchor_3_kappa_star": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 75.54210780797399
+        },
+        "bautin_anchor_3_sigma_q": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 0.23562551410624955
+        },
+        "bautin_anchor_4_gamma": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 4.1
+        },
+        "bautin_anchor_4_kappa_star": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 100.74296898959992
+        },
+        "bautin_anchor_4_sigma_q": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 0.26381613346214744
+        },
+        "bautin_anchor_5_gamma": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 5.0
+        },
+        "bautin_anchor_5_kappa_star": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 126.73141169710885
+        },
+        "bautin_anchor_5_sigma_q": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 0.2851990717213474
+        },
+        "bt_locus_empty_in_physical_range": {
+          "tolerance_abs": 0.0,
+          "tolerance_kind": "exact",
+          "value": true
+        },
+        "kappa_sn_max": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": -1.3072225095629866
+        },
+        "kappa_sn_min": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": -68.04821702076237
+        },
+        "n_bautin_tube": {
+          "tolerance_abs": 0.0,
+          "tolerance_kind": "exact",
+          "value": 719
+        },
+        "n_bt_physical_kappa_sn_positive_cells": {
+          "tolerance_abs": 0.0,
+          "tolerance_kind": "exact",
+          "value": 0
+        },
+        "n_gamma": {
+          "tolerance_abs": 0.0,
+          "tolerance_kind": "exact",
+          "value": 97
+        },
+        "n_no_hopf": {
+          "tolerance_abs": 0.0,
+          "tolerance_kind": "exact",
+          "value": 355
+        },
+        "n_sigma_q": {
+          "tolerance_abs": 0.0,
+          "tolerance_kind": "exact",
+          "value": 71
+        },
+        "n_subcritical": {
+          "tolerance_abs": 0.0,
+          "tolerance_kind": "exact",
+          "value": 4867
+        },
+        "n_supercritical": {
+          "tolerance_abs": 0.0,
+          "tolerance_kind": "exact",
+          "value": 946
+        }
+      },
+      "notes": "Closed-form \u2113_1 + saddle-node coupling on 71\u00d797 (\u03c3_q, \u03b3) grid.",
+      "seed": 0,
+      "tolerance_class": "deterministic_exact"
+    },
+    "h1_synthetic_validation": {
+      "config": {
+        "bc_epochs": 10,
+        "block_length": 21,
+        "ci_alpha": 0.05,
+        "dt_days": 0.003968253968253968,
+        "initial_spot": 100.0,
+        "initial_variance": 0.04,
+        "kappa_anchor": 1e-10,
+        "kappa_other_mult": 4.0,
+        "n_bc_train_episodes": 30,
+        "n_bootstrap": 200,
+        "n_days_per_path": 100,
+        "n_paths_per_source": 30,
+        "n_slices": 256,
+        "seed": 42,
+        "window_length": 21
+      },
+      "metrics": {
+        "n_windows_kept_source_b": {
+          "tolerance_abs": 0.0,
+          "tolerance_kind": "exact",
+          "value": 2206
+        },
+        "n_windows_kept_source_c": {
+          "tolerance_abs": 0.0,
+          "tolerance_kind": "exact",
+          "value": 1389
+        },
+        "ordering_holds": {
+          "tolerance_abs": 0.0,
+          "tolerance_kind": "exact",
+          "value": true
+        },
+        "pass_protocol": {
+          "tolerance_abs": 0.0,
+          "tolerance_kind": "exact",
+          "value": true
+        },
+        "sw2_source_a": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 0.00498050575971948
+        },
+        "sw2_source_a_ci_high": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 0.016350663123069414
+        },
+        "sw2_source_a_ci_low": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 0.004307582881679654
+        },
+        "sw2_source_b": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 0.03374471421708758
+        },
+        "sw2_source_b_ci_high": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 0.040174327081496854
+        },
+        "sw2_source_b_ci_low": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 0.029998390859726654
+        },
+        "sw2_source_c": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 0.05414013582530937
+        },
+        "sw2_source_c_ci_high": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 0.06107655138851217
+        },
+        "sw2_source_c_ci_low": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 0.04338906539160197
+        }
+      },
+      "notes": "BC-trained MLP + reflexive/Heston rollouts + sliced-W2 with block bootstrap. Locked config: n_bc_train_episodes=30, n_paths_per_source=30 (paper's headline SW2 = 0.005/0.034/0.054 ordering).",
+      "seed": 42,
+      "tolerance_class": "stochastic_relative"
+    },
+    "h_bimod_2d_scan": {
+      "config": {
+        "base_kappa_v": 2.0,
+        "base_rho": -0.7,
+        "base_theta": 0.04,
+        "base_v0": 0.04,
+        "base_xi": 0.3,
+        "burn_in_frac": 0.5,
+        "dt": 1.0175010175010176e-05,
+        "initial_spot": 100.0,
+        "kappa_envelope_dt": 1.0175010175010176e-05,
+        "kappa_envelope_n_paths": 200,
+        "kappa_envelope_n_probes": 16,
+        "kappa_envelope_n_steps": 1000,
+        "kappa_envelope_search_max": 1e-08,
+        "kappa_grid_relative": [
+          0.0,
+          0.5,
+          0.9,
+          1.0,
+          1.05
+        ],
+        "leverage_gamma": 0.5,
+        "max_samples_for_test": 20000,
+        "memory_decay_alpha": 252.0,
+        "memory_intake_beta": 1.0,
+        "n_paths": 1000,
+        "n_steps": 2000,
+        "oi_contracts_per_cell": 50000.0,
+        "oi_log_moneyness": [
+          -0.1,
+          -0.05,
+          0.0,
+          0.05,
+          0.1
+        ],
+        "oi_maturities_days": [
+          30.0,
+          90.0,
+          180.0
+        ],
+        "seed": 42
+      },
+      "metrics": {
+        "any_pca_bimodal": {
+          "tolerance_abs": 0.0,
+          "tolerance_kind": "exact",
+          "value": true
+        },
+        "kappa_star_envelope": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 3.906250000000001e-09
+        },
+        "n_samples_at_kappa_1_05_envelope": {
+          "tolerance_abs": 0.0,
+          "tolerance_kind": "exact",
+          "value": 15769
+        },
+        "pca_dip_p_value_at_kappa_0": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 0.9785111553291389
+        },
+        "pca_dip_p_value_at_kappa_1_05_envelope": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 0.033417386166621266
+        },
+        "pca_dip_p_value_at_kappa_star": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 0.6840246920362725
+        },
+        "pca_dip_statistic_at_kappa_1_05_envelope": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 0.004547094948041662
+        },
+        "pca_explained_variance_at_kappa_1_05_envelope": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 0.5643469047918459
+        }
+      },
+      "notes": "Reflexive SDE at \u03b3 > 0; PCA-projected Hartigan dip + Silverman bandwidth tests. Locked config: n_paths=1000, n_steps=2000 (paper's headline n=15,769 cell).",
+      "seed": 42,
+      "tolerance_class": "stochastic_relative"
+    },
+    "hawkes_sv_equivalence": {
+      "config": {
+        "kappa_max_multiplier": 2.0,
+        "kappa_min": 0.0,
+        "n_kappa": 1001
+      },
+      "metrics": {
+        "beta_zero": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 0.21422577391290315
+        },
+        "criticality_residual": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 3.8506139632965564e-05
+        },
+        "criticality_residual_brent": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 1.9984014443252818e-15
+        },
+        "kappa_at_beta_zero": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 0.1237032
+        },
+        "kappa_star_brent": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 0.8964305216085703
+        },
+        "kappa_star_grid": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 0.8981928
+        },
+        "kappa_star_paper": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 0.8964
+        },
+        "n_kappa": {
+          "tolerance_abs": 0.0,
+          "tolerance_kind": "exact",
+          "value": 1001
+        },
+        "n_sv_at_2_kappa_star": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 2.112017098985067
+        },
+        "n_sv_at_kappa_star": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 0.999961493860367
+        },
+        "n_sv_at_kappa_star_brent": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 1.000000000000002
+        }
+      },
+      "notes": "3x3 Jacobian eigendecomp; Brent root on Routh-Hurwitz H(\u03ba).",
+      "seed": 0,
+      "tolerance_class": "deterministic_exact"
+    },
+    "kappa_star_robustness": {
+      "config": {
+        "T_eff": 0.25,
+        "a_star": 4.605170185988092,
+        "alpha": 0.05,
+        "beta": 1.0,
+        "component_sigma": 0.07,
+        "coupling_units": 1.0,
+        "gamma": 1.0,
+        "kappa_v": 2.0,
+        "misspec_separations": [
+          0.0,
+          0.02,
+          0.04,
+          0.06,
+          0.08,
+          0.1,
+          0.12,
+          0.14,
+          0.16,
+          0.18,
+          0.2,
+          0.25,
+          0.3
+        ],
+        "mu_q": 4.605170185988092,
+        "n_mu": 41,
+        "n_sigma": 41,
+        "sigma_q": 0.1,
+        "sweep_pct": 0.3,
+        "target_kappa_rel_errors": [
+          0.05,
+          0.1,
+          0.25
+        ],
+        "theta_v": 0.04,
+        "v_star": 0.04
+      },
+      "metrics": {
+        "G_v_canonical": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": -0.1768598325813968
+        },
+        "G_y_canonical": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": -0.035239817201772564
+        },
+        "dkappa_dGv": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": -287.67287357762984
+        },
+        "dkappa_dGy": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 1949.053328480929
+        },
+        "dkappa_dmu_q": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 2717.5758381499577
+        },
+        "dkappa_dsigma_q": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": -281.85435874002076
+        },
+        "elasticity_mu_q": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 702.8273092297268
+        },
+        "elasticity_sigma_q": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": -1.5828728377177792
+        },
+        "kappa_star_canonical": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 17.806506753025378
+        },
+        "misspec_relative_error_first": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 0.0001342085505606438
+        },
+        "misspec_relative_error_last": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 2.177331740179881
+        },
+        "omega_star_canonical": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 1.177442562550897
+        },
+        "rel_dev_at_10pct_sigma_q_only": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 0.17095078056193813
+        },
+        "rel_dev_at_30pct_sigma_q_only": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 0.48012955986843964
+        }
+      },
+      "notes": "Closed-form analytical elasticities + heatmap + misspec curve.",
+      "seed": 0,
+      "tolerance_class": "deterministic_exact"
+    },
+    "lambda_scaling": {
+      "config": {
+        "alpha": 0.5,
+        "beta": 1.0,
+        "bootstrap_seed": 202605142,
+        "coupling_at_kappa_star": 0.8964,
+        "dt": 0.01,
+        "epsilon_high": 0.2,
+        "epsilon_low": 0.05,
+        "gamma": 0.5,
+        "kappa_v": 2.0,
+        "n_bootstrap": 2000,
+        "n_paths": 10000,
+        "n_steps": 10000,
+        "predicted_exponent": 0.6666666666666666,
+        "renorm_every": 50,
+        "rho_grid": [
+          -0.95,
+          -0.7,
+          -0.5,
+          -0.3,
+          0.3,
+          0.7
+        ],
+        "seed": 20260514,
+        "theta_v": 0.04,
+        "xi_grid": [
+          0.1,
+          0.2,
+          0.3,
+          0.5,
+          0.7,
+          1.0
+        ]
+      },
+      "metrics": {
+        "fit_B": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 0.08146921117395685
+        },
+        "fit_B_ci_high": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 0.16752896988073918
+        },
+        "fit_B_ci_low": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": -0.009907583290002435
+        },
+        "fit_log_A": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": -2.4646332253112098
+        },
+        "fit_log_A_ci_high": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": -2.280928386771206
+        },
+        "fit_log_A_ci_low": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": -2.6745673484614487
+        },
+        "fit_residual_std": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 0.2014772679148674
+        },
+        "n_cells_fit": {
+          "tolerance_abs": 0.0,
+          "tolerance_kind": "exact",
+          "value": 36
+        },
+        "n_cells_total": {
+          "tolerance_abs": 0.0,
+          "tolerance_kind": "exact",
+          "value": 36
+        },
+        "z_score_vs_two_thirds": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 12.97915909711801
+        }
+      },
+      "notes": "Khasminskii \u039b scan with locked per-cell seed offset; OLS+bootstrap fit.",
+      "seed": 20260514,
+      "tolerance_class": "deterministic_exact"
+    },
+    "limit_cycle_supercritical": {
+      "config": {
+        "atol": 1e-11,
+        "initial_state": [
+          0.5,
+          0.0,
+          0.0
+        ],
+        "kappa_multiplier": 1.05,
+        "n_eval": 8801,
+        "rtol": 1e-09,
+        "t_total": 220.0,
+        "transient_periods": 10
+      },
+      "metrics": {
+        "amplitude_u": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 0.322831836916883
+        },
+        "amplitude_y": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 1.051624520043542
+        },
+        "amplitude_z": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 1.3478152089731605
+        },
+        "kappa": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 0.9412200000000001
+        },
+        "kappa_star": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 0.8964
+        },
+        "n_kept_samples": {
+          "tolerance_abs": 0.0,
+          "tolerance_kind": "exact",
+          "value": 4410
+        },
+        "omega_star": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 0.5724
+        },
+        "period_measured": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 10.561263987670486
+        },
+        "period_relative_error": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 0.037865794020930675
+        },
+        "period_theory": {
+          "tolerance_abs": 1e-10,
+          "tolerance_kind": "absolute",
+          "value": 10.976913534555532
+        }
+      },
+      "notes": "scipy.integrate.solve_ivp at rtol=1e-9, atol=1e-11; period from zero crossings.",
+      "seed": 0,
+      "tolerance_class": "deterministic_exact"
+    },
+    "mckean_vlasov_validation": {
+      "config": {
+        "G0_std": 0.05,
+        "T": 0.25,
+        "T_eff": 0.25,
+        "a_star": 4.605170185988092,
+        "alpha": 0.05,
+        "beta": 1.0,
+        "coupling_units": 1.0,
+        "gamma": 1.0,
+        "kappa_v": 2.0,
+        "mu_q": 4.605170185988092,
+        "n_grid": [
+          10,
+          100,
+          1000
+        ],
+        "n_replicates": 16,
+        "n_steps": 100,
+        "seed": 20260514,
+        "sigma_G": 0.05,
+        "sigma_q": 0.1,
+        "theta_G": 50.0,
+        "theta_v": 0.04,
+        "v_star": 0.04
+      },
+      "metrics": {
+        "C_T_theoretical": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 0.0025000000000000005
+        },
+        "fitted_intercept_log_inv_sqrt_n": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": -2.8683073315301457
+        },
+        "fitted_slope_log_inv_sqrt_n": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 1.1593318686742233
+        },
+        "fitted_slope_log_n": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": -0.5796659343371117
+        },
+        "kappa_star_mv": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 17.811443353596637
+        },
+        "kappa_star_shift_ratio": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 1.0002772357677858
+        },
+        "kappa_star_single": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 17.806506753025378
+        },
+        "omega_star": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 1.177442562550897
+        },
+        "rmse_sup_n10": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 0.014228774894371566
+        },
+        "rmse_sup_n100": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 0.0043444130122419905
+        },
+        "rmse_sup_n1000": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 0.0009859062959747139
+        },
+        "tau_G_trading_days": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 5.04
+        },
+        "tau_G_years": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 0.02
+        },
+        "theta_G": {
+          "tolerance_kind": "relative",
+          "tolerance_relative": 0.05,
+          "value": 50.0
+        }
+      },
+      "notes": "Particle SDE at locked seed; quick-mode budget (3 n-points, 16 reps, 100 steps).",
+      "seed": 20260514,
+      "tolerance_class": "stochastic_relative"
+    }
+  },
+  "generated_at_utc": "2026-05-23T21:00:13+00:00",
+  "n_experiments": 8,
+  "schema_version": "1.0",
+  "stochastic_rel_tolerance": 0.05,
+  "tooling": {
+    "QuantLib": "1.42.1",
+    "diptest": "0.11.0",
+    "gymnasium": "1.3.0",
+    "machine": "arm64",
+    "matplotlib": "3.10.9",
+    "numpy": "2.4.4",
+    "pandas": "3.0.2",
+    "platform": "macOS-26.3.1-arm64-arm-64bit-Mach-O",
+    "python": "3.14.3",
+    "scipy": "1.17.1",
+    "torch": "2.11.0"
+  },
+  "version": "0.3.3"
+}

@@ -23,6 +23,7 @@ To intentionally update the baseline after a science change:
 
 from __future__ import annotations
 
+import contextlib
 import json
 import math
 import os
@@ -34,6 +35,7 @@ import numpy as np
 import pytest
 
 from reflexive_options.experiments import _generate_repro_baseline as repro_mod
+from reflexive_options.experiments import _generate_repro_baseline_v033 as repro_v033_mod
 from reflexive_options.experiments._generate_repro_baseline import (
     CANONICAL_SEED,
     RECEIPT_PATH,
@@ -50,6 +52,18 @@ from reflexive_options.experiments._generate_repro_baseline import (
     _tooling_versions,
     blake2b_hex,
     canonical_json,
+)
+from reflexive_options.experiments._generate_repro_baseline_v033 import (
+    DETERMINISTIC_ABS_TOL as V033_DET_ABS_TOL,
+)
+from reflexive_options.experiments._generate_repro_baseline_v033 import (
+    RECEIPT_PATH as V033_RECEIPT_PATH,
+)
+from reflexive_options.experiments._generate_repro_baseline_v033 import (
+    RECEIPT_VERSION as V033_RECEIPT_VERSION,
+)
+from reflexive_options.experiments._generate_repro_baseline_v033 import (
+    STOCHASTIC_REL_TOL as V033_STOCH_REL_TOL,
 )
 
 # ---------------------------------------------------------------------------
@@ -657,3 +671,201 @@ def test_build_receipt_includes_schema_and_tooling() -> None:
     assert "tooling" in receipt and "python" in receipt["tooling"]
     assert receipt["n_experiments"] == len(receipt["entries"])
     assert all("blake2b_hash" in e for e in receipt["entries"])
+
+
+# ---------------------------------------------------------------------------
+# v0.3.3 Wave 1–6 reproducibility receipt
+# ---------------------------------------------------------------------------
+#
+# The v0.3.3 receipt lives in `tests/repro/baseline_v0.3.3.json` and pins the
+# headline metrics introduced in waves 1–6 (lambda scaling, supercritical limit
+# cycle, Hawkes–SV equivalence, codim-2 / Bautin, McKean–Vlasov,
+# κ★ robustness, 2D H_bimod, H1 synthetic-validation). The schema differs from
+# the v0.1.0 receipt: per-metric tolerances (absolute for deterministic
+# experiments, relative for stochastic) rather than whole-metric-dict hashes.
+#
+# Same env-var escape hatches as the v0.1.0 leg (CI_FAST=1 / SKIP_REPRO=1).
+
+
+def _load_v033_payload() -> dict[str, Any]:
+    if not V033_RECEIPT_PATH.exists():
+        return {}
+    return json.loads(V033_RECEIPT_PATH.read_text())
+
+
+def _v033_experiment_names() -> list[str]:
+    payload = _load_v033_payload()
+    if not payload:
+        return []
+    return list(payload.get("experiments", {}).keys())
+
+
+def _assert_v033_metric_matches(measured: Any, baseline: dict[str, Any], path: str) -> str | None:
+    """Return None on match, an error string on failure."""
+    expected = baseline["value"]
+    kind = baseline.get("tolerance_kind")
+
+    # Bool: exact equality.
+    if isinstance(expected, bool):
+        if not isinstance(measured, bool) or measured != expected:
+            return f"{path}: bool mismatch — measured={measured!r} vs baseline={expected!r}"
+        return None
+
+    # Int: exact equality (post-bool to avoid bool-as-int collisions).
+    if isinstance(expected, int) and not isinstance(expected, bool):
+        if not isinstance(measured, int) or isinstance(measured, bool) or measured != expected:
+            return f"{path}: int mismatch — measured={measured!r} vs baseline={expected!r}"
+        return None
+
+    # Float: absolute or relative tolerance per the receipt entry.
+    if isinstance(expected, (int, float)):
+        if not isinstance(measured, (int, float)) or isinstance(measured, bool):
+            return f"{path}: type mismatch — measured={type(measured).__name__} vs baseline=float"
+        target = float(expected)
+        actual = float(measured)
+        if math.isnan(target) and math.isnan(actual):
+            return None
+        if kind == "absolute":
+            tol = float(baseline["tolerance_abs"])
+            if abs(actual - target) > tol:
+                return (
+                    f"{path}: |Δ|={abs(actual - target):.3e} > {tol:.1e} "
+                    f"(measured={actual:.10g} vs baseline={target:.10g})"
+                )
+            return None
+        if kind == "relative":
+            tol = float(baseline["tolerance_relative"])
+            denom = max(abs(target), 1e-12)
+            rel = abs(actual - target) / denom
+            if rel > tol:
+                return (
+                    f"{path}: rel_err={rel:.3%} > {tol:.0%} "
+                    f"(measured={actual:.6g} vs baseline={target:.6g})"
+                )
+            return None
+        if kind == "exact":
+            if actual != target:
+                return f"{path}: exact mismatch — measured={actual} vs baseline={target}"
+            return None
+        return f"{path}: unknown tolerance_kind {kind!r}"
+
+    # Non-numeric primitive: exact.
+    if measured != expected:
+        return f"{path}: mismatch — measured={measured!r} vs baseline={expected!r}"
+    return None
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(os.environ.get("CI_FAST") or os.environ.get("SKIP_REPRO"), reason=SKIP_REASON)
+@pytest.mark.parametrize(
+    "experiment_name",
+    _v033_experiment_names(),
+    ids=_v033_experiment_names() or None,
+)
+def test_v033_experiment_reproduces_baseline(experiment_name: str) -> None:
+    """Re-run a Wave 1–6 experiment and assert headline metrics match the receipt."""
+    payload = _load_v033_payload()
+    assert payload, "v0.3.3 receipt missing — run `bash scripts/generate_repro_baseline.sh`"
+    entry = payload["experiments"][experiment_name]
+
+    # Find the registered spec to re-run.
+    spec = None
+    for s in repro_v033_mod._all_specs():
+        if s.name == experiment_name:
+            spec = s
+            break
+    assert spec is not None, f"v0.3.3 spec for {experiment_name!r} not in registry"
+
+    raw = spec.runner()
+    failures: list[str] = []
+    for ms in spec.metrics:
+        baseline = entry["metrics"][ms.name]
+        try:
+            measured = ms.extractor(raw)
+        except (KeyError, IndexError, TypeError) as err:
+            failures.append(f"{ms.name}: extraction failed — {err!r}")
+            continue
+        # Coerce numpy scalars to Python primitives for comparison.
+        if hasattr(measured, "item") and not isinstance(measured, bool):
+            with contextlib.suppress(AttributeError, TypeError):
+                measured = measured.item()
+        err_msg = _assert_v033_metric_matches(measured, baseline, f"{spec.name}.{ms.name}")
+        if err_msg:
+            failures.append(err_msg)
+    assert not failures, "\n".join(failures)
+
+
+def test_v033_receipt_file_exists() -> None:
+    assert V033_RECEIPT_PATH.exists(), (
+        f"missing v0.3.3 receipt at {V033_RECEIPT_PATH} — "
+        "run `bash scripts/generate_repro_baseline.sh`"
+    )
+
+
+def test_v033_receipt_is_well_formed() -> None:
+    """v0.3.3 top-level shape + per-experiment shape."""
+    payload = json.loads(V033_RECEIPT_PATH.read_text())
+    required_top = {
+        "schema_version",
+        "version",
+        "commit",
+        "generated_at_utc",
+        "tooling",
+        "deterministic_abs_tolerance",
+        "stochastic_rel_tolerance",
+        "n_experiments",
+        "experiments",
+    }
+    assert required_top.issubset(payload.keys()), required_top - payload.keys()
+    assert payload["version"] == V033_RECEIPT_VERSION
+    assert payload["deterministic_abs_tolerance"] == V033_DET_ABS_TOL
+    assert payload["stochastic_rel_tolerance"] == V033_STOCH_REL_TOL
+    assert payload["n_experiments"] == len(payload["experiments"])
+    for name, entry in payload["experiments"].items():
+        assert {"tolerance_class", "seed", "config", "metrics"} <= entry.keys(), name
+        assert entry["tolerance_class"] in {"deterministic_exact", "stochastic_relative"}, name
+        for metric_name, metric_entry in entry["metrics"].items():
+            qualified = f"{name}.{metric_name}"
+            assert "value" in metric_entry, qualified
+            assert "tolerance_kind" in metric_entry, qualified
+            kind = metric_entry["tolerance_kind"]
+            if kind == "absolute":
+                assert "tolerance_abs" in metric_entry, qualified
+            elif kind == "relative":
+                assert "tolerance_relative" in metric_entry, qualified
+            elif kind == "exact":
+                pass
+            else:
+                raise AssertionError(f"{qualified}: unknown tolerance_kind {kind!r}")
+
+
+def test_v033_every_registered_spec_appears_in_receipt() -> None:
+    """No Wave 1–6 spec silently dropped on the way to the receipt."""
+    payload = json.loads(V033_RECEIPT_PATH.read_text())
+    receipt_names = set(payload["experiments"].keys())
+    spec_names = {s.name for s in repro_v033_mod._all_specs()}
+    assert spec_names == receipt_names, (
+        f"v0.3.3 spec/receipt drift — only-spec={spec_names - receipt_names}, "
+        f"only-receipt={receipt_names - spec_names}"
+    )
+
+
+def test_v033_expected_experiments_locked() -> None:
+    """Lock the *set* of v0.3.3 experiments — guards against accidental drops."""
+    spec_names = {s.name for s in repro_v033_mod._all_specs()}
+    assert spec_names == {
+        "lambda_scaling",
+        "limit_cycle_supercritical",
+        "hawkes_sv_equivalence",
+        "codim2_analysis",
+        "mckean_vlasov_validation",
+        "kappa_star_robustness",
+        "h_bimod_2d_scan",
+        "h1_synthetic_validation",
+    }
+
+
+def test_v033_tolerance_constants_match_policy() -> None:
+    """Per CLAUDE.md: 1e-10 abs for deterministic, 5% rel for stochastic."""
+    assert V033_DET_ABS_TOL == 1e-10
+    assert V033_STOCH_REL_TOL == 0.05

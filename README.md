@@ -1,8 +1,14 @@
 # reflexive-options
 
-**Reflexive options market simulator with dealer-gamma feedback, RL-trained agents, and analytical bifurcation results.**
+[![release](https://img.shields.io/github/v/tag/mahimn01/reflexive-options?sort=semver&label=release)](https://github.com/mahimn01/reflexive-options/releases)
+[![tests](https://img.shields.io/badge/tests-409%20passing-brightgreen)](#quality)
+[![coverage](https://img.shields.io/badge/coverage-88.10%25-brightgreen)](#quality)
+[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![paper](https://img.shields.io/badge/paper-PDF%20(30%20pp)-blue)](paper/main.pdf)
 
-In-progress research codebase for the working paper *Reflexivity in Options Markets* (Patel, 2026).
+**Reflexive options market simulator with dealer-gamma feedback, four bifurcation theorems, RL-trained agents, and a pre-registered evaluation framework.**
+
+In-progress research codebase for the working paper *Reflexivity in Options Markets* (Patel, 2026). Current release: **v0.3.3** (master 30 pp + ICAIF 6 pp + NeurIPS workshop 4-body variant).
 
 ## What's here
 
@@ -22,8 +28,11 @@ A full implementation of:
 
 4. **An RL training infrastructure** (Mamba state-space + cross-attention transformer, PPO + behavioral cloning + EWC + curriculum learning) vendored from the [`mahimn01/trading-algo`](https://github.com/mahimn01/trading-algo) ATLAS module.
 
-5. **Two analytical results** (synthesis of established machinery in a configuration not previously published in this combination — see `paper/related_work.md` §1 for the precedent comparison against Halperin–Itkin Marketron, Dai 2025, Brock–Hommes–Wagener, and He–Li–Zheng 2009):
-   - A Hopf bifurcation theorem characterizing the critical coupling $\kappa^*$ at which endogenous limit cycles in volatility appear.
+5. **Four bifurcation-theoretic results** (synthesis of established machinery in a configuration not previously published in this combination — see `paper/related_work.md` §1 for the precedent comparison against Halperin–Itkin Marketron, Dai 2025, Brock–Hommes–Wagener, and He–Li–Zheng 2009):
+   - **Theorem 1 (Hopf):** critical coupling $\kappa^\star$ at which endogenous limit cycles in volatility appear, with closed-form first Lyapunov coefficient $\ell_1$ for log-normal open-interest.
+   - **Theorem 2 (BT-empty):** Bogdanov-Takens locus is empty in the canonical scan window; the model is structurally Hopf-only and cannot generate excitable spike-and-recovery dynamics from its autonomous skeleton alone.
+   - **Theorem 3 (McKean-Vlasov correction):** $\kappa^\star_{\mathrm{MV}}/\kappa^\star_{\mathrm{single}} = \sqrt{1 + (\omega^\star \tau_G)^2}$, strictly multiplicative; single-dealer model is structurally biased toward over-predicting instability when dealer-hedging is slower than the Hopf period.
+   - **Theorem 4 (Hawkes-SV equivalence):** formal identification of Hardiman 2013's critical Hawkes branching ratio $n \approx 1$ with our continuous-time Hopf threshold $\kappa^\star$, via the Bacry-Delattre-Hoffmann-Muzy diffusive-limit identity and the Bacry-Mastromatteo-Muzy kernel-universal stability boundary.
    - The reflexive simulator's stationary marginal density, contrasted analytically with Heston's known stationary distribution.
 
 6. **An evaluation framework** (each ingredient borrowed; combination not previously published — see `paper/related_work.md` §§2–3 for the comparison against He–Li–Zheng 2025 NeurIPS, Ning et al. 2021/2024, VolGAN, FuNVol, Subbaswamy–Saria 2022, Packer 2018):
@@ -104,22 +113,52 @@ The arXiv submission metadata (subjects, MSC codes, license, comments) lives in 
 | Surface generator + arbitrage filter (~85k surfaces/sec) | **implemented + tested** |
 | ATLAS vendored (Mamba + BC + EWC + RAT) | **vendored (~3,700 LOC, 8 smoke tests pass)** |
 | Gymnasium RL env + state/action/reward + curriculum | **implemented + tested** |
-| Hopf bifurcation analysis (Theorem 1 + closed-form $\ell_1$ + stochastic shift $\Lambda$) | **derived + computed (closed-form-OI regime, §4.3.5): $\kappa^* = 17.81$, $\omega^* = 1.18$, $\ell_1 = -0.48$ (supercritical); $\|\Lambda\| \sim 10^{-3}$ at the §4.2 trivial-equilibrium evaluation, sign configuration-dependent (deferred to empirical phase) — reproduce via `lambda_correction_canonical`** |
-| Fokker-Planck stationary density vs Heston (analytical + MC) | **derived: H_tail confirmed, H_skew confirmed, H_bimod refuted (honest finding documented)** |
+| Theorem 1 (Hopf) + closed-form $\ell_1$ + symbolic ℓ_1 (Appendix A) | **derived + computed (closed-form-OI regime, §3.5): $\kappa^\star = 17.81$, $\omega^\star = 1.18$, $\ell_1 = -0.48$ (supercritical). Symbolic 7.8 KB rational verified against numerical to ~$10^{-13}$. Limit cycle past $\kappa^\star$ validated: $T = 10.561$ yr vs theory 10.977 yr (3.79%)** |
+| Theorem 2 (BT-empty, §3.7) + Bautin curve with 6 anchors | **proved (closed-form $G_v < 0$ dominance argument); 71×97 scan confirms $\kappa_{\mathrm{SN}} \leq -1.31$ everywhere** |
+| Theorem 3 (McKean-Vlasov correction, §3.8) | **derived + numerically validated: propagation-of-chaos slope -0.58 (theory -0.5); MV/single ratio 1.000277 at canonical $\theta_G = 50$/yr** |
+| Theorem 4 (Hawkes-SV equivalence at Hopf boundary, §3.9) | **derived + machine-precision verified: $n_{\mathrm{SV}}(\kappa^\star_{\mathrm{brent}}) = 1$ to $< 10^{-15}$. Closes the Hardiman 2013 ↔ continuous-time SV gap** |
+| Empirical $\|\Lambda\| \sim \|\rho\xi\|^B$ fit | **measured: $\hat B = 0.082$, 95% CI $[-0.010, 0.168]$ — refutes ELR $B = 2/3$ prediction at the trivial-equilibrium regime ($p \ll 0.01$, 13σ)** |
+| Fokker-Planck stationary density vs Heston (analytical + MC) | **derived: H_tail confirmed, H_skew confirmed; H_bimod refuted on 1D marginal, *supported* on 2D PCA-projection at $\kappa = 1.05 \kappa^\star_{\mathrm{env}}$ ($p = 0.033$)** |
+| $\kappa^\star$ robustness to OI misspecification (§3.6) | **elasticities $\eta_{\sigma_q} = -1.58$, $\eta_{\mu_q} = +703$; calibration tolerance for Phase 4: $\mu_q$ to $\pm 5$bp is binding** |
+| H1 synthetic-pipeline validation (§5.4) | **demonstrated working: SW2(κ_0) < SW2(2κ_0) < SW2(Heston) with disjoint bootstrap CIs** |
+| H4 detector power on Stuart-Landau positive control | **$\geq 80\%$ peak power at $T = 512$ for 8/9 $(\mu, \sigma)$ configurations; non-monotone in $T$** |
+| Sliced-W2 sample-complexity | **$n_{\min} \approx 4{,}000$ windows for $\pm 10\%$ bootstrap CI half-width** |
 | κ-sensitivity transfer experiment (BC-trained MLP, ~15-20 min/run) | **implemented + tested** |
-| Marketron replication infrastructure | **implemented + tested (0 cells hit, mechanism mismatch — documented)** |
-| Pre-registration document | **drafted (2,624 words, commit-anchored)** |
-| Test suite | **336/336 passing, ≥85% branch coverage** [^cov] |
+| Marketron mechanism decomposition | **8/24 OOS shape-cell match (33.3%) at per-set tuned coupling; a priori long-horizon restricted subset 7/10 in-sample ($p = 0.172$)** |
+| Pre-registration document | **locked + OpenTimestamps Bitcoin-anchored proof (`paper/pre_registration.md.ots`). A1–A7 amendments closed at commit `63078f5`; no further amendments permitted post-data-load** |
+| Manuscript variants | **NeurIPS GenAI Finance Workshop (4-body) + ICAIF 2026 double-blind ACM sigconf (6 pp), both compiled clean** |
+| Test suite | **409 passing, 88.10% branch coverage** [^cov] |
 | CI (GitHub Actions) | **green on Python 3.12 / 3.13 / 3.14** |
 
-[^cov]: Coverage measured by the most recent `bash scripts/verify.sh` run (88.94% as of v0.3.1); gated at >=85% in CI via `[tool.coverage.report] fail_under = 85`.
+[^cov]: Coverage measured by the most recent `bash scripts/verify.sh` run (88.10% as of v0.3.3); gated at ≥ 85% in CI via `[tool.coverage.report] fail_under = 85`.
 
-**v0.3 shipped** (2026-04-22):
-- Closed-form first Lyapunov coefficient $\ell_1$ for log-normal open-interest in moneyness (`paper/theory.md` §4.3, `theory/bifurcation.lyapunov_coefficient_lognormal_oi`); matches the FD-tensor pipeline to <0.6% relative.
-- 4D phase scan extending the $(\kappa, \xi)$ scan to $(\kappa, \xi, \rho, \sigma_v)$ — `experiments/hopf_phase_scan_4d.py`, rendered to `paper/figures/hopf_phase_diagram.pdf`.
-- H4 spectral-peak detector with adaptive Welch window, dual signal ($|r_t|$ and realised-variance proxy), IAAFT surrogate null — pre-registration amendments A1–A5 in `paper/pre_registration_amendments.md`.
-- GP-posterior slope CI for the κ-sensitivity protocol (amendment A6) and TOST equivalence on the dimensionless elasticity (amendment A7).
-- LaTeX manuscript: `paper/main.tex` + `paper/references.bib` + `paper/Makefile`. Build with `make pdf` from `paper/`.
+**v0.3.3 shipped** (2026-05-14) — see [`CHANGELOG.md`](CHANGELOG.md) for the full release notes. Highlights:
+- 4 theorems (Hopf + BT-empty + MV-Hopf + Hawkes-SV) with closed-form proofs / proof sketches.
+- Closed-form symbolic $\ell_1$ as Appendix A (7.8 KB rational in 13 symbols, machine-verified).
+- Empirical $|\Lambda| \sim |\rho\xi|^B$ scaling fit ($\hat B = 0.082$, refutes ELR).
+- Limit cycle past $\kappa^\star$ numerically validated to 3.79%.
+- H1 synthetic pipeline demonstrated end-to-end before empirical SPX target.
+- 2D bimodality flip on $(\log S, v)$ joint PCA-projection.
+- NeurIPS workshop + ICAIF manuscript variants ready.
+
+## How to cite
+
+If you use this software or paper, please cite:
+
+```bibtex
+@software{patel2026reflexive,
+  author       = {Patel, Mahimn},
+  title        = {Reflexivity in Options Markets:
+                  A Stochastic-Volatility Model with Dealer-Gamma Feedback,
+                  Hopf Bifurcation Calculus, and a Pre-Registered Evaluation Framework},
+  year         = 2026,
+  version      = {v0.3.3},
+  url          = {https://github.com/mahimn01/reflexive-options},
+  note         = {Pre-registered at commit 268c061 via OpenTimestamps proof}
+}
+```
+
+A machine-readable [`CITATION.cff`](CITATION.cff) is committed at the repo root and is recognised by GitHub's "Cite this repository" button.
 
 **Known open items** (post-v1):
 - Joint VIX/SPX simulation (Marketron explicitly fails this; we don't address it in v1).
