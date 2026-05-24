@@ -1427,3 +1427,840 @@ def find_bautin_anchors(
         return crossings
     idx = np.linspace(0, len(crossings) - 1, n_anchors).round().astype(int)
     return [crossings[i] for i in idx]
+
+
+# ---------------------------------------------------------------------------
+# Mixture-of-K-lognormals generalization of the §4.3 closed form
+# (paper/theory.md §4.3.7, paper/mixture_oi_lyapunov.md).
+#
+# Empirical SPX open-interest grids are multi-modal — ATM concentration plus
+# round-strike spikes, calendar-near-expiry clustering, dealer-portfolio-driven
+# OTM tails. The single-lognormal closed form of §4.3 is only robust to mild
+# bimodality (≤ Δ=0.10); §3.6 reports 119% relative error at Δ=0.20.
+#
+# Generalization. Take q(log K) = Σ_k w_k · N(log K; μ_k, σ_k²) with w_k ≥ 0
+# and Σ_k w_k = 1. By linearity of the dealer-gamma aggregator G in the OI
+# density (Eq. 14), the aggregate is itself a mixture:
+#
+#     G(a, v) = Σ_k w_k · G_k(a, v)
+#
+# where each G_k is the closed-form single-lognormal aggregator (Eq. 15a) with
+# its own (μ_k, σ_k). All partials of G are linear combinations of the
+# single-component partials, so the same Routh-Hurwitz quadratic (Eq. 16)
+# applies with (G_y, G_v) replaced by the mixture sums Σ_k w_k (G_{y,k}, G_{v,k}).
+# The Hopf threshold κ★ is the smallest positive root of that quadratic and the
+# first Lyapunov coefficient ℓ_1 is obtained by passing the multilinear (B, C)
+# tensors — themselves linear in {w_k} — into the existing Kuznetsov pipeline.
+#
+# Mathematically this is just "use the mixture partials in place of the
+# single-component partials". The closed-form structure of κ★ is preserved,
+# and ℓ_1 remains a rational expression in {w_k, μ_k, σ_k}_{k=1}^K and
+# (κ_v, α, β, γ).
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class MixtureOIComponent:
+    """One log-normal component of a mixture-OI density q(log K).
+
+    All fields are in log-strike units (so `mu_q` ≈ log S for ATM, `sigma_q`
+    is the per-component standard deviation in log-strike). Weights are
+    interpreted in the same scale as the other components — they need not
+    sum to 1, the mixture machinery normalises internally.
+    """
+
+    weight: float
+    mu_q: float
+    sigma_q: float
+
+    def __post_init__(self) -> None:
+        if self.weight < 0.0:
+            raise ValueError(f"weight must be ≥ 0, got {self.weight}")
+        if self.sigma_q <= 0.0:
+            raise ValueError(f"sigma_q must be > 0, got {self.sigma_q}")
+
+
+def _normalize_components(
+    components: list[MixtureOIComponent] | tuple[MixtureOIComponent, ...],
+) -> list[MixtureOIComponent]:
+    """Return a copy of `components` with weights summing to 1 (no other changes)."""
+    if len(components) == 0:
+        raise ValueError("mixture_components must contain ≥ 1 component")
+    total = sum(c.weight for c in components)
+    if total <= 0.0:
+        raise ValueError(f"sum of mixture weights must be > 0, got {total}")
+    return [
+        MixtureOIComponent(weight=c.weight / total, mu_q=c.mu_q, sigma_q=c.sigma_q)
+        for c in components
+    ]
+
+
+# Keys of the partials dictionary returned by `G_lognormal_oi_partials` — used
+# below to drive the linear mixture combination in a single loop.
+_PARTIAL_KEYS: tuple[str, ...] = (
+    "G",
+    "G_a",
+    "G_v",
+    "G_z",
+    "G_aa",
+    "G_av",
+    "G_vv",
+    "G_az",
+    "G_vz",
+    "G_zz",
+    "G_aaa",
+    "G_aav",
+    "G_avv",
+    "G_vvv",
+    "G_aaz",
+    "G_avz",
+    "G_vvz",
+    "G_azz",
+    "G_vzz",
+    "G_zzz",
+)
+
+
+def G_mixture_lognormal_oi(
+    log_spot: float,
+    variance: float,
+    *,
+    mixture_components: list[MixtureOIComponent] | tuple[MixtureOIComponent, ...],
+    T_eff: float,
+    coupling_units: float = 1.0,
+    rate: float = 0.0,
+    dividend: float = 0.0,
+) -> float:
+    """Closed-form aggregate dealer-gamma G(a, v) for a mixture-of-K-lognormals OI.
+
+    By linearity of the dealer-gamma aggregator in the OI density,
+
+        G(a, v) = Σ_k w_k · G_k(a, v),
+
+    where each G_k is the single-lognormal closed form `G_lognormal_oi` with
+    component parameters (μ_k, σ_k). Weights are normalised internally.
+
+    Args:
+        log_spot, variance: state at which to evaluate G.
+        mixture_components: list of `MixtureOIComponent`. K ≥ 1.
+        T_eff, coupling_units, rate, dividend: as in `G_lognormal_oi`.
+
+    Returns:
+        G(log_spot, variance).
+    """
+    comps = _normalize_components(list(mixture_components))
+    total = 0.0
+    for c in comps:
+        total += c.weight * G_lognormal_oi(
+            log_spot,
+            variance,
+            mu_q=c.mu_q,
+            sigma_q=c.sigma_q,
+            T_eff=T_eff,
+            coupling_units=coupling_units,
+            rate=rate,
+            dividend=dividend,
+        )
+    return float(total)
+
+
+def G_mixture_lognormal_oi_partials(
+    *,
+    a_star: float,
+    v_star: float,
+    mixture_components: list[MixtureOIComponent] | tuple[MixtureOIComponent, ...],
+    T_eff: float,
+    coupling_units: float = 1.0,
+    rate: float = 0.0,
+    dividend: float = 0.0,
+) -> dict[str, float]:
+    """All partials of the mixture G(a, v) at (a_star, v_star) up to third order.
+
+    Multi-linearity of differentiation gives
+
+        ∂^|α| G / ∂x^α = Σ_k w_k · ∂^|α| G_k / ∂x^α
+
+    for every multi-index α. We therefore delegate to `G_lognormal_oi_partials`
+    for each component and form the weighted sum. K=1 collapses to the
+    single-lognormal closed form to machine precision.
+
+    Args:
+        a_star, v_star: equilibrium location.
+        mixture_components: list of `MixtureOIComponent`. K ≥ 1.
+        T_eff, coupling_units, rate, dividend: as in `G_lognormal_oi_partials`.
+
+    Returns:
+        Dict with the same keys as `G_lognormal_oi_partials`. All z-partials
+        are 0 since each component is z-independent.
+    """
+    comps = _normalize_components(list(mixture_components))
+    out: dict[str, float] = {k: 0.0 for k in _PARTIAL_KEYS}
+    for c in comps:
+        pk = G_lognormal_oi_partials(
+            a_star=a_star,
+            v_star=v_star,
+            mu_q=c.mu_q,
+            sigma_q=c.sigma_q,
+            T_eff=T_eff,
+            coupling_units=coupling_units,
+            rate=rate,
+            dividend=dividend,
+        )
+        for key in _PARTIAL_KEYS:
+            out[key] += c.weight * pk[key]
+    return out
+
+
+def kappa_star_mixture_lognormal_oi(
+    *,
+    mixture_components: list[MixtureOIComponent] | tuple[MixtureOIComponent, ...],
+    T_eff: float,
+    kappa_v: float,
+    alpha: float,
+    beta: float,
+    gamma: float,
+    a_star: float,
+    v_star: float,
+    coupling_units: float = 1.0,
+    rate: float = 0.0,
+    dividend: float = 0.0,
+) -> tuple[float, float]:
+    """Closed-form Hopf threshold κ* for the mixture-OI parameterization.
+
+    Because the Routh-Hurwitz coefficients are linear in (G_y, G_v) and these
+    in turn are linear combinations of the per-component partials, the
+    *same* quadratic Eq. 16 governs the mixture case — only the (G_y, G_v)
+    fed into `kappa_star_lognormal_oi` change:
+
+        G_y(mix) = Σ_k w_k · G_{y,k},
+        G_v(mix) = Σ_k w_k · G_{v,k}.
+
+    K=1 recovers the single-lognormal `kappa_star_lognormal_oi` to machine
+    precision (verified in tests).
+
+    Returns:
+        (kappa_star, omega_star). Same failure modes as
+        `kappa_star_lognormal_oi` — propagates ValueError on degenerate /
+        non-Hopf regimes.
+    """
+    p = G_mixture_lognormal_oi_partials(
+        a_star=a_star,
+        v_star=v_star,
+        mixture_components=mixture_components,
+        T_eff=T_eff,
+        coupling_units=coupling_units,
+        rate=rate,
+        dividend=dividend,
+    )
+    return kappa_star_lognormal_oi(
+        G_y=p["G_a"],
+        G_v=p["G_v"],
+        kappa_v=kappa_v,
+        alpha=alpha,
+        beta=beta,
+        gamma=gamma,
+    )
+
+
+def lyapunov_coefficient_mixture_lognormal_oi(
+    *,
+    mixture_components: list[MixtureOIComponent] | tuple[MixtureOIComponent, ...],
+    T_eff: float,
+    kappa_v: float,
+    theta_v: float,
+    alpha: float,
+    beta: float,
+    gamma: float,
+    a_star: float,
+    v_star: float | None = None,
+    coupling_units: float = 1.0,
+    rate: float = 0.0,
+    dividend: float = 0.0,
+) -> tuple[float, float, float]:
+    """Closed-form first Lyapunov coefficient ℓ_1 for the mixture-OI case.
+
+    Pipeline (mirrors `lyapunov_coefficient_lognormal_oi`):
+        1. Compute the mixture partials of G via
+           `G_mixture_lognormal_oi_partials` (linear in the {w_k}).
+        2. Solve the quadratic Routh-Hurwitz condition H(κ*) = 0 via
+           `kappa_star_lognormal_oi` on the mixture (G_y, G_v).
+        3. Assemble (J, B, C) at κ* via `_build_lognormal_tensors` — the same
+           tensor assembly works because every multilinear tensor inherits the
+           same linearity in the {w_k}.
+        4. Feed (J, B, C, ω*) to the Kuznetsov 2004 formula via
+           `compute_lyapunov_coefficient`.
+
+    K=1 collapses to `lyapunov_coefficient_lognormal_oi` to machine precision.
+
+    Returns:
+        (kappa_star, omega_star, ell_1). Sign convention: ℓ_1 < 0 supercritical,
+        ℓ_1 > 0 sub-critical (cf. Kuznetsov 2004 §3.5).
+    """
+    if v_star is None:
+        v_star = theta_v
+
+    partials = G_mixture_lognormal_oi_partials(
+        a_star=a_star,
+        v_star=v_star,
+        mixture_components=mixture_components,
+        T_eff=T_eff,
+        coupling_units=coupling_units,
+        rate=rate,
+        dividend=dividend,
+    )
+
+    kappa_star, omega_star = kappa_star_lognormal_oi(
+        G_y=partials["G_a"],
+        G_v=partials["G_v"],
+        kappa_v=kappa_v,
+        alpha=alpha,
+        beta=beta,
+        gamma=gamma,
+    )
+
+    J, B, C = _build_lognormal_tensors(
+        partials,
+        kappa=kappa_star,
+        kappa_v=kappa_v,
+        alpha=alpha,
+        beta=beta,
+        gamma=gamma,
+    )
+    ell_1 = compute_lyapunov_coefficient(J, B, C, omega=omega_star)
+    return kappa_star, omega_star, ell_1
+
+
+# ---------------------------------------------------------------------------
+# No-Hopf-wedge taxonomy (paper §3.5 closing-the-bifurcation analysis).
+#
+# The §3.5 closed-form quadratic H(κ) = A_2 κ^2 + A_1 κ + A_0 has discriminant
+#
+#     D := (G_v L − G_y A^2)^2 − 4 G_y^2 A (M A − L/2),    A := α + κ_v,
+#                                                          M := α κ_v,
+#                                                          L := β γ,
+#
+# and a "no-Hopf wedge" defined operationally as
+#
+#     W_NH := {(σ_q, γ) : H(κ) = 0 has no positive root in κ ∈ [0, ∞)}.
+#
+# Two sub-cases generate the wedge: (i) D < 0 (no real root of H, the strict
+# §3.5 wedge) or (ii) D ≥ 0 but the smallest positive root is non-positive
+# (both real roots negative). The L2-T § 3.7 BT analysis showed
+# κ_SN(σ_q, γ) < 0 throughout the canonical scan window, so the saddle-node
+# locus that they checked is also empty.
+#
+# The open question is: in W_NH, what bifurcation (if any) is accessible as
+# κ ramps up from 0? Theorem 6 (no-Hopf-wedge taxonomy) answers it: with the
+# canonical closed-form partials (G_y, G_v) held fixed at the trivial
+# equilibrium (a^* = μ_q, v^* = θ_v), all three Routh-Hurwitz inequalities
+# (c_2 > 0, c_0 > 0, H > 0) hold *strictly for every κ ≥ 0* throughout W_NH.
+# The equilibrium is therefore globally asymptotically stable on the
+# physical κ-half-line in the wedge — no codim-1 bifurcation of any kind.
+#
+# Sufficient condition (closed-form, verified in `is_in_no_hopf_wedge` and
+# enforced by `bifurcations_in_no_hopf_wedge`):
+#
+#     (S1) G_y ≤ 0                            ⇒ c_2(κ) = -κ G_y + A > 0 ∀κ ≥ 0
+#     (S2) G_y · α κ_v + G_v · β γ ≤ 0        ⇒ c_0(κ) ≥ L/2 > 0 ∀κ ≥ 0
+#     (S3) D < 0,  OR  (D ≥ 0 ∧ A_0 > 0 ∧ A_1 > 0)
+#                                              ⇒ H(κ) > 0 ∀κ ≥ 0
+#
+# (S1)+(S2)+(S3) ⇒ Liu's full Routh-Hurwitz holds strictly for every κ ≥ 0,
+# so the spectral abscissa of J(κ) stays strictly negative — globally
+# asymptotically stable equilibrium on κ ∈ [0, ∞).
+# ---------------------------------------------------------------------------
+
+
+def is_in_no_hopf_wedge(
+    *,
+    sigma_q: float,
+    gamma: float,
+    mu_q: float,
+    T_eff: float,
+    kappa_v: float,
+    alpha: float,
+    beta: float,
+    a_star: float,
+    v_star: float,
+    coupling_units: float = 1.0,
+    rate: float = 0.0,
+    dividend: float = 0.0,
+) -> bool:
+    """Classify $(\\sigma_q, \\gamma)$ as belonging to the no-Hopf wedge.
+
+    The no-Hopf wedge is defined operationally as the set of $(\\sigma_q, \\gamma)$
+    parameter pairs for which the closed-form Routh-Hurwitz quadratic
+    $H(\\kappa) = A_2 \\kappa^2 + A_1 \\kappa + A_0$ admits NO positive real root.
+    Two sub-cases generate it: (i) discriminant $D < 0$ (no real root at all —
+    the strict §3.5 wedge), or (ii) $D \\geq 0$ but both real roots non-positive.
+
+    Returns True if $(\\sigma_q, \\gamma)$ is in the wedge, False if a positive
+    Hopf root exists.
+
+    Args mirror `kappa_star_lognormal_oi` except that the OI partials are
+    recomputed from $(\\mu_q, \\sigma_q, T_{eff}, a^\\star, v^\\star)$ here.
+    """
+    if sigma_q <= 0.0:
+        raise ValueError(f"sigma_q must be > 0, got {sigma_q}")
+    if T_eff <= 0.0:
+        raise ValueError(f"T_eff must be > 0, got {T_eff}")
+    if kappa_v <= 0.0:
+        raise ValueError(f"kappa_v must be > 0, got {kappa_v}")
+    if alpha <= 0.0:
+        raise ValueError(f"alpha must be > 0, got {alpha}")
+    if gamma < 0.0:
+        raise ValueError(f"gamma must be >= 0, got {gamma}")
+
+    p = G_lognormal_oi_partials(
+        a_star=a_star,
+        v_star=v_star,
+        mu_q=mu_q,
+        sigma_q=sigma_q,
+        T_eff=T_eff,
+        coupling_units=coupling_units,
+        rate=rate,
+        dividend=dividend,
+    )
+    G_y = p["G_a"]
+    G_v = p["G_v"]
+    A_tot = alpha + kappa_v
+    M = alpha * kappa_v
+    L = beta * gamma
+
+    if abs(G_y) < 1e-300:
+        # H collapses to linear: G_v L κ + (M A − L/2)
+        if abs(G_v * L) < 1e-300:
+            return True  # H is a non-zero constant, no Hopf root
+        kappa_lin = (0.5 * L - M * A_tot) / (G_v * L)
+        return kappa_lin <= 0.0
+
+    A2 = G_y * G_y * A_tot
+    A1 = G_v * L - G_y * A_tot * A_tot
+    A0 = M * A_tot - 0.5 * L
+    disc = A1 * A1 - 4.0 * A2 * A0
+    if disc < 0.0:
+        return True  # strict §3.5 wedge: no real root
+    sqrt_disc = float(np.sqrt(disc))
+    r1 = (-A1 - sqrt_disc) / (2.0 * A2)
+    r2 = (-A1 + sqrt_disc) / (2.0 * A2)
+    return not (r1 > 0.0 or r2 > 0.0)
+
+
+@dataclass(frozen=True)
+class NoHopfBifurcationResult:
+    """Output of `bifurcations_in_no_hopf_wedge`.
+
+    Encodes the §3.5 wedge taxonomy at a single $(\\sigma_q, \\gamma)$:
+
+        - `is_in_wedge`: whether $(\\sigma_q, \\gamma)$ admits no positive Hopf root.
+        - `is_globally_stable`: True iff the canonical sufficient conditions
+          (S1)+(S2)+(S3) of Theorem 6 hold — Routh-Hurwitz strict for all
+          $\\kappa \\geq 0$, equilibrium globally asymptotically stable.
+        - `kappa_sn`: positive κ at which the constant Routh-Hurwitz coefficient
+          $c_0(\\kappa) = 0$ (saddle-node onset via $\\det J = 0$). `None` if
+          $c_0$ stays positive on $[0, \\kappa_{\\max}]$.
+        - `kappa_c2_zero`: positive κ at which $c_2(\\kappa) = 0$ (an additional
+          eigenvalue-crossing route the §3.7 closed form does NOT cover).
+          `None` if $c_2 > 0$ on $[0, \\kappa_{\\max}]$.
+        - `kappa_H_zero`: positive κ at which $H(\\kappa) = 0$ — should always be
+          `None` inside the wedge by construction, but reported for sanity.
+        - `kappa_max_scanned`: the upper end of the scanned κ-interval.
+        - `spectral_abscissa_max`: $\\max_{\\kappa \\in [0, \\kappa_{\\max}]} \\max_i
+          \\mathrm{Re}\\,\\lambda_i(J(\\kappa))$, sampled. Negative ⇒ stable.
+        - `G_y`, `G_v`: the canonical partials used.
+    """
+
+    is_in_wedge: bool
+    is_globally_stable: bool
+    kappa_sn: float | None
+    kappa_c2_zero: float | None
+    kappa_H_zero: float | None
+    kappa_max_scanned: float
+    spectral_abscissa_max: float
+    G_y: float
+    G_v: float
+
+
+def bifurcations_in_no_hopf_wedge(
+    *,
+    sigma_q: float,
+    gamma: float,
+    mu_q: float,
+    T_eff: float,
+    kappa_v: float,
+    alpha: float,
+    beta: float,
+    a_star: float,
+    v_star: float,
+    coupling_units: float = 1.0,
+    rate: float = 0.0,
+    dividend: float = 0.0,
+    kappa_max: float = 1.0e3,
+    n_kappa_samples: int = 200,
+) -> NoHopfBifurcationResult:
+    """Scan κ ∈ [0, κ_max] for any codim-1 bifurcation at fixed $(\\sigma_q, \\gamma)$
+    inside the no-Hopf wedge.
+
+    Uses the L2-T canonical-equilibrium partials (G_y, G_v frozen at the
+    trivial equilibrium $a^* = \\mu_q$, $v^* = \\theta_v$) and inspects three
+    closed-form codim-1 indicators:
+
+        - $c_0(\\kappa) = 0$  (saddle-node via $\\det J = 0$)
+        - $c_2(\\kappa) = 0$  (real eigenvalue crossing into RHP via trace flip)
+        - $H(\\kappa) = 0$    (Hopf — should be excluded by the wedge definition)
+
+    Also samples the eigenvalues of $J(\\kappa)$ on a log-uniform κ-grid up to
+    $\\kappa_{\\max}$ and reports $\\max_\\kappa \\max_i \\mathrm{Re}\\,\\lambda_i$
+    as a numerical sanity-check against the closed-form claim.
+
+    Returns a `NoHopfBifurcationResult`. The honest interpretation of the
+    output:
+
+        - `is_in_wedge=True` ∧ `is_globally_stable=True`
+          ⇒ Theorem 6(a): no bifurcation on the physical κ-half-line.
+
+        - `is_in_wedge=True` ∧ `is_globally_stable=False`
+          ⇒ Theorem 6(b/c): some codim-1 bifurcation exists; inspect
+          `kappa_sn`, `kappa_c2_zero`, `kappa_H_zero` for the mechanism.
+
+    Args:
+        sigma_q, gamma: parameter-plane location.
+        kappa_max: upper end of the scanned interval (default 1000, large
+            enough to cover the §3.5 / §3.7 canonical κ★ scales).
+        n_kappa_samples: number of κ samples for the numerical eigenvalue
+            sweep (default 200; cost is dominated by 200 × 3×3 eigvals
+            — milliseconds).
+        Other args: as in `lyapunov_coefficient_lognormal_oi`.
+    """
+    if kappa_max <= 0.0:
+        raise ValueError(f"kappa_max must be > 0, got {kappa_max}")
+    if n_kappa_samples < 2:
+        raise ValueError(f"n_kappa_samples must be >= 2, got {n_kappa_samples}")
+
+    in_wedge = is_in_no_hopf_wedge(
+        sigma_q=sigma_q,
+        gamma=gamma,
+        mu_q=mu_q,
+        T_eff=T_eff,
+        kappa_v=kappa_v,
+        alpha=alpha,
+        beta=beta,
+        a_star=a_star,
+        v_star=v_star,
+        coupling_units=coupling_units,
+        rate=rate,
+        dividend=dividend,
+    )
+
+    p = G_lognormal_oi_partials(
+        a_star=a_star,
+        v_star=v_star,
+        mu_q=mu_q,
+        sigma_q=sigma_q,
+        T_eff=T_eff,
+        coupling_units=coupling_units,
+        rate=rate,
+        dividend=dividend,
+    )
+    G_y = p["G_a"]
+    G_v = p["G_v"]
+
+    A_tot = alpha + kappa_v
+    M = alpha * kappa_v
+    L = beta * gamma
+
+    # Closed-form bifurcation indicators (all linear or quadratic in κ).
+    #
+    # c_2(κ) = -κ G_y + A:  zero at κ = A / G_y if G_y > 0 (and only then).
+    if G_y > 0.0:
+        kappa_c2_zero: float | None = A_tot / G_y
+        if cast(float, kappa_c2_zero) > kappa_max:
+            kappa_c2_zero = None
+    else:
+        kappa_c2_zero = None
+
+    # c_0(κ) = -κ (G_y M + G_v L) + L/2: zero at κ = (L/2) / (G_y M + G_v L)
+    # if denominator is positive.
+    denom_c0 = G_y * M + G_v * L
+    if denom_c0 > 0.0:
+        kappa_sn_candidate = 0.5 * L / denom_c0
+        kappa_sn: float | None = (
+            kappa_sn_candidate if 0.0 < kappa_sn_candidate <= kappa_max else None
+        )
+    else:
+        kappa_sn = None
+
+    # H(κ) = A2 κ² + A1 κ + A0 zeros (Hopf). Should be excluded if in wedge.
+    A2 = G_y * G_y * A_tot
+    A1 = G_v * L - G_y * A_tot * A_tot
+    A0 = M * A_tot - 0.5 * L
+    kappa_H_zero: float | None = None
+    if abs(A2) > 1e-300:
+        disc = A1 * A1 - 4.0 * A2 * A0
+        if disc >= 0.0:
+            sqrt_disc = float(np.sqrt(disc))
+            r1 = (-A1 - sqrt_disc) / (2.0 * A2)
+            r2 = (-A1 + sqrt_disc) / (2.0 * A2)
+            positive_roots = [r for r in (r1, r2) if 0.0 < r <= kappa_max]
+            if positive_roots:
+                kappa_H_zero = float(min(positive_roots))
+    elif abs(A1) > 1e-300:
+        # Linear: A1 κ + A0 = 0
+        kappa_lin = -A0 / A1
+        if 0.0 < kappa_lin <= kappa_max:
+            kappa_H_zero = kappa_lin
+
+    # Numerical sanity-check: sample max Re(λ) on a κ-grid.
+    # Use log spacing so we cover small and large κ.
+    kappa_samples = np.concatenate(
+        [
+            np.array([0.0]),
+            np.logspace(
+                np.log10(max(1e-6, kappa_max / 1e6)),
+                np.log10(kappa_max),
+                n_kappa_samples - 1,
+            ),
+        ]
+    )
+    max_re_overall = -np.inf
+    for k in kappa_samples:
+        a_lin = float(k) * G_y
+        b_lin = float(k) * G_v - 0.5
+        J = np.array(
+            [
+                [a_lin, b_lin, 0.0],
+                [0.0, -kappa_v, gamma],
+                [beta, 0.0, -alpha],
+            ],
+            dtype=np.float64,
+        )
+        eig_re = float(np.max(np.linalg.eigvals(J).real))
+        if eig_re > max_re_overall:
+            max_re_overall = eig_re
+
+    # Global-stability verdict (Theorem 6 sufficient conditions).
+    cond_c2 = G_y <= 0.0
+    cond_c0 = denom_c0 <= 0.0
+    cond_H = in_wedge  # H > 0 ∀κ ≥ 0 follows from the wedge definition + A2 > 0
+    is_globally_stable = bool(in_wedge and cond_c2 and cond_c0 and cond_H)
+
+    return NoHopfBifurcationResult(
+        is_in_wedge=in_wedge,
+        is_globally_stable=is_globally_stable,
+        kappa_sn=kappa_sn,
+        kappa_c2_zero=kappa_c2_zero,
+        kappa_H_zero=kappa_H_zero,
+        kappa_max_scanned=float(kappa_max),
+        spectral_abscissa_max=float(max_re_overall),
+        G_y=float(G_y),
+        G_v=float(G_v),
+    )
+
+
+def scan_no_hopf_wedge(
+    *,
+    sigma_q_grid: NDArray[np.float64],
+    gamma_grid: NDArray[np.float64],
+    mu_q: float,
+    T_eff: float,
+    kappa_v: float,
+    alpha: float,
+    beta: float,
+    a_star: float,
+    v_star: float,
+    coupling_units: float = 1.0,
+    rate: float = 0.0,
+    dividend: float = 0.0,
+    kappa_max: float = 1.0e3,
+    n_kappa_samples: int = 50,
+) -> dict[str, NDArray[np.float64]]:
+    """Vectorised wedge scan over a $(\\sigma_q, \\gamma)$ grid.
+
+    For each $(\\sigma_q, \\gamma)$ cell, call `bifurcations_in_no_hopf_wedge`
+    and store the four headline scalars as arrays of shape (n_gamma, n_sigma_q):
+
+        - `in_wedge_grid`  (bool):  the wedge classifier output.
+        - `globally_stable_grid` (bool):  Theorem 6 sufficient conditions met.
+        - `kappa_sn_grid`  (float): NaN where no positive SN; else the κ value.
+        - `spectral_abscissa_grid` (float): the numerical max Re(λ) over κ-scan.
+
+    Cost: ~`n_sigma_q × n_gamma × n_kappa_samples` 3×3 eigvals — on the
+    51×51 canonical grid with `n_kappa_samples=50`, runs in ~3 s on M-series.
+    """
+    sq = np.asarray(sigma_q_grid, dtype=np.float64)
+    gam = np.asarray(gamma_grid, dtype=np.float64)
+    if sq.ndim != 1 or gam.ndim != 1:
+        raise ValueError("sigma_q_grid and gamma_grid must be 1D")
+    if not (np.all(np.diff(sq) > 0) and np.all(np.diff(gam) > 0)):
+        raise ValueError("grids must be strictly ascending")
+
+    n_g = len(gam)
+    n_s = len(sq)
+    in_wedge_grid = np.zeros((n_g, n_s), dtype=bool)
+    globally_stable_grid = np.zeros((n_g, n_s), dtype=bool)
+    kappa_sn_grid = np.full((n_g, n_s), np.nan, dtype=np.float64)
+    spectral_abscissa_grid = np.full((n_g, n_s), np.nan, dtype=np.float64)
+
+    for i, g in enumerate(gam):
+        for j, s in enumerate(sq):
+            r = bifurcations_in_no_hopf_wedge(
+                sigma_q=float(s),
+                gamma=float(g),
+                mu_q=mu_q,
+                T_eff=T_eff,
+                kappa_v=kappa_v,
+                alpha=alpha,
+                beta=beta,
+                a_star=a_star,
+                v_star=v_star,
+                coupling_units=coupling_units,
+                rate=rate,
+                dividend=dividend,
+                kappa_max=kappa_max,
+                n_kappa_samples=n_kappa_samples,
+            )
+            in_wedge_grid[i, j] = r.is_in_wedge
+            globally_stable_grid[i, j] = r.is_globally_stable
+            if r.kappa_sn is not None:
+                kappa_sn_grid[i, j] = r.kappa_sn
+            spectral_abscissa_grid[i, j] = r.spectral_abscissa_max
+
+    return {
+        "sigma_q_grid": sq,
+        "gamma_grid": gam,
+        "in_wedge_grid": in_wedge_grid,
+        "globally_stable_grid": globally_stable_grid,
+        "kappa_sn_grid": kappa_sn_grid,
+        "spectral_abscissa_grid": spectral_abscissa_grid,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Task-spec packaging: `NoHopfWedgeScanResult` + `scan_no_hopf_wedge_bifurcations`
+#
+# Thin typed wrapper around `scan_no_hopf_wedge` that returns a dataclass with
+# scalar summary statistics (cell counts, max spectral abscissa, etc.) alongside
+# the underlying grids. The summary scalars are the "headline numbers" that
+# Theorem 6 and the §3.5-extension narrative in the paper refer to directly.
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class NoHopfWedgeScanResult:
+    """Aggregate output of `scan_no_hopf_wedge_bifurcations` over a (σ_q, γ) grid.
+
+    Underlying per-cell verdict comes from `bifurcations_in_no_hopf_wedge`; this
+    dataclass packages the grids together with the four summary scalars used by
+    Theorem 6's bookkeeping.
+
+    Attributes:
+        sigma_q_grid: 1D ascending grid of σ_q values, shape (n_sigma_q,).
+        gamma_grid: 1D ascending grid of γ values, shape (n_gamma,).
+        in_wedge_grid: bool (n_gamma, n_sigma_q) — wedge classifier per cell.
+        globally_stable_grid: bool (n_gamma, n_sigma_q) — Theorem 6 sufficient
+            conditions (S1)+(S2)+(S3) hold at this cell.
+        kappa_sn_grid: float (n_gamma, n_sigma_q) — positive saddle-node κ
+            (c_0 = 0) inside (0, κ_max]; NaN where no positive SN root.
+        spectral_abscissa_grid: float (n_gamma, n_sigma_q) — sampled
+            max_κ max_i Re λ_i(J(κ)) on the κ-grid.
+        n_wedge_cells: number of cells classified as in-wedge.
+        n_globally_stable_cells: number of wedge cells with Theorem 6
+            sufficient conditions verified.
+        n_positive_saddle_node_cells: number of cells with a positive κ_SN ≤ κ_max.
+        wedge_max_spectral_abscissa: max over wedge cells of the spectral
+            abscissa (numerical sanity-check on the closed-form verdict; should
+            be < 0 if Theorem 6(a) holds globally).
+        kappa_max_scanned: upper end of the κ-interval scanned.
+    """
+
+    sigma_q_grid: NDArray[np.float64]
+    gamma_grid: NDArray[np.float64]
+    in_wedge_grid: NDArray[np.bool_]
+    globally_stable_grid: NDArray[np.bool_]
+    kappa_sn_grid: NDArray[np.float64]
+    spectral_abscissa_grid: NDArray[np.float64]
+    n_wedge_cells: int
+    n_globally_stable_cells: int
+    n_positive_saddle_node_cells: int
+    wedge_max_spectral_abscissa: float
+    kappa_max_scanned: float
+
+
+def scan_no_hopf_wedge_bifurcations(
+    *,
+    sigma_q_grid: NDArray[np.float64],
+    gamma_grid: NDArray[np.float64],
+    mu_q: float,
+    T_eff: float,
+    kappa_v: float,
+    alpha: float,
+    beta: float,
+    a_star: float,
+    v_star: float,
+    coupling_units: float = 1.0,
+    rate: float = 0.0,
+    dividend: float = 0.0,
+    kappa_max: float = 100.0,
+    n_kappa_samples: int = 80,
+) -> NoHopfWedgeScanResult:
+    """Scan (σ_q, γ) over a grid, classify each cell against the §3.5 wedge,
+    and search κ ∈ (0, κ_max] for any codim-1 bifurcation.
+
+    Thin wrapper around `scan_no_hopf_wedge` that packages the result as a
+    `NoHopfWedgeScanResult` with the four summary scalars referenced by
+    Theorem 6 in `paper/saddle_node_no_hopf.md` and `paper/theory.md §4.4.4`.
+
+    Args:
+        sigma_q_grid, gamma_grid: 1D ascending grids.
+        mu_q, T_eff, a_star, v_star, coupling_units, rate, dividend: log-normal
+            OI parameters and equilibrium anchor; see `G_lognormal_oi_partials`.
+        kappa_v, alpha, beta: the deterministic-skeleton triangle.
+        kappa_max: upper end of the κ-interval scanned per cell (default 100).
+        n_kappa_samples: number of κ samples used in the numerical eigenvalue
+            sanity-check (default 80).
+
+    Returns:
+        `NoHopfWedgeScanResult`. The headline verdict is
+        `n_positive_saddle_node_cells == 0` ∧ `wedge_max_spectral_abscissa < 0`
+        ⇒ Theorem 6(a) — wedge is globally asymptotically stable on
+        κ ∈ [0, κ_max].
+    """
+    grids = scan_no_hopf_wedge(
+        sigma_q_grid=sigma_q_grid,
+        gamma_grid=gamma_grid,
+        mu_q=mu_q,
+        T_eff=T_eff,
+        kappa_v=kappa_v,
+        alpha=alpha,
+        beta=beta,
+        a_star=a_star,
+        v_star=v_star,
+        coupling_units=coupling_units,
+        rate=rate,
+        dividend=dividend,
+        kappa_max=kappa_max,
+        n_kappa_samples=n_kappa_samples,
+    )
+    in_wedge = np.asarray(grids["in_wedge_grid"], dtype=np.bool_)
+    gs = np.asarray(grids["globally_stable_grid"], dtype=np.bool_)
+    ksn = np.asarray(grids["kappa_sn_grid"], dtype=np.float64)
+    abs_max = np.asarray(grids["spectral_abscissa_grid"], dtype=np.float64)
+
+    n_wedge = int(np.sum(in_wedge))
+    n_gs = int(np.sum(gs))
+    n_sn = int(np.sum(np.isfinite(ksn)))
+    wedge_abs_max = float(np.max(abs_max[in_wedge])) if n_wedge > 0 else float("nan")
+
+    return NoHopfWedgeScanResult(
+        sigma_q_grid=grids["sigma_q_grid"],
+        gamma_grid=grids["gamma_grid"],
+        in_wedge_grid=in_wedge,
+        globally_stable_grid=gs,
+        kappa_sn_grid=ksn,
+        spectral_abscissa_grid=abs_max,
+        n_wedge_cells=n_wedge,
+        n_globally_stable_cells=n_gs,
+        n_positive_saddle_node_cells=n_sn,
+        wedge_max_spectral_abscissa=wedge_abs_max,
+        kappa_max_scanned=float(kappa_max),
+    )

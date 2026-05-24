@@ -109,6 +109,9 @@ omit = [
     "src/reflexive_options/experiments/hawkes_sv_equivalence.py",
     "src/reflexive_options/experiments/kappa_star_robustness.py",
     "src/reflexive_options/experiments/lambda_correction_canonical.py",
+    "src/reflexive_options/experiments/info_theoretic_excess_entropy.py",
+    "src/reflexive_options/experiments/mixture_oi_robustness.py",
+    "src/reflexive_options/experiments/saddle_node_wedge.py",
 ]
 
 [tool.coverage.report]
