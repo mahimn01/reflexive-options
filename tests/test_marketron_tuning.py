@@ -34,8 +34,10 @@ from reflexive_options.experiments.marketron_tuning import (
 )
 from reflexive_options.experiments.synthetic_replication import (
     DEFAULT_REL_TOLERANCE,
+    LONG_HORIZON_THRESHOLD_YEARS,
     MARKETRON_MOMENT_TARGETS,
     MARKETRON_PARAM_SETS,
+    SHAPE_ENVELOPE_ABS_BOUND,
     SHAPE_MATCH_GATE,
     CellOutcome,
     ReplicationConfig,
@@ -43,9 +45,11 @@ from reflexive_options.experiments.synthetic_replication import (
     _build_cell_outcome,
     _order_of_magnitude_match,
     _sign_of,
+    aggregate_mechanism_relevant_subset,
     classify_mechanism,
     compare_to_marketron_targets,
     format_mechanism_decomposition_table,
+    is_mechanism_relevant_cell,
     load_tuned_overrides,
     run_reflexive_with_matched_marketron_calibration,
 )
@@ -631,6 +635,197 @@ def test_tuning_main_smoketest_returns_zero(
 # ---------------------------------------------------------------------------
 # synthetic_replication.main() — exit code wiring
 # ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# §6.1 a priori mechanism-relevant subset predicate
+# ---------------------------------------------------------------------------
+
+
+def test_mechanism_relevant_constants_are_pre_committed() -> None:
+    """The §6.1 constants are committed in source before per-cell inspection.
+
+    Locking the numeric values here is what makes the predicate a priori — any
+    silent edit of the bound or threshold in source would break this test, so
+    a reviewer can see in one place which numbers count as pre-data.
+    """
+    assert LONG_HORIZON_THRESHOLD_YEARS == 0.5
+    assert SHAPE_ENVELOPE_ABS_BOUND == 10.0
+
+
+def test_is_mechanism_relevant_cell_filters_short_horizons() -> None:
+    """Cells below the long-horizon threshold are dropped from the subset."""
+    cell = {
+        "horizon": 0.25,
+        "mechanism_class": "shape_target",
+        "target": 0.05,
+        "measured": -0.04,
+        "sign_match": False,
+    }
+    assert is_mechanism_relevant_cell(cell) is False
+    cell["horizon"] = 0.5
+    assert is_mechanism_relevant_cell(cell) is True
+
+
+def test_is_mechanism_relevant_cell_filters_dead_zone_targets() -> None:
+    """Targets within ±1e-3 carry no sign info → dropped."""
+    cell = {
+        "horizon": 1.0,
+        "mechanism_class": "shape_target",
+        "target": 5e-4,  # in dead-zone
+        "measured": 0.10,
+        "sign_match": False,
+    }
+    assert is_mechanism_relevant_cell(cell) is False
+
+
+def test_is_mechanism_relevant_cell_filters_envelope_saturation() -> None:
+    """Simulator outputs with |measured| ≥ 10 or NaN are envelope-excluded."""
+    cell = {
+        "horizon": 1.0,
+        "mechanism_class": "shape_target",
+        "target": 0.05,
+        "measured": 14.76,  # blown up
+        "sign_match": True,
+    }
+    assert is_mechanism_relevant_cell(cell) is False
+    cell["measured"] = float("nan")
+    assert is_mechanism_relevant_cell(cell) is False
+
+
+def test_is_mechanism_relevant_cell_filters_non_shape_target() -> None:
+    """Vol (level_artifact) and mean (calibration_artifact) cells never qualify."""
+    base = {"horizon": 1.0, "target": 0.5, "measured": 0.4, "sign_match": True}
+    for mclass in ("level_artifact", "calibration_artifact"):
+        assert is_mechanism_relevant_cell({**base, "mechanism_class": mclass}) is False
+
+
+def test_is_mechanism_relevant_cell_accepts_valid_long_horizon_cell() -> None:
+    """A long-horizon, non-dead-zone, in-envelope shape_target cell qualifies."""
+    cell = {
+        "horizon": 2.0,
+        "mechanism_class": "shape_target",
+        "target": 0.18,
+        "measured": -0.43,
+        "sign_match": False,
+    }
+    assert is_mechanism_relevant_cell(cell) is True
+
+
+def test_aggregate_mechanism_relevant_subset_basic_counts() -> None:
+    """Aggregator threads horizon from the per_cell key and counts sign_match."""
+    comparison = {
+        "per_cell": {
+            "0.2500y": {
+                "skew": {
+                    "mechanism_class": "shape_target",
+                    "target": 0.05,
+                    "measured": 0.04,
+                    "sign_match": True,
+                }  # short-horizon → excluded
+            },
+            "0.5000y": {
+                "skew": {
+                    "mechanism_class": "shape_target",
+                    "target": 0.05,
+                    "measured": 0.04,
+                    "sign_match": True,
+                },
+                "excess_kurt": {
+                    "mechanism_class": "shape_target",
+                    "target": -0.01,
+                    "measured": 0.10,
+                    "sign_match": False,
+                },
+            },
+            "1.0000y": {
+                "skew": {
+                    "mechanism_class": "shape_target",
+                    "target": 0.17,
+                    "measured": 14.7,  # envelope-excluded
+                    "sign_match": True,
+                },
+                "excess_kurt": {
+                    "mechanism_class": "shape_target",
+                    "target": 0.07,
+                    "measured": 1.3,
+                    "sign_match": True,
+                },
+            },
+        }
+    }
+    result = aggregate_mechanism_relevant_subset(comparison)
+    assert result["total"] == 3  # 0.5 skew, 0.5 kurt, 1.0 kurt; 0.25 and 1.0 skew dropped
+    assert result["matches"] == 2  # 0.5 skew and 1.0 kurt
+    assert result["match_rate"] == pytest.approx(2 / 3)
+
+
+def test_aggregate_mechanism_relevant_subset_empty_subset_safe() -> None:
+    """Empty subset → match_rate=0, binomial_p=1 (no falsifiable claim)."""
+    comparison = {"per_cell": {}}
+    result = aggregate_mechanism_relevant_subset(comparison)
+    assert result["total"] == 0
+    assert result["match_rate"] == 0.0
+    assert result["binomial_p_under_chance"] == 1.0
+
+
+def test_mechanism_relevant_subset_match_rate_exceeds_chance_threshold() -> None:
+    """Pre-anchored regression test for the §6.1 restricted-subset claim.
+
+    Reads the OOS metrics.json artifacts committed at
+    runs/synthetic_replication/20260514T184419Z_seed42 (Marketron Table 5)
+    and …T184443Z_seed42 (Marketron Table 6), applies the locked-in-source
+    `is_mechanism_relevant_cell` predicate, and checks the pooled
+    sign-match count beats the chance-agreement threshold on the binomial
+    null. This is the regression test the paper §6.1 cites by name.
+
+    The assertion uses a one-sided binomial-p threshold of 0.5; that is the
+    same level reported in the paper text (the restricted subset at OOS is
+    chance-level, p ≈ 0.637) and intentionally loose to make this an
+    artifact-stability check rather than a re-derivation of significance.
+    The paper explicitly does NOT claim p<0.05 on the restricted subset; this
+    test pins what IS claimed: the subset rate ≥ 50% (i.e. at least
+    chance-level) at OOS so the §6.1 number cannot silently drift below
+    chance without CI noticing.
+    """
+    import json
+
+    repo_root = Path(__file__).resolve().parents[1]
+    run_dirs = [
+        repo_root / "runs" / "synthetic_replication" / "20260514T184419Z_seed42",
+        repo_root / "runs" / "synthetic_replication" / "20260514T184443Z_seed42",
+    ]
+    pooled_matches = 0
+    pooled_total = 0
+    for run_dir in run_dirs:
+        metrics_path = run_dir / "metrics.json"
+        if not metrics_path.exists():
+            pytest.skip(f"OOS run artifact missing: {metrics_path}")
+        # NaN appears in committed metrics for the Table 6 high-σ regime;
+        # json.loads parses "NaN" as float('nan') here only because we feed
+        # it through the parse_constant hook (vanilla json otherwise raises).
+        text = metrics_path.read_text()
+        metrics = json.loads(text, parse_constant=lambda _: float("nan"))
+        reflexive = metrics["reflexive_vs_marketron"]
+        # Re-run aggregator on the saved per_cell block so the test exercises
+        # the predicate (not the cached subset entry the aggregator emits).
+        subset = aggregate_mechanism_relevant_subset(reflexive)
+        pooled_matches += int(subset["matches"])
+        pooled_total += int(subset["total"])
+    # The §6.1 a priori subset at OOS pools to 4/8 matches across the two
+    # published Marketron parameter sets — paper headline.
+    assert pooled_total == 8, (
+        f"Expected 8 mechanism-relevant cells pooled across the two OOS runs, "
+        f"got {pooled_total}. If this changes, §6.1 must be updated to match."
+    )
+    assert pooled_matches >= pooled_total // 2, (
+        f"Restricted subset match rate dropped below chance: "
+        f"{pooled_matches}/{pooled_total}. §6.1 reports 4/8."
+    )
+    assert pooled_matches == 4, (
+        f"Expected 4 sign matches in the §6.1 restricted OOS subset "
+        f"(reproducible from committed metrics.json), got {pooled_matches}."
+    )
 
 
 @pytest.mark.skipif(

@@ -30,6 +30,7 @@ Run: ``python scripts/gp_ci_coverage_audit.py``
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import sys
@@ -65,14 +66,17 @@ class AuditConfig:
     n_reps: int = N_REPS
     n_boot: int = N_BOOT
     seed: int = 20260514
+    n_seeds: int = 1
 
 
-TRUTHS: dict[str, tuple[Callable[[NDArray[np.float64]], NDArray[np.float64]], float | tuple[float, float]]] = {
-    "quadratic": (lambda x: x ** 2, 2.0 * X_ANCHOR),
-    "linear":    (lambda x: 0.5 * x, 0.5),
-    "sin":       (lambda x: np.sin(2.0 * np.pi * x), 2.0 * np.pi * np.cos(2.0 * np.pi * X_ANCHOR)),
-    "quintic":   (lambda x: x ** 5, 5.0 * X_ANCHOR ** 4),
-    "kinked":    (lambda x: np.maximum(x - X_ANCHOR, 0.0), (0.0, 1.0)),
+TRUTHS: dict[
+    str, tuple[Callable[[NDArray[np.float64]], NDArray[np.float64]], float | tuple[float, float]]
+] = {
+    "quadratic": (lambda x: x**2, 2.0 * X_ANCHOR),
+    "linear": (lambda x: 0.5 * x, 0.5),
+    "sin": (lambda x: np.sin(2.0 * np.pi * x), 2.0 * np.pi * np.cos(2.0 * np.pi * X_ANCHOR)),
+    "quintic": (lambda x: x**5, 5.0 * X_ANCHOR**4),
+    "kinked": (lambda x: np.maximum(x - X_ANCHOR, 0.0), (0.0, 1.0)),
 }
 
 
@@ -99,7 +103,7 @@ def _fit_gp(
     y_norm = y_centred / y_std
 
     grid_span = float(np.max(x_s) - np.min(x_s))
-    pinned = max(noise_variance_raw / (y_std ** 2), 1e-10)
+    pinned = max(noise_variance_raw / (y_std**2), 1e-10)
     white = WhiteKernel(noise_level=pinned, noise_level_bounds="fixed")
 
     if kernel_choice == "rbf":
@@ -130,22 +134,22 @@ def _fit_gp(
         ell = float(gp.kernel_.k1.length_scale)
         sigma2 = float(gp.kernel_.k2.noise_level)
         diff = x_anchor_s - x_s
-        K = np.exp(-0.5 * (diff[:, None] - diff[None, :]) ** 2 / ell ** 2)
+        K = np.exp(-0.5 * (diff[:, None] - diff[None, :]) ** 2 / ell**2)
         # ^ wrong, see below
         # build kernel matrices on x_s correctly:
         K = np.exp(-0.5 * ((x_s[:, None] - x_s[None, :]) / ell) ** 2)
         K_jitter = K + sigma2 * np.eye(len(x_s)) + 1e-12 * np.eye(len(x_s))
         k_anchor = np.exp(-0.5 * ((x_anchor_s - x_s) / ell) ** 2)
-        k_grad = -((x_anchor_s - x_s) / ell ** 2) * k_anchor
+        k_grad = -((x_anchor_s - x_s) / ell**2) * k_anchor
         try:
             L = np.linalg.cholesky(K_jitter)
             alpha = np.linalg.solve(L.T, np.linalg.solve(L, y_norm))
             v = np.linalg.solve(L, k_grad)
-            var_norm = float(1.0 / ell ** 2 - v @ v)
+            var_norm = float(1.0 / ell**2 - v @ v)
         except np.linalg.LinAlgError:
             K_inv = np.linalg.pinv(K_jitter)
             alpha = K_inv @ y_norm
-            var_norm = float(1.0 / ell ** 2 - k_grad @ K_inv @ k_grad)
+            var_norm = float(1.0 / ell**2 - k_grad @ K_inv @ k_grad)
         slope_norm = float(k_grad @ alpha)
         var_norm = max(var_norm, 0.0)
     else:
@@ -188,7 +192,8 @@ def _bca_bootstrap(
 
     jk = np.empty(n, dtype=np.float64)
     for i in range(n):
-        keep = np.ones(n, dtype=bool); keep[i] = False
+        keep = np.ones(n, dtype=bool)
+        keep[i] = False
         try:
             s_jk, _ = _local_quadratic_slope(x[keep], y[keep], X_ANCHOR)
         except Exception:
@@ -228,7 +233,7 @@ def calibrate_kappa_inf(cfg: AuditConfig) -> float:
             noise = rng.standard_normal(len(GRID)) * cfg.sigma_noise
             y = f(GRID) + noise
             try:
-                s, se = _fit_gp(GRID, y, "rbf", noise_variance_raw=cfg.sigma_noise ** 2)
+                s, se = _fit_gp(GRID, y, "rbf", noise_variance_raw=cfg.sigma_noise**2)
                 if se > 1e-15 and not isinstance(ts, tuple):
                     z_pool.append(abs((s - ts) / se))
             except Exception:
@@ -238,11 +243,9 @@ def calibrate_kappa_inf(cfg: AuditConfig) -> float:
     return max(q / 1.959964, 1.0)
 
 
-def run_audit(cfg: AuditConfig) -> dict[str, dict[str, float]]:
-    print(f"σ_noise = {cfg.sigma_noise}, n_reps = {cfg.n_reps}, grid = 9 pts on [0,1]")
-    kappa_inf = calibrate_kappa_inf(cfg)
-    print(f"Calibrated κ_inf for inflated method: {kappa_inf:.3f}")
-
+def _run_single_seed(
+    cfg: AuditConfig, *, seed: int, kappa_inf: float
+) -> dict[str, dict[str, float]]:
     table: dict[str, dict[str, float]] = {}
     for truth_name in ("quadratic", "linear", "sin", "quintic", "kinked"):
         f, ts = TRUTHS[truth_name]
@@ -250,13 +253,13 @@ def run_audit(cfg: AuditConfig) -> dict[str, dict[str, float]]:
         cov_inf = 0
         cov_bca = 0
         cov_mat = 0
-        rng = np.random.default_rng(cfg.seed + hash(truth_name) % 1_000_000)
-        for r in range(cfg.n_reps):
+        rng = np.random.default_rng(seed + hash(truth_name) % 1_000_000)
+        for _ in range(cfg.n_reps):
             noise = rng.standard_normal(len(GRID)) * cfg.sigma_noise
             y = f(GRID) + noise
 
             try:
-                s, se = _fit_gp(GRID, y, "rbf", noise_variance_raw=cfg.sigma_noise ** 2)
+                s, se = _fit_gp(GRID, y, "rbf", noise_variance_raw=cfg.sigma_noise**2)
                 if _covered(ts, s - 1.959964 * se, s + 1.959964 * se):
                     cov_pin += 1
                 if _covered(ts, s - 1.959964 * se * kappa_inf, s + 1.959964 * se * kappa_inf):
@@ -265,7 +268,7 @@ def run_audit(cfg: AuditConfig) -> dict[str, dict[str, float]]:
                 pass
 
             try:
-                s, se = _fit_gp(GRID, y, "matern32", noise_variance_raw=cfg.sigma_noise ** 2)
+                s, se = _fit_gp(GRID, y, "matern32", noise_variance_raw=cfg.sigma_noise**2)
                 if _covered(ts, s - 1.959964 * se, s + 1.959964 * se):
                     cov_mat += 1
             except Exception:
@@ -273,7 +276,7 @@ def run_audit(cfg: AuditConfig) -> dict[str, dict[str, float]]:
 
             try:
                 _, lo_b, hi_b = _bca_bootstrap(
-                    GRID, y, np.random.default_rng(rng.integers(0, 2 ** 31)), n_boot=cfg.n_boot
+                    GRID, y, np.random.default_rng(rng.integers(0, 2**31)), n_boot=cfg.n_boot
                 )
                 if _covered(ts, lo_b, hi_b):
                     cov_bca += 1
@@ -281,32 +284,116 @@ def run_audit(cfg: AuditConfig) -> dict[str, dict[str, float]]:
                 pass
 
         table[truth_name] = {
-            "gp_pinned_rbf":  cov_pin / cfg.n_reps,
-            "gp_inflated":    cov_inf / cfg.n_reps,
-            "bca_bootstrap":  cov_bca / cfg.n_reps,
-            "gp_matern32":    cov_mat / cfg.n_reps,
+            "gp_pinned_rbf": cov_pin / cfg.n_reps,
+            "gp_inflated": cov_inf / cfg.n_reps,
+            "bca_bootstrap": cov_bca / cfg.n_reps,
+            "gp_matern32": cov_mat / cfg.n_reps,
         }
-        print(f"  {truth_name:10s}: ", table[truth_name])
+    return table
 
-    print(f"\n=== Coverage Table (rows=truth, cols=method, n_reps={cfg.n_reps}) ===")
+
+def run_audit(cfg: AuditConfig) -> dict[str, object]:
+    print(
+        f"σ_noise = {cfg.sigma_noise}, n_reps = {cfg.n_reps}, n_seeds = {cfg.n_seeds}, grid = 9 pts on [0,1]"
+    )
+    kappa_inf = calibrate_kappa_inf(cfg)
+    print(f"Calibrated κ_inf for inflated method: {kappa_inf:.3f}")
+
     methods = ["gp_pinned_rbf", "gp_inflated", "bca_bootstrap", "gp_matern32"]
-    print(f"{'truth':12s} " + " ".join(f"{m:>16s}" for m in methods))
-    for t in ("quadratic", "linear", "sin", "quintic", "kinked"):
-        print(f"{t:12s} " + " ".join(f"{table[t][m]:>16.3f}" for m in methods))
+    truth_names = ("quadratic", "linear", "sin", "quintic", "kinked")
 
-    print("\n#truths with coverage ≥ 0.90:")
+    per_seed: list[dict[str, dict[str, float]]] = []
+    for s_idx in range(cfg.n_seeds):
+        seed = cfg.seed + s_idx
+        print(f"\n[seed {s_idx + 1}/{cfg.n_seeds} = {seed}]")
+        sub = _run_single_seed(cfg, seed=seed, kappa_inf=kappa_inf)
+        per_seed.append(sub)
+        for tname in truth_names:
+            print(f"  {tname:10s}: ", sub[tname])
+
+    # Aggregate across seeds: mean and (min, max) per (truth, method).
+    table_mean: dict[str, dict[str, float]] = {}
+    table_min: dict[str, dict[str, float]] = {}
+    table_max: dict[str, dict[str, float]] = {}
+    for tname in truth_names:
+        table_mean[tname] = {}
+        table_min[tname] = {}
+        table_max[tname] = {}
+        for m in methods:
+            vals = [sub[tname][m] for sub in per_seed]
+            arr = np.asarray(vals, dtype=np.float64)
+            table_mean[tname][m] = float(arr.mean())
+            table_min[tname][m] = float(arr.min())
+            table_max[tname][m] = float(arr.max())
+
+    print(
+        f"\n=== Mean Coverage Across {cfg.n_seeds} Seeds "
+        f"(rows=truth, cols=method, n_reps={cfg.n_reps}) ==="
+    )
+    print(f"{'truth':12s} " + " ".join(f"{m:>16s}" for m in methods))
+    for t in truth_names:
+        print(f"{t:12s} " + " ".join(f"{table_mean[t][m]:>16.3f}" for m in methods))
+
+    if cfg.n_seeds > 1:
+        print("\n=== (min, max) range across seeds ===")
+        print(f"{'truth':12s} " + " ".join(f"{m:>16s}" for m in methods))
+        for t in truth_names:
+            cells = [f"({table_min[t][m]:.2f},{table_max[t][m]:.2f})".rjust(16) for m in methods]
+            print(f"{t:12s} " + " ".join(cells))
+
+    print("\n#truths with mean coverage ≥ 0.90:")
     for m in methods:
-        n_ok = sum(1 for t in table if table[t][m] >= 0.90)
+        n_ok = sum(1 for t in truth_names if table_mean[t][m] >= 0.90)
         print(f"  {m:18s} {n_ok}/5")
 
-    return {"kappa_inf": kappa_inf, "table": table}
+    return {
+        "kappa_inf": kappa_inf,
+        "table": table_mean,
+        "table_min": table_min,
+        "table_max": table_max,
+        "per_seed": per_seed,
+    }
 
 
 def main() -> None:
     from datetime import UTC, datetime
-    cfg = AuditConfig()
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--sigma",
+        type=float,
+        default=SIGMA_NOISE,
+        help=f"Gaussian observation noise σ_n (default {SIGMA_NOISE}).",
+    )
+    parser.add_argument(
+        "--n-seeds",
+        type=int,
+        default=1,
+        help="Number of top-level seeds to average over (default 1).",
+    )
+    parser.add_argument(
+        "--n-reps",
+        type=int,
+        default=N_REPS,
+        help=f"Replicates per (seed, truth, method) (default {N_REPS}).",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=20260514,
+        help="Base seed; per-seed offsets are seed+0, seed+1, ...",
+    )
+    args = parser.parse_args()
+
+    cfg = AuditConfig(
+        sigma_noise=float(args.sigma),
+        n_seeds=int(args.n_seeds),
+        n_reps=int(args.n_reps),
+        seed=int(args.seed),
+    )
     timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
-    run_dir = os.path.join(REPO_ROOT, "runs", "gp_ci_coverage", timestamp)
+    tag = f"sigma{cfg.sigma_noise:.2f}_seeds{cfg.n_seeds}"
+    run_dir = os.path.join(REPO_ROOT, "runs", "gp_ci_coverage", f"{timestamp}_{tag}")
     os.makedirs(run_dir, exist_ok=True)
 
     payload = run_audit(cfg)

@@ -2,7 +2,9 @@
 
 Covers:
     - Closed-form $C(T)$ propagation-of-chaos constant.
-    - $\\kappa^\\star$ shift formula limit cases (theta_G -> infty, finite).
+    - 4D Hopf-threshold correction (v0.3.6): exact match to canonical closed
+      form, regression pins at the auditor's 5-point table, infinite-theta_G
+      limit recovers the single-dealer threshold.
     - Particle-system smoke test: simulator runs and produces finite output.
     - $1/\\sqrt n$ scaling: fitted log-log slope close to 1 within 30%.
     - Lipschitz / input-validation: rejects non-positive theta_G, sigma_G,
@@ -16,12 +18,30 @@ import numpy as np
 import pytest
 
 from reflexive_options.theory.mckean_vlasov import (
+    KAPPA_STAR_SINGLE_CANONICAL,
+    mckean_vlasov_jacobian_4d,
+    mckean_vlasov_kappa_star,
+    mckean_vlasov_kappa_star_canonical_closed_form,
     mckean_vlasov_kappa_star_shift,
     mean_field_limit_trajectory,
     propagation_of_chaos_constant,
     propagation_of_chaos_error,
     propagation_of_chaos_scaling,
     simulate_n_dealer_system,
+)
+
+# Auditor's canonical regime — short-gamma (G_y > 0) parameters at which the
+# v0.3.5 heuristic formula was wrong in sign.
+CANONICAL_REGIME = dict(
+    G_y=0.5,
+    G_v=-0.5,
+    G_z=-0.5,
+    alpha=0.5,
+    beta=1.0,
+    gamma=0.5,
+    kappa_v=2.0,
+    sigma2_y=0.0,
+    sigma2_v=0.0,
 )
 
 # ---------------------------------------------------------------------------
@@ -75,34 +95,189 @@ def test_propagation_of_chaos_constant_rejects_invalid_args() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Hopf-threshold shift.
+# Hopf-threshold shift (CORRECTED v0.3.6 — 4D extended Jacobian).
+#
+# The v0.3.5 closed-form sqrt(1 + (omega/theta_G)^2) was incorrect:
+# the auditor's numerical 4D Hopf computation showed the ratio is < 1
+# (destabilising) at the canonical short-gamma regime, not > 1.
+# See paper/mv_hopf_corrected.md.
 # ---------------------------------------------------------------------------
 
 
-def test_kappa_star_shift_instantaneous_hedging_limit() -> None:
-    """As theta_G -> infty (instantaneous hedging), MV ratio -> 1."""
-    ratio_fast = mckean_vlasov_kappa_star_shift(theta_G=1e6, omega_star=1.0)
-    assert ratio_fast == pytest.approx(1.0, abs=1e-6)
+def test_kappa_star_canonical_closed_form_matches_numerical() -> None:
+    """The closed-form $\\kappa^\\star_\\mathrm{MV}(\\theta_G)$ at the canonical regime
+    agrees with the 4D numerical Hopf solver to machine precision."""
+    for theta_G in [0.1, 0.5, 1.0, 5.0, 50.0, 500.0]:
+        k_closed = mckean_vlasov_kappa_star_canonical_closed_form(theta_G)
+        k_num, _ = mckean_vlasov_kappa_star(theta_G=theta_G, **CANONICAL_REGIME)
+        assert k_num == pytest.approx(k_closed, rel=1e-6), (
+            f"theta_G={theta_G}: numerical {k_num} vs closed-form {k_closed}"
+        )
 
 
-def test_kappa_star_shift_slow_hedging_increases_threshold() -> None:
-    """Slow hedging (small theta_G) raises the threshold (ratio > 1)."""
-    ratio_slow = mckean_vlasov_kappa_star_shift(theta_G=0.5, omega_star=1.0)
-    # With theta_G = omega_star: ratio = sqrt(1 + (1/0.5)^2) = sqrt(5) ≈ 2.236
-    assert ratio_slow == pytest.approx(np.sqrt(5.0), rel=1e-6)
+def test_kappa_star_mv_canonical_audit_table() -> None:
+    """Auditor's regression table at the canonical regime (Wave: external audit).
+
+    The 4D Hopf threshold at short-gamma canonical params, verified independently:
+
+        theta_G | kappa_star_MV
+        0.5     | 0.536
+        1.0     | 0.619
+        5.0     | 0.800
+        50      | 0.885
+        500     | 0.895
+
+    These are pinned to 3 decimals (closed-form is exact, so this is just a
+    floor on the audit reproduction).
+    """
+    expected = [
+        (0.5, 0.536),
+        (1.0, 0.619),
+        (5.0, 0.800),
+        (50.0, 0.885),
+        (500.0, 0.895),
+    ]
+    for theta_G, k_audit in expected:
+        result = mckean_vlasov_kappa_star_shift(theta_G=theta_G, **CANONICAL_REGIME)
+        assert result.kappa_star_mv == pytest.approx(k_audit, abs=0.001), (
+            f"theta_G={theta_G}: computed {result.kappa_star_mv:.6f} vs audit {k_audit}"
+        )
 
 
-def test_kappa_star_shift_zero_omega() -> None:
-    """At zero Hopf frequency the channel is DC; ratio = 1 regardless of theta_G."""
-    assert mckean_vlasov_kappa_star_shift(theta_G=10.0, omega_star=0.0) == pytest.approx(1.0)
+def test_kappa_star_mv_canonical_theta_5_pin() -> None:
+    """Pinned 4-decimal regression: at theta_G=5 the MV threshold is 0.7996.
+
+    Direct anchor against the auditor's report (4-decimal precision).
+    """
+    result = mckean_vlasov_kappa_star_shift(theta_G=5.0, **CANONICAL_REGIME)
+    assert result.kappa_star_mv == pytest.approx(0.79955, abs=5e-5)
 
 
-def test_kappa_star_shift_rejects_invalid_args() -> None:
-    """theta_G must be > 0 and omega_star must be >= 0."""
+def test_kappa_star_mv_canonical_ratio_below_one() -> None:
+    """At the canonical short-gamma regime the MV correction LOWERS the threshold."""
+    for theta_G in [0.5, 1.0, 5.0, 50.0]:
+        result = mckean_vlasov_kappa_star_shift(theta_G=theta_G, **CANONICAL_REGIME)
+        assert result.ratio < 1.0, (
+            f"theta_G={theta_G}: MV ratio {result.ratio:.4f} >= 1 — the v0.3.5 sign error has returned"
+        )
+
+
+def test_kappa_star_mv_instantaneous_hedging_limit() -> None:
+    """As theta_G -> infty (instantaneous hedging), the MV ratio -> 1.
+
+    The 4D system's $g$ channel collapses onto its target instantaneously,
+    decoupling the dealer mode from the price/variance dynamics.
+    """
+    result = mckean_vlasov_kappa_star_shift(theta_G=1e6, **CANONICAL_REGIME)
+    assert result.ratio == pytest.approx(1.0, abs=1e-5), f"large-theta_G ratio {result.ratio} != 1"
+    # Single-dealer asymptote
+    assert result.kappa_star_single == pytest.approx(KAPPA_STAR_SINGLE_CANONICAL, rel=1e-6)
+
+
+def test_kappa_star_mv_frozen_dealer_limit_finite() -> None:
+    """As theta_G -> 0+ the MV threshold approaches 8/21 (FINITE, not divergent).
+
+    Unlike the v0.3.5 heuristic which blew up as 1/theta_G, the correct 4D
+    closed-form has $\\kappa^\\star_\\mathrm{MV}(0^+) = 8/21 \\approx 0.381$
+    at the canonical regime. The dealer state freezes but the 4D system
+    still has a Hopf at a smaller threshold than the single-dealer model.
+    """
+    k_closed_small = mckean_vlasov_kappa_star_canonical_closed_form(1e-6)
+    assert k_closed_small == pytest.approx(8.0 / 21.0, rel=1e-3)
+
+
+def test_kappa_star_mv_long_gamma_regime_above_one() -> None:
+    """The log-normal-OI long-gamma regime (G_y < 0) gives ratio > 1 — the
+    regime-dependence of the corrected formula is a real feature.
+
+    This test guards against accidentally re-applying a "ratio < 1 always"
+    assumption taken from the short-gamma audit table.
+    """
+    # Approximate log-normal-OI calibration values from §4.3.
+    result = mckean_vlasov_kappa_star_shift(
+        theta_G=50.0,
+        G_y=-0.035,
+        G_v=-0.177,
+        G_z=0.0,
+        kappa_v=2.0,
+        alpha=0.05,
+        beta=1.0,
+        gamma=1.0,
+        sigma2_y=0.0,
+        sigma2_v=1.0,
+        kappa_min=0.1,
+        kappa_max=1e5,
+    )
+    assert result.ratio > 1.0, f"long-gamma regime should have ratio > 1, got {result.ratio:.4f}"
+
+
+def test_kappa_star_shift_legacy_omega_star_emits_deprecation_warning() -> None:
+    """Passing the deprecated omega_star kwarg emits a DeprecationWarning."""
+    with pytest.warns(DeprecationWarning, match="omega_star is deprecated"):
+        mckean_vlasov_kappa_star_shift(
+            theta_G=5.0,
+            omega_star=0.5,
+            **CANONICAL_REGIME,
+        )
+
+
+def test_kappa_star_shift_rejects_invalid_theta_G() -> None:
+    """theta_G must be > 0."""
     with pytest.raises(ValueError, match="theta_G"):
-        mckean_vlasov_kappa_star_shift(theta_G=0.0, omega_star=1.0)
-    with pytest.raises(ValueError, match="omega_star"):
-        mckean_vlasov_kappa_star_shift(theta_G=1.0, omega_star=-0.1)
+        mckean_vlasov_kappa_star_shift(theta_G=0.0, **CANONICAL_REGIME)
+
+
+def test_kappa_star_shift_rejects_missing_jacobian_args() -> None:
+    """The corrected API requires the full 4D Jacobian structure."""
+    with pytest.raises(TypeError, match="missing keyword arguments"):
+        mckean_vlasov_kappa_star_shift(theta_G=5.0)
+
+
+def test_jacobian_4d_construction_shape_and_structure() -> None:
+    """The 4D Jacobian is 4x4 with the expected sparsity pattern."""
+    J = mckean_vlasov_jacobian_4d(kappa=1.0, theta_G=5.0, **CANONICAL_REGIME)
+    assert J.shape == (4, 4)
+    # Spot row: only the dealer-state coupling is nonzero (sigma2_y = sigma2_v = 0 at canonical).
+    assert J[0, 0] == 0.0
+    assert J[0, 1] == 0.0
+    assert J[0, 2] == 0.0
+    assert J[0, 3] == 1.0  # = kappa
+    # Dealer row: theta_G * G_y, theta_G * G_v, theta_G * G_z, -theta_G
+    assert J[3, 0] == pytest.approx(5.0 * 0.5)
+    assert J[3, 1] == pytest.approx(5.0 * -0.5)
+    assert J[3, 2] == pytest.approx(5.0 * -0.5)
+    assert J[3, 3] == pytest.approx(-5.0)
+
+
+def test_jacobian_4d_rejects_invalid_args() -> None:
+    """theta_G, kappa_v, alpha must all be > 0."""
+    base = dict(kappa=1.0, **CANONICAL_REGIME)
+    with pytest.raises(ValueError, match="theta_G"):
+        mckean_vlasov_jacobian_4d(theta_G=0.0, **base)
+    base2 = {**base, "kappa_v": 0.0}
+    with pytest.raises(ValueError, match="kappa_v"):
+        mckean_vlasov_jacobian_4d(theta_G=1.0, **base2)
+    base3 = {**base, "alpha": -1.0}
+    with pytest.raises(ValueError, match="alpha"):
+        mckean_vlasov_jacobian_4d(theta_G=1.0, **base3)
+
+
+def test_kappa_star_canonical_closed_form_rejects_invalid_theta_G() -> None:
+    with pytest.raises(ValueError, match="theta_G"):
+        mckean_vlasov_kappa_star_canonical_closed_form(0.0)
+
+
+def test_kappa_star_mv_solver_raises_when_no_hopf_in_bracket() -> None:
+    """If no sign change of max(Re lambda) appears in [kappa_min, kappa_max],
+    the solver raises rather than silently returning a bad value."""
+    # Pick a tiny bracket that excludes the Hopf at canonical regime.
+    with pytest.raises(RuntimeError, match="no 4D MV Hopf"):
+        mckean_vlasov_kappa_star(
+            theta_G=5.0,
+            kappa_min=1e-5,
+            kappa_max=1e-4,
+            **CANONICAL_REGIME,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -304,8 +479,10 @@ def test_mckean_vlasov_validation_experiment_smoke(tmp_path) -> None:  # type: i
     assert "C_T_theoretical" in metrics
     slope = float(metrics["fitted_slope_log_inv_sqrt_n"])  # type: ignore[arg-type]
     assert 0.5 <= slope <= 1.5, f"experiment slope {slope:.3f} out of [0.5, 1.5]"
-    # MV correction is positive (threshold expands).
-    assert float(metrics["kappa_star_shift_ratio"]) >= 1.0  # type: ignore[arg-type]
+    # The log-normal-OI calibration (G_y < 0) is a long-gamma regime where the
+    # corrected v0.3.6 MV ratio is > 1. Short-gamma canonical regimes give
+    # ratio < 1; both are covered in the unit tests above.
+    assert float(metrics["kappa_star_shift_ratio"]) > 1.0  # type: ignore[arg-type]
 
 
 def test_propagation_of_chaos_error_rejects_invalid_replicates() -> None:

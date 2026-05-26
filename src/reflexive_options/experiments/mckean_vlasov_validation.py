@@ -45,10 +45,11 @@ from reflexive_options.experiments._common import (
 )
 from reflexive_options.theory.bifurcation import (
     G_lognormal_oi_partials,
-    kappa_star_lognormal_oi,
 )
 from reflexive_options.theory.mckean_vlasov import (
+    KAPPA_STAR_SINGLE_CANONICAL,
     ChaosScalingResult,
+    mckean_vlasov_kappa_star_canonical_closed_form,
     mckean_vlasov_kappa_star_shift,
     propagation_of_chaos_constant,
     propagation_of_chaos_scaling,
@@ -129,19 +130,25 @@ def run(*, quick: bool = False) -> dict[str, object]:
         coupling_units=cfg.coupling_units,
     )
     G_y, G_v = partials["G_a"], partials["G_v"]
-    kappa_star_single, omega_star = kappa_star_lognormal_oi(
-        G_y=G_y,
-        G_v=G_v,
+    # Corrected v0.3.6: 4D MV Hopf via mckean_vlasov_kappa_star_shift. The
+    # log-normal-OI calibration sets G_z = 0 and uses the Heston backbone
+    # $\\sigma^2 = v$ (sigma2_v = 1).
+    mv_result = mckean_vlasov_kappa_star_shift(
+        theta_G=cfg.theta_G,
+        G_y=float(G_y),
+        G_v=float(G_v),
+        G_z=0.0,
         kappa_v=cfg.kappa_v,
         alpha=cfg.alpha,
         beta=cfg.beta,
         gamma=cfg.gamma,
+        sigma2_y=0.0,
+        sigma2_v=1.0,
     )
-    shift_ratio = mckean_vlasov_kappa_star_shift(
-        theta_G=cfg.theta_G,
-        omega_star=omega_star,
-    )
-    kappa_star_mv = kappa_star_single * shift_ratio
+    kappa_star_single = mv_result.kappa_star_single
+    kappa_star_mv = mv_result.kappa_star_mv
+    shift_ratio = mv_result.ratio
+    omega_star = mv_result.omega_star_mv
 
     # Closed-form $C(T)$.
     C_T = propagation_of_chaos_constant(
@@ -174,6 +181,11 @@ def run(*, quick: bool = False) -> dict[str, object]:
     fig_path = FIGURES_DIR / "mckean_vlasov_propagation_chaos.pdf"
     fig_path.parent.mkdir(parents=True, exist_ok=True)
     _render_propagation_of_chaos_figure(scaling, C_T=C_T, out_path=fig_path)
+
+    # v0.3.6: also render the corrected MV Hopf-threshold figure (the headline
+    # MV-correction figure that replaces the v0.3.5 spurious "ratio > 1" plot).
+    threshold_fig_path = FIGURES_DIR / "mckean_vlasov_threshold_correction.pdf"
+    _render_threshold_correction_figure(out_path=threshold_fig_path)
 
     # Persist artifacts.
     run_dir = make_run_dir("mckean_vlasov_validation")
@@ -270,6 +282,76 @@ def _render_propagation_of_chaos_figure(
     )
     ax.grid(True, which="both", alpha=0.3)
     ax.legend(loc="lower left", fontsize=9, framealpha=0.92)
+    fig.tight_layout()
+    fig.savefig(out_path)
+    plt.close(fig)
+
+
+def _render_threshold_correction_figure(*, out_path: Path) -> None:
+    """Render kappa_star_MV / kappa_star_single vs theta_G at the canonical regime.
+
+    The headline v0.3.6 figure: shows the corrected ratio approaching 1 from
+    BELOW as theta_G -> infty, and limiting to (8/21) / kappa_star_single =
+    16 / [7 (25 - sqrt(385))] ≈ 0.425 as theta_G -> 0+.
+
+    SOURCE_DATE_EPOCH-pinned for byte-stable regeneration.
+    """
+    theta_grid = np.geomspace(1e-2, 1e3, 200)
+    ratios = np.array(
+        [
+            mckean_vlasov_kappa_star_canonical_closed_form(float(t)) / KAPPA_STAR_SINGLE_CANONICAL
+            for t in theta_grid
+        ]
+    )
+
+    fig, ax = plt.subplots(1, 1, figsize=(6.5, 4.5))
+    ax.semilogx(
+        theta_grid,
+        ratios,
+        "-",
+        color="#2c3e50",
+        linewidth=2.0,
+        label=r"$\kappa^\star_{\mathrm{MV}}(\theta_G) / \kappa^\star_{\mathrm{single}}$ (4D Hopf, closed form)",
+    )
+    # Audit anchor points.
+    anchor_theta = np.array([0.5, 1.0, 5.0, 50.0, 500.0])
+    anchor_ratios = np.array(
+        [
+            mckean_vlasov_kappa_star_canonical_closed_form(float(t)) / KAPPA_STAR_SINGLE_CANONICAL
+            for t in anchor_theta
+        ]
+    )
+    ax.scatter(
+        anchor_theta,
+        anchor_ratios,
+        s=60,
+        marker="o",
+        facecolors="none",
+        edgecolors="#d65f5f",
+        linewidths=1.8,
+        zorder=5,
+        label="external audit anchors",
+    )
+    # Asymptotic lines.
+    ax.axhline(1.0, ls="--", color="#999999", lw=1.0, label=r"$\theta_G \to \infty$: ratio $\to 1$")
+    lim0 = (8.0 / 21.0) / KAPPA_STAR_SINGLE_CANONICAL
+    ax.axhline(
+        lim0,
+        ls=":",
+        color="#999999",
+        lw=1.0,
+        label=rf"$\theta_G \to 0^+$: ratio $\to {lim0:.3f}$",
+    )
+
+    ax.set_xlabel(r"dealer-hedging speed $\theta_G$ (1/yr)")
+    ax.set_ylabel(r"$\kappa^\star_{\mathrm{MV}} / \kappa^\star_{\mathrm{single}}$")
+    ax.set_title(
+        "Corrected MV Hopf-threshold ratio (v0.3.6)\n"
+        r"Canonical short-gamma regime $(G_y, G_v, G_z) = (1/2, -1/2, -1/2)$"
+    )
+    ax.grid(True, which="both", alpha=0.3)
+    ax.set_ylim(0.35, 1.05)
+    ax.legend(loc="lower right", fontsize=9, framealpha=0.92)
     fig.tight_layout()
     fig.savefig(out_path)
     plt.close(fig)

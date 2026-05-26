@@ -1,5 +1,17 @@
 # McKean–Vlasov mean-field limit of the dealer-gamma channel
 
+> **SUPERSEDED IN PART (v0.3.6).** The "Effect on the Hopf threshold" section
+> below — the v0.3.5 closed-form ratio
+> $\kappa^\star_{\mathrm{MV}}/\kappa^\star_{\mathrm{single}} = \sqrt{1 + (\omega^\star\tau_G)^2}$
+> — was incorrect in sign and magnitude per an external math audit. The
+> heuristic "low-pass filter, reciprocate the gain" derivation missed the
+> destabilising effect of adding a fourth state to the linearised system.
+> See `paper/mv_hopf_corrected.md` for the corrected derivation via the
+> full 4D extended Jacobian + Liu (1994) Hopf criterion. The
+> propagation-of-chaos Theorem 2 below (Sznitman $C/n$ bound) and the
+> numerical $1/\sqrt n$ validation are independent of the threshold
+> derivation and remain correct.
+
 > Self-contained writeup for integration into `paper/main.tex` as **§4 (after the codim-2 §3.6)** or **Appendix B**.
 > All numerics produced from `runs/mckean_vlasov_validation/` and `paper/figures/mckean_vlasov_propagation_chaos.pdf`.
 > Implementation: `src/reflexive_options/theory/mckean_vlasov.py`. Reproducer: `python -m reflexive_options.experiments.mckean_vlasov_validation`.
@@ -50,7 +62,17 @@ $$
 
 The supremum over $t \in [0, T]$ gives (4)–(5). The bound is *tight* for OU; the standard Sznitman Grönwall argument gives the same $C/n$ rate but with a possibly looser constant. $\square$
 
-## Effect on the Hopf threshold
+## ~~Effect on the Hopf threshold~~ (SUPERSEDED, see `mv_hopf_corrected.md`)
+
+> The closed-form below is **incorrect** in both sign and magnitude. It assumed
+> the dealer-gamma channel acts as a low-pass filter on the *existing* 3D
+> state — but the mean-field limit introduces a *new* fourth state to the
+> linearisation and the correct Hopf analysis must be performed on the 4D
+> extended Jacobian. At the canonical short-gamma regime the corrected
+> ratio is $< 1$ (MV is a destabiliser), not $> 1$ as derived below. The
+> full corrected derivation, closed form, audit-anchor table, and economic
+> re-framing are in `paper/mv_hopf_corrected.md`. The text below is retained
+> as a record of the v0.3.5 error and the correction trail.
 
 The MV system inserts a first-order low-pass filter (bandwidth $\theta_G$) between the spot/variance state and the aggregate gamma fed back into spot. At the deterministic Hopf frequency $\omega^\star$ from §3, the linearised transfer function from the target perturbation $\delta g$ to the aggregate $\bar G_\infty$ is
 

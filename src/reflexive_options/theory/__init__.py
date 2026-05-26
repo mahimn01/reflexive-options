@@ -62,8 +62,13 @@ from reflexive_options.theory.info_theoretic import (
     transfer_entropy_simulated,
 )
 from reflexive_options.theory.mckean_vlasov import (
+    KAPPA_STAR_SINGLE_CANONICAL,
     ChaosErrorResult,
     ChaosScalingResult,
+    MVHopfResult,
+    mckean_vlasov_jacobian_4d,
+    mckean_vlasov_kappa_star,
+    mckean_vlasov_kappa_star_canonical_closed_form,
     mckean_vlasov_kappa_star_shift,
     mean_field_limit_trajectory,
     propagation_of_chaos_constant,
@@ -105,6 +110,7 @@ from reflexive_options.theory.stationary import (
 )
 
 __all__ = [
+    "KAPPA_STAR_SINGLE_CANONICAL",
     "BautinScanResult",
     "BimodalityResult",
     "ChaosErrorResult",
@@ -118,6 +124,7 @@ __all__ = [
     "HawkesEquivalenceResult",
     "HopfScanResult",
     "KappaStarSensitivityResult",
+    "MVHopfResult",
     "MisspecificationError",
     "MixtureOIComponent",
     "PSDPeakResult",
@@ -159,6 +166,9 @@ __all__ = [
     "lyapunov_coefficient_lognormal_oi",
     "lyapunov_coefficient_mixture_lognormal_oi",
     "make_mixture_lognormal_density",
+    "mckean_vlasov_jacobian_4d",
+    "mckean_vlasov_kappa_star",
+    "mckean_vlasov_kappa_star_canonical_closed_form",
     "mckean_vlasov_kappa_star_shift",
     "mean_field_limit_trajectory",
     "n_sv_at_kappa",

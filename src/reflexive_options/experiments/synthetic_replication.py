@@ -193,6 +193,30 @@ MechanismClass = str  # one of: "shape_target", "level_artifact", "calibration_a
 # ``shape_target`` cells must agree in sign for CI to pass.
 SHAPE_MATCH_GATE: float = 0.30
 
+# ---------------------------------------------------------------------------
+# A priori mechanism-relevant cell predicate (§6.1 of the paper)
+# ---------------------------------------------------------------------------
+#
+# The reflexive simulator's dealer-gamma feedback channel has a characteristic
+# integration time (T_eff in the tuning grid); the channel's signature on
+# shape moments only becomes mechanism-attributable once the integration time
+# is shorter than the horizon. Below LONG_HORIZON_THRESHOLD_YEARS the cells
+# are short-transient-dominated by the variance-OU + leverage cross-term and
+# the comparison to Marketron's calibrated long-horizon shape is not
+# informative about the dealer-gamma mechanism.
+#
+# SHAPE_ENVELOPE_ABS_BOUND treats simulator outputs with |measured| > 10 (one
+# order of magnitude above the largest Marketron-published shape moment) as
+# envelope-saturated and excludes them from the binomial denominator. This is
+# analogous to instrument saturation in an empirical measurement: a reading
+# pegged at the high end of the scale carries no sign information.
+#
+# Both constants are committed in source before any per-cell outcome is
+# inspected. The aggregator `aggregate_mechanism_relevant_subset` and the
+# pre-anchored test in tests/test_marketron_tuning.py use them verbatim.
+LONG_HORIZON_THRESHOLD_YEARS: float = 0.5
+SHAPE_ENVELOPE_ABS_BOUND: float = 10.0
+
 
 @dataclass(frozen=True)
 class CellOutcome:
@@ -691,6 +715,7 @@ def compare_to_marketron_targets(
                 n_fail += 1
 
             per_horizon[moment_name] = {
+                "horizon": outcome.horizon,
                 "measured": outcome.measured,
                 "target": outcome.target,
                 "relative_error": outcome.relative_error,
@@ -712,7 +737,7 @@ def compare_to_marketron_targets(
     # passes-at-exact-match contract.
     overall_passed = n_fail == 0 and n_pass > 0 and (shape_total == 0 or shape_match_rate >= 0.5)
 
-    return {
+    result: dict[str, Any] = {
         "target_set": target_set,
         "rel_tolerance": rel_tolerance,
         "per_cell": per_cell,
@@ -733,6 +758,12 @@ def compare_to_marketron_targets(
         "shape_gate_passed": shape_gate_passed,
         "overall_passed": overall_passed,
     }
+    # A priori-restricted mechanism-relevant subset (§6.1). Counts only the
+    # long-horizon (≥0.5y), within-envelope (|measured|<10, finite),
+    # non-dead-zone-target shape_target cells; reports the binomial p-value
+    # under the random-sign null.
+    result["mechanism_relevant_subset"] = aggregate_mechanism_relevant_subset(result)
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -784,6 +815,94 @@ def format_mechanism_decomposition_table(comparison: dict[str, Any]) -> str:
                 f"{'Y' if cell['within_8pct'] else 'N':>4s}"
             )
     return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Mechanism-relevant subset (§6.1 a priori restriction)
+# ---------------------------------------------------------------------------
+
+
+def is_mechanism_relevant_cell(cell: dict[str, Any]) -> bool:
+    """Return True iff a per-cell outcome is in the a priori mechanism-relevant subset.
+
+    The subset is locked in source (constants
+    ``LONG_HORIZON_THRESHOLD_YEARS = 0.5`` and ``SHAPE_ENVELOPE_ABS_BOUND = 10``)
+    before any per-cell outcome is inspected. A cell qualifies iff:
+
+      1. ``mechanism_class == "shape_target"`` (skew or excess_kurt; level/drift
+         cells are routed elsewhere and never enter this subset).
+      2. ``horizon >= LONG_HORIZON_THRESHOLD_YEARS`` — the dealer-gamma channel
+         needs at least the integration time of the tuned ``T_eff`` (≤ 0.5 y in
+         the §6 tuning grid) to imprint on the shape moment.
+      3. ``|target| >= 1e-3`` — Marketron's published targets within ±1e-3
+         carry no sign information (cf. ``_sign_of`` dead-zone matching the
+         brief's reporting precision); we drop them from both numerator AND
+         denominator rather than ambiguously counting them either way.
+      4. ``measured`` is finite AND ``|measured| < SHAPE_ENVELOPE_ABS_BOUND`` —
+         envelope-saturated or NaN simulator outputs (Marketron Table 6's
+         high-σ regime at the per-set tuned coupling) carry no sign info and
+         are dropped akin to instrument saturation.
+
+    Expected input shape is the per-cell dict emitted by
+    :func:`compare_to_marketron_targets` (keys: ``horizon``, ``mechanism_class``,
+    ``target``, ``measured``, …). ``horizon`` may be supplied either inside the
+    cell or threaded by the caller; we accept both.
+    """
+    if cell.get("mechanism_class") != "shape_target":
+        return False
+    horizon = cell.get("horizon")
+    if horizon is None:
+        return False
+    if float(horizon) < LONG_HORIZON_THRESHOLD_YEARS:
+        return False
+    target = float(cell.get("target", 0.0))
+    if abs(target) < 1e-3:
+        return False
+    measured = float(cell.get("measured", float("nan")))
+    if not math.isfinite(measured):
+        return False
+    return not abs(measured) >= SHAPE_ENVELOPE_ABS_BOUND
+
+
+def aggregate_mechanism_relevant_subset(
+    comparison: dict[str, Any],
+) -> dict[str, float | int]:
+    """Aggregate the a priori-restricted subset of shape-target cells.
+
+    Walks the ``per_cell`` block of a :func:`compare_to_marketron_targets`
+    result, threads the horizon into each cell so :func:`is_mechanism_relevant_cell`
+    can apply the long-horizon predicate, and tallies sign-matches in the
+    qualifying subset. The returned ``binomial_p`` is the one-sided
+    ``P(X >= matches | n=total, p=0.5)`` from
+    :func:`scipy.stats.binom.sf` (chance-agreement null) ``+ pmf(matches)``;
+    we return ``1.0`` when ``total == 0`` so callers can safely format it.
+    """
+    from scipy.stats import binom
+
+    matches = 0
+    total = 0
+    per_cell: dict[str, dict[str, Any]] = comparison.get("per_cell", {})
+    for horizon_key, per_horizon in per_cell.items():
+        # Parse "0.5000y" → 0.5
+        horizon = float(horizon_key.rstrip("y"))
+        for _moment, cell in per_horizon.items():
+            cell_with_horizon = dict(cell)
+            cell_with_horizon["horizon"] = horizon
+            if not is_mechanism_relevant_cell(cell_with_horizon):
+                continue
+            total += 1
+            if bool(cell.get("sign_match")):
+                matches += 1
+    # One-sided P(X >= matches | n=total, p=0.5); 1.0 when total == 0.
+    binomial_p = 1.0 if total == 0 else float(binom.sf(matches - 1, total, 0.5))
+    return {
+        "matches": int(matches),
+        "total": int(total),
+        "match_rate": float(matches / total) if total > 0 else 0.0,
+        "binomial_p_under_chance": float(binomial_p),
+        "long_horizon_threshold_years": float(LONG_HORIZON_THRESHOLD_YEARS),
+        "shape_envelope_abs_bound": float(SHAPE_ENVELOPE_ABS_BOUND),
+    }
 
 
 # ---------------------------------------------------------------------------

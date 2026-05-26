@@ -130,13 +130,25 @@
   doi     = {10.1111/1467-9965.00038},
 }
 
-@article{engellambrasmussen2024,
-  author  = {Engel, Maximilian and Lamb, Jeroen S. W. and Rasmussen, Martin},
+@comment{
+  TODO(3P-BIB P0-1): the former entry engellambrasmussen2024 was a hallucination.
+  DOI 10.1007/s00440-024-01301-4 actually resolves to Baxendale (single author),
+  Vol 193, pp 375--425 -- see baxendale2025 entry below. All
+  \citet{engellambrasmussen2024} / \citep{engellambrasmussen2024} sites in
+  paper/main.tex must be rewritten to baxendale2025 (integration handled by
+  the main agent; see paper/bib_fixes.md for line numbers).
+}
+
+@article{baxendale2025,
+  author  = {Baxendale, Peter H.},
   title   = {Lyapunov Exponents and Shear-Induced Chaos for a {H}opf Bifurcation with Additive Noise},
   journal = {Probability Theory and Related Fields},
-  volume  = {188},
+  volume  = {193},
+  pages   = {375--425},
   year    = {2024},
+  note    = {Print issue 2025},
   doi     = {10.1007/s00440-024-01301-4},
+  issn    = {0178-8051},
 }
 
 @book{kuznetsov2004,
@@ -629,4 +641,54 @@
   volume    = {169},
   publisher = {Springer},
   year      = {1997},
+}
+
+@incollection{sznitman1991,
+  author    = {Sznitman, Alain-Sol},
+  title     = {Topics in Propagation of Chaos},
+  booktitle = {{\'E}cole d'{\'E}t{\'e} de Probabilit{\'e}s de {S}aint-{F}lour {XIX} --- 1989},
+  editor    = {Hennequin, Paul-Louis},
+  series    = {Lecture Notes in Mathematics},
+  volume    = {1464},
+  pages     = {165--251},
+  publisher = {Springer},
+  address   = {Berlin, Heidelberg},
+  year      = {1991},
+  doi       = {10.1007/BFb0085169},
+  isbn      = {9783540538417},
+}
+
+@book{carmonadelarue2018,
+  author    = {Carmona, Ren{\'e} and Delarue, Fran{\c{c}}ois},
+  title     = {Probabilistic Theory of Mean Field Games with Applications {I}--{II}},
+  series    = {Probability Theory and Stochastic Modelling},
+  volume    = {83--84},
+  publisher = {Springer},
+  year      = {2018},
+  doi       = {10.1007/978-3-319-58920-6},
+  isbn      = {9783319564371},
+}
+
+@article{liu1994,
+  author  = {Liu, W.-M.},
+  title   = {Criterion of {H}opf Bifurcations without Using Eigenvalues},
+  journal = {Journal of Mathematical Analysis and Applications},
+  volume  = {182},
+  number  = {1},
+  pages   = {250--256},
+  year    = {1994},
+  doi     = {10.1006/jmaa.1994.1079},
+}
+
+@article{jaissonrosenbaum2015,
+  author  = {Jaisson, Thibault and Rosenbaum, Mathieu},
+  title   = {Limit Theorems for Nearly Unstable {H}awkes Processes},
+  journal = {The Annals of Applied Probability},
+  volume  = {25},
+  number  = {2},
+  pages   = {600--631},
+  year    = {2015},
+  doi     = {10.1214/14-AAP1005},
+  eprint  = {1310.2033},
+  archivePrefix = {arXiv},
 }

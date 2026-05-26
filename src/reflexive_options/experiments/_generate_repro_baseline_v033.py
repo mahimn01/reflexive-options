@@ -44,10 +44,10 @@ Each experiment is locked at the *exact* config that produced the paper's
 headline numbers (NOT always the dataclass default). The headline configs
 were chosen during the v0.3.1–v0.3.3 development cycle:
 
-  * `mckean_vlasov_validation`: quick variant (n_grid=(10,100,1000),
-    n_replicates=16, n_steps=100). The full sweep (5 n-points × 64 reps ×
-    250 steps) is too slow for the regression test and the slope claim is
-    stable on the quick sweep.
+  * `mckean_vlasov_validation`: production sweep (n_grid=(10,32,100,316,
+    1000), n_replicates=64, n_steps=250) — the headline 5-point Sznitman
+    fit. Runs in ≈ 2 s so it fits the regression-test budget; the quick
+    3-point sweep was deprecated in v0.3.5 per the 3P-CLAIMS audit.
   * `h_bimod_2d_scan`: n_paths=1000, n_steps=2000 — gave the n=15,769
     surviving-sample cell at κ_env=1.05·κ★_env that the paper cites.
   * `h1_synthetic_validation`: n_bc_train_episodes=30, n_paths_per_source=30
@@ -258,10 +258,11 @@ def _config_codim2() -> dict[str, Any]:
 def _run_mckean_vlasov() -> dict[str, Any]:
     from reflexive_options.experiments.mckean_vlasov_validation import run as _run
 
-    # Use quick mode — the paper's headline slope and shift-ratio numbers come
-    # from this configuration; the full sweep is too slow for the regression
-    # gate (≈ 10 minutes vs ≈ 30 seconds) and the slope claim is invariant.
-    return _run(quick=True)
+    # Production sweep — pins the n ∈ {10, 32, 100, 316, 1000} × 64-reps
+    # numbers cited in §3.10. The full sweep runs in ≈ 2 s on a laptop,
+    # so it stays inside the regression-gate budget while supplying the
+    # 5-point Sznitman-slope fit the audit demanded.
+    return _run(quick=False)
 
 
 def _config_mckean_vlasov() -> dict[str, Any]:
@@ -269,13 +270,7 @@ def _config_mckean_vlasov() -> dict[str, Any]:
 
     from reflexive_options.experiments.mckean_vlasov_validation import MVValidationConfig
 
-    return asdict(
-        MVValidationConfig(
-            n_grid=(10, 100, 1000),
-            n_replicates=16,
-            n_steps=100,
-        )
-    )
+    return asdict(MVValidationConfig())
 
 
 def _run_kappa_star_robustness() -> dict[str, Any]:
@@ -539,7 +534,7 @@ def _all_specs() -> list[WaveExperimentSpec]:
             config_dict=_config_mckean_vlasov(),
             tolerance_class="stochastic_relative",
             seed=20260514,
-            notes="Particle SDE at locked seed; quick-mode budget (3 n-points, 16 reps, 100 steps).",
+            notes="Particle SDE at locked seed; production-mode sweep (5 n-points {10,32,100,316,1000}, 64 reps, 250 steps).",
             metrics=(
                 MetricSpec("kappa_star_single", lambda m: float(m["kappa_star_single"])),
                 MetricSpec("kappa_star_mv", lambda m: float(m["kappa_star_mv"])),
@@ -550,8 +545,10 @@ def _all_specs() -> list[WaveExperimentSpec]:
                 MetricSpec("tau_G_trading_days", lambda m: float(m["tau_G_trading_days"])),
                 MetricSpec("C_T_theoretical", lambda m: float(m["C_T_theoretical"])),
                 MetricSpec("rmse_sup_n10", lambda m: float(m["rmse_sup"][0])),
-                MetricSpec("rmse_sup_n100", lambda m: float(m["rmse_sup"][1])),
-                MetricSpec("rmse_sup_n1000", lambda m: float(m["rmse_sup"][2])),
+                MetricSpec("rmse_sup_n32", lambda m: float(m["rmse_sup"][1])),
+                MetricSpec("rmse_sup_n100", lambda m: float(m["rmse_sup"][2])),
+                MetricSpec("rmse_sup_n316", lambda m: float(m["rmse_sup"][3])),
+                MetricSpec("rmse_sup_n1000", lambda m: float(m["rmse_sup"][4])),
                 MetricSpec(
                     "fitted_slope_log_inv_sqrt_n",
                     lambda m: float(m["fitted_slope_log_inv_sqrt_n"]),

@@ -4,9 +4,9 @@ The single-representative-dealer SDE in the §2 model implicitly assumes
 either (a) perfect coordination across dealers, or (b) the law-of-large-
 numbers limit where idiosyncratic dealer noise washes out.  This module
 formalises (b) as a McKean-Vlasov (MV) SDE coupled to the *law* of the
-dealer-gamma process, and provides a finite-particle simulator that
+dealer-gamma process, provides a finite-particle simulator that
 validates Sznitman (1991) / Méléard (1996)'s propagation-of-chaos $1/n$
-rate.
+rate, and provides the EXACT 4D Hopf-threshold correction.
 
 Setup (n-dealer system).  Dealer $i \in \{1, \ldots, n\}$ holds gamma
 exposure $G_i$ that obeys
@@ -51,26 +51,65 @@ Key quantitative outputs:
               + Var(G^0) * exp(-2 theta_G T)
             <= max(sigma_G^2 / (2 theta_G), Var(G^0)).
 
-2. Hopf-threshold shift.  The MV system's $G$-channel acts as a
-   first-order low-pass filter on the target $g(S, v)$ with time
-   constant $\tau_G = 1/\theta_G$.  At the Hopf frequency $\omega^\star$
-   the effective coupling becomes
-   $\kappa_\text{eff} = \kappa \cdot \theta_G / \sqrt{\theta_G^2 + (\omega^\star)^2}$,
-   so the threshold shifts to
+2. Hopf-threshold shift (CORRECTED in v0.3.6).  The mean-field limit
+   adds a fourth state to the linearisation — the aggregate dealer
+   gamma $g$ obeying $\dot g = -\theta_G g + \theta_G (G_y y + G_v u
+   + G_z z)$ — and the spot equation now feeds back $\kappa g$ rather
+   than the instantaneous map $\kappa (G_y y + G_v u + G_z z)$.  The
+   extended 4D Jacobian is
 
-       kappa_star_MV / kappa_star_single
-           = sqrt(theta_G^2 + omega_star^2) / theta_G
-           = sqrt(1 + (omega_star * tau_G)^2)
-           = 1 + 0.5 * (omega_star * tau_G)^2 + O((omega_star tau_G)^4).
+       J_MV(kappa, theta_G) =
+         [ -0.5 sig2_y   -0.5 sig2_v    0           kappa        ]
+         [ 0             -kappa_v       gamma       0            ]
+         [ beta          0              -alpha      0            ]
+         [ theta_G G_y   theta_G G_v    theta_G G_z -theta_G     ]
 
-   For instantaneous hedging $\theta_G \to \infty$ (i.e. $\tau_G \to 0$)
-   the correction vanishes: MV agrees with single-dealer.  For slow
-   hedging the threshold is *higher* — the dealer ensemble damps the
-   feedback channel, requiring stronger coupling to destabilise.
+   (with sig2_y = ∂_y σ², sig2_v = ∂_v σ² being the Ito terms from the
+   spot SDE).  The Hopf threshold is the smallest κ > 0 at which a
+   complex-conjugate eigenvalue pair has zero real part, equivalently
+   the 4D Liu / Routh-Hurwitz condition
+
+       a_3 a_2 a_1 - a_1^2 - a_3^2 a_0 = 0,   (Hopf line)
+       a_3 > 0,  a_0 > 0,  a_3 a_2 - a_1 > 0  (positivity).
+
+   The previous v0.3.5 "low-pass filter, reciprocate the gain" heuristic
+   was incorrect: it ignored the destabilising effect of adding a new
+   state to the linearised system (the rank of the unstable manifold
+   can grow at the bifurcation) and missed the phase-coupling between
+   $g$ and the price/variance channels.  An external audit verified
+   numerically that the previous formula was wrong by up to a factor
+   of $\sim$2 in magnitude AND of opposite sign at the canonical
+   short-gamma regime (G_y > 0).  The exact 4D computation is
+   implemented here.
+
+   At the canonical short-gamma regime
+   $(G_y, G_v, G_z, \alpha, \beta, \gamma, \kappa_v) = (0.5, -0.5, -0.5,
+   0.5, 1, 0.5, 2)$ with $\sigma^2_y = \sigma^2_v = 0$, the threshold
+   admits the closed form
+
+       kappa_star_MV(theta_G) =
+         [50 t^2 + 143 t + 105 - (2t + 5) sqrt(385 t^2 + 810 t + 441)]
+         / [12 t (t + 1)],     t := theta_G,
+
+   with single-dealer limit $\kappa^\star_\mathrm{single} = (25 -
+   \sqrt{385}) / 6 \approx 0.8964$ as $\theta_G \to \infty$ (the dealer
+   mode decouples) and $\kappa^\star_\mathrm{MV} \to 8/21 \approx 0.381$
+   as $\theta_G \to 0^+$.  Across this regime the MV correction strictly
+   *lowers* the threshold: dealer-hedging latency is destabilising.
+
+   For general regimes the ratio is regime-dependent: in particular
+   long-gamma regimes (G_y < 0, e.g.\ the log-normal-OI calibration of
+   §4.3) the ratio is > 1 and diverges as $\theta_G \to 0$.
+
+   See `paper/mv_hopf_corrected.md` for the full derivation.
 
 This module implements:
 
-* `mckean_vlasov_kappa_star_shift` — closed-form ratio above.
+* `mckean_vlasov_jacobian_4d` — the extended 4D Jacobian above.
+* `mckean_vlasov_kappa_star` — solves the 4D Hopf condition numerically.
+* `mckean_vlasov_kappa_star_shift` — returns the corrected ratio
+   $\kappa^\star_\mathrm{MV} / \kappa^\star_\mathrm{single}$ together
+   with both thresholds and the Hopf frequency.
 * `simulate_n_dealer_system` — Euler-Maruyama on the n-particle SDE.
 * `propagation_of_chaos_error` — measures $|G_bar_n - G_bar_inf|$ and
   the $L^2$ supremum over a path.
@@ -87,50 +126,476 @@ References:
         Games with Applications I-II. Springer.  Vol I, Thm 2.12.
     Lacker, D. (2018) "Mean field games via controlled martingale problems."
         SPA 128.
+    Liu, W.-M. (1994) "Criterion of Hopf bifurcations without using
+        eigenvalues." J. Math. Anal. Appl. 182, 250–256.  The 4D
+        Hopf criterion in Routh-Hurwitz form.
 """
 
 from __future__ import annotations
 
+import math
+import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
 
 import numpy as np
 from numpy.typing import NDArray
+from scipy.optimize import brentq
 
 # ---------------------------------------------------------------------------
-# Closed-form Hopf-threshold shift (Deliverable 3).
+# 4D extended Jacobian + corrected Hopf threshold (Theorem 3, v0.3.6).
 # ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class MVHopfResult:
+    """Output of `mckean_vlasov_kappa_star` / `mckean_vlasov_kappa_star_shift`.
+
+    `kappa_star_single`: the 3D single-dealer Hopf threshold (theta_G -> infty
+        limit), computed from the same parameters by removing the dealer-OU
+        state and feeding $g(S,v)$ back instantaneously.
+    `kappa_star_mv`: the 4D MV Hopf threshold at finite theta_G.
+    `ratio`: kappa_star_mv / kappa_star_single.  < 1 means MV destabilises
+        (lower threshold than single-dealer); > 1 means MV stabilises.
+    `omega_star_mv`: the Hopf frequency of the imaginary eigenvalue pair at
+        kappa_star_mv.
+    `theta_G`: the dealer-hedging speed used.
+    """
+
+    kappa_star_single: float
+    kappa_star_mv: float
+    ratio: float
+    omega_star_mv: float
+    theta_G: float
+
+
+def mckean_vlasov_jacobian_4d(
+    *,
+    kappa: float,
+    theta_G: float,
+    G_y: float,
+    G_v: float,
+    G_z: float,
+    kappa_v: float,
+    alpha: float,
+    beta: float,
+    gamma: float,
+    sigma2_y: float = 0.0,
+    sigma2_v: float = 0.0,
+) -> NDArray[np.float64]:
+    r"""Build the 4D extended Jacobian $J_\mathrm{MV}(\kappa, \theta_G)$.
+
+    The extended state is $(y, u, z, g)$ where $g$ is the aggregate
+    dealer-gamma deviation.  Linearising the spot/variance/memory/dealer
+    SDEs at the equilibrium with $g(S, v)$ Taylor-expanded as
+    $g(y, u, z) = G_y y + G_v u + G_z z$,
+
+        \dot y = -\tfrac12 \sigma^2_y y - \tfrac12 \sigma^2_v u + \kappa g,
+        \dot u = -\kappa_v u + \gamma z,
+        \dot z = \beta y - \alpha z,
+        \dot g = -\theta_G g + \theta_G (G_y y + G_v u + G_z z).
+
+    Args:
+        kappa: feedback strength.
+        theta_G: dealer-hedging speed > 0.
+        G_y, G_v, G_z: partials of the dealer-gamma target $g(y, u, z)$.
+        kappa_v: variance mean-reversion speed > 0.
+        alpha: memory-channel decay > 0.
+        beta: memory-channel intake.
+        gamma: leverage feedback.
+        sigma2_y, sigma2_v: partials of $\sigma^2(y, u)$ at equilibrium
+            (the Ito terms in the spot SDE; both zero for the pure 4D
+            short-gamma analysis, sigma2_v = 1 for a Heston backbone
+            $\sigma^2 = v$ at $v^\star = 1$).
+    """
+    if theta_G <= 0.0:
+        raise ValueError(f"theta_G must be > 0, got {theta_G}")
+    if kappa_v <= 0.0:
+        raise ValueError(f"kappa_v must be > 0, got {kappa_v}")
+    if alpha <= 0.0:
+        raise ValueError(f"alpha must be > 0, got {alpha}")
+    return np.array(
+        [
+            [-0.5 * sigma2_y, -0.5 * sigma2_v, 0.0, kappa],
+            [0.0, -kappa_v, gamma, 0.0],
+            [beta, 0.0, -alpha, 0.0],
+            [theta_G * G_y, theta_G * G_v, theta_G * G_z, -theta_G],
+        ],
+        dtype=np.float64,
+    )
+
+
+def _jacobian_3d_single_dealer(
+    *,
+    kappa: float,
+    G_y: float,
+    G_v: float,
+    G_z: float,
+    kappa_v: float,
+    alpha: float,
+    beta: float,
+    gamma: float,
+    sigma2_y: float = 0.0,
+    sigma2_v: float = 0.0,
+) -> NDArray[np.float64]:
+    """3D single-dealer Jacobian (theta_G -> infty limit).
+
+    Recovers the §2 model: $g(S, v)$ is fed back instantaneously, so
+    row 1 of the Jacobian gets $\\kappa G_y, \\kappa G_v, \\kappa G_z$.
+    """
+    a = kappa * G_y - 0.5 * sigma2_y
+    b = kappa * G_v - 0.5 * sigma2_v
+    return np.array(
+        [
+            [a, b, kappa * G_z],
+            [0.0, -kappa_v, gamma],
+            [beta, 0.0, -alpha],
+        ],
+        dtype=np.float64,
+    )
+
+
+def _max_real_eig(J: NDArray[np.float64]) -> float:
+    """Maximum real part of the eigenvalues of J."""
+    eig = np.linalg.eigvals(J)
+    return float(np.asarray(eig, dtype=np.complex128).real.max())
+
+
+def _imag_at_max_real(J: NDArray[np.float64]) -> float:
+    """Imaginary part of the eigenvalue with the smallest |Re| (the Hopf pair)."""
+    eig = np.asarray(np.linalg.eigvals(J), dtype=np.complex128)
+    order = np.argsort(np.abs(eig.real))
+    return float(abs(eig[order[0]].imag))
+
+
+def _find_first_hopf(
+    f: Callable[[float], float],
+    kappa_min: float,
+    kappa_max: float,
+    n_grid: int,
+) -> float | None:
+    """Scan f(kappa) on a log grid, return brentq root at the smallest sign change.
+
+    Returns None if no sign change is detected in [kappa_min, kappa_max].
+    Detects both +→− and −→+ crossings; the smallest-kappa crossing is the
+    Hopf threshold.
+    """
+    if kappa_min <= 0.0 or kappa_max <= kappa_min:
+        raise ValueError("require 0 < kappa_min < kappa_max")
+    ks = np.geomspace(kappa_min, kappa_max, n_grid)
+    fs = np.array([f(float(k)) for k in ks], dtype=np.float64)
+    sign = np.sign(fs)
+    # Mask out exact zeros that aren't true sign changes (e.g. degenerate).
+    changes = np.where(np.diff(sign) != 0)[0]
+    if len(changes) == 0:
+        return None
+    i = int(changes[0])
+    a, b = float(ks[i]), float(ks[i + 1])
+    if math.copysign(1.0, fs[i]) == math.copysign(1.0, fs[i + 1]):
+        return None
+    return float(brentq(f, a, b, xtol=1e-10))
+
+
+def mckean_vlasov_kappa_star(
+    *,
+    theta_G: float,
+    G_y: float,
+    G_v: float,
+    G_z: float,
+    kappa_v: float,
+    alpha: float,
+    beta: float,
+    gamma: float,
+    sigma2_y: float = 0.0,
+    sigma2_v: float = 0.0,
+    kappa_min: float = 1e-3,
+    kappa_max: float = 1e4,
+    n_grid: int = 2001,
+) -> tuple[float, float]:
+    """Solve the 4D MV Hopf condition for $\\kappa^\\star_\\mathrm{MV}$.
+
+    Finds the smallest $\\kappa > 0$ at which $\\max_i \\mathrm{Re}\\,
+    \\lambda_i(J_\\mathrm{MV}(\\kappa, \\theta_G)) = 0$, scanning a
+    log-spaced grid on $[\\kappa_\\min, \\kappa_\\max]$.  This is the
+    Liu / 4D Routh-Hurwitz Hopf line; we use the eigenvalue formulation
+    rather than the explicit polynomial discriminant because the latter
+    is messy in general parameters and harder to verify the positivity
+    conditions on.
+
+    Returns:
+        (kappa_star_mv, omega_star_mv) where omega_star_mv is the
+        imaginary part of the complex pair at the bifurcation.
+
+    Raises:
+        RuntimeError if no sign change of max(Re λ) is found on the
+        grid — either the regime has no Hopf in [kappa_min, kappa_max]
+        or the bracket needs widening.
+    """
+
+    def f(kappa: float) -> float:
+        J = mckean_vlasov_jacobian_4d(
+            kappa=kappa,
+            theta_G=theta_G,
+            G_y=G_y,
+            G_v=G_v,
+            G_z=G_z,
+            kappa_v=kappa_v,
+            alpha=alpha,
+            beta=beta,
+            gamma=gamma,
+            sigma2_y=sigma2_y,
+            sigma2_v=sigma2_v,
+        )
+        return _max_real_eig(J)
+
+    kstar = _find_first_hopf(f, kappa_min, kappa_max, n_grid)
+    if kstar is None:
+        raise RuntimeError(
+            f"no 4D MV Hopf found on [{kappa_min}, {kappa_max}] at theta_G={theta_G}; "
+            "widen the bracket or check the regime parameters."
+        )
+    J_star = mckean_vlasov_jacobian_4d(
+        kappa=kstar,
+        theta_G=theta_G,
+        G_y=G_y,
+        G_v=G_v,
+        G_z=G_z,
+        kappa_v=kappa_v,
+        alpha=alpha,
+        beta=beta,
+        gamma=gamma,
+        sigma2_y=sigma2_y,
+        sigma2_v=sigma2_v,
+    )
+    omega_star = _imag_at_max_real(J_star)
+    return float(kstar), float(omega_star)
+
+
+def _kappa_star_single_3d(
+    *,
+    G_y: float,
+    G_v: float,
+    G_z: float,
+    kappa_v: float,
+    alpha: float,
+    beta: float,
+    gamma: float,
+    sigma2_y: float = 0.0,
+    sigma2_v: float = 0.0,
+    kappa_min: float = 1e-3,
+    kappa_max: float = 1e4,
+    n_grid: int = 2001,
+) -> tuple[float, float]:
+    """Solve the 3D single-dealer Hopf condition; theta_G -> infty limit of MV."""
+
+    def f(kappa: float) -> float:
+        J = _jacobian_3d_single_dealer(
+            kappa=kappa,
+            G_y=G_y,
+            G_v=G_v,
+            G_z=G_z,
+            kappa_v=kappa_v,
+            alpha=alpha,
+            beta=beta,
+            gamma=gamma,
+            sigma2_y=sigma2_y,
+            sigma2_v=sigma2_v,
+        )
+        return _max_real_eig(J)
+
+    kstar = _find_first_hopf(f, kappa_min, kappa_max, n_grid)
+    if kstar is None:
+        raise RuntimeError(
+            f"no 3D single-dealer Hopf found on [{kappa_min}, {kappa_max}]; "
+            "widen the bracket or check the regime parameters."
+        )
+    J_star = _jacobian_3d_single_dealer(
+        kappa=kstar,
+        G_y=G_y,
+        G_v=G_v,
+        G_z=G_z,
+        kappa_v=kappa_v,
+        alpha=alpha,
+        beta=beta,
+        gamma=gamma,
+        sigma2_y=sigma2_y,
+        sigma2_v=sigma2_v,
+    )
+    omega_star = _imag_at_max_real(J_star)
+    return float(kstar), float(omega_star)
 
 
 def mckean_vlasov_kappa_star_shift(
     *,
     theta_G: float,
-    omega_star: float,
-) -> float:
-    """Closed-form ratio kappa_star_MV / kappa_star_single.
+    G_y: float | None = None,
+    G_v: float | None = None,
+    G_z: float | None = None,
+    kappa_v: float | None = None,
+    alpha: float | None = None,
+    beta: float | None = None,
+    gamma: float | None = None,
+    sigma2_y: float = 0.0,
+    sigma2_v: float = 0.0,
+    omega_star: float | None = None,
+    kappa_min: float = 1e-3,
+    kappa_max: float = 1e4,
+    n_grid: int = 2001,
+) -> MVHopfResult:
+    r"""Corrected MV Hopf-threshold shift via the 4D extended Jacobian.
 
-    The dealer-ensemble OU channel is a low-pass filter of bandwidth
-    $\\theta_G$ acting on the spot/variance perturbation that drives the
-    target gamma $g(S, v)$.  At the Hopf frequency $\\omega^\\star$, the
-    transfer-function gain is $\\theta_G / \\sqrt{\\theta_G^2 + \\omega^{\\star 2}}$,
-    so the effective coupling shrinks by that factor and the threshold
-    expands by its reciprocal.
-
-    Returns:
-        kappa_star_MV / kappa_star_single = sqrt(1 + (omega_star / theta_G)^2).
-
-        For theta_G -> infty (instantaneous hedging, tau_G -> 0) the ratio
-        is 1; for slow hedging the threshold is strictly higher.
+    Returns the structured result containing the single-dealer threshold,
+    the MV threshold, their ratio, and the Hopf frequency $\omega^\star_\mathrm{MV}$.
+    The MV threshold is the smallest $\kappa > 0$ for which the 4D Jacobian
+    $J_\mathrm{MV}(\kappa, \theta_G)$ has a pair of complex-conjugate
+    eigenvalues with zero real part.  The single-dealer threshold is the
+    $\theta_G \to \infty$ limit, recovered by removing the dealer state.
 
     Args:
-        theta_G: dealer-hedging speed > 0 (autocorrelation time tau_G = 1/theta_G).
-        omega_star: deterministic Hopf frequency at the single-dealer threshold.
+        theta_G: dealer-hedging speed > 0 (autocorrelation time
+            $\tau_G = 1/\theta_G$).
+        G_y, G_v, G_z: partials of the dealer-gamma target.
+        kappa_v: variance mean-reversion speed > 0.
+        alpha: memory-channel decay > 0.
+        beta: memory-channel intake.
+        gamma: leverage feedback.
+        sigma2_y, sigma2_v: partials of $\sigma^2$ at equilibrium
+            (0 for the canonical 4D regime, sigma2_v = 1 for a Heston
+            backbone $\sigma^2 = v$ at $v^\star = 1$).
+        omega_star: DEPRECATED — was the single-dealer Hopf frequency used
+            by the v0.3.5 heuristic formula.  Now ignored; the corrected
+            computation does not need it as an input (it is reported as an
+            output).  Passing a non-None value emits a DeprecationWarning.
+        kappa_min, kappa_max, n_grid: bracket and resolution for the
+            log-grid eigenvalue scan.
+
+    BACKWARD COMPATIBILITY:
+        The v0.3.5 signature was ``mckean_vlasov_kappa_star_shift(*, theta_G,
+        omega_star)`` returning a scalar ratio.  That signature is no longer
+        supported because the v0.3.5 formula was numerically incorrect by up
+        to a factor of ~2 (and of wrong sign in canonical short-gamma
+        regimes) per an external audit.  Callers must supply the full
+        4D Jacobian structure (the same parameters used by the bifurcation
+        module's `kappa_star_lognormal_oi` and friends).
+
+    Returns:
+        `MVHopfResult` with .kappa_star_single, .kappa_star_mv, .ratio,
+        .omega_star_mv, .theta_G.
     """
     if theta_G <= 0.0:
         raise ValueError(f"theta_G must be > 0, got {theta_G}")
-    if omega_star < 0.0:
-        raise ValueError(f"omega_star must be >= 0, got {omega_star}")
-    return float(np.sqrt(1.0 + (omega_star / theta_G) ** 2))
+    if omega_star is not None:
+        warnings.warn(
+            "omega_star is deprecated and ignored: the corrected v0.3.6 4D Hopf "
+            "computation does not require it as an input. See "
+            "paper/mv_hopf_corrected.md for the corrected derivation.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    required = {
+        "G_y": G_y,
+        "G_v": G_v,
+        "G_z": G_z,
+        "kappa_v": kappa_v,
+        "alpha": alpha,
+        "beta": beta,
+        "gamma": gamma,
+    }
+    missing = [k for k, v in required.items() if v is None]
+    if missing:
+        raise TypeError(
+            "mckean_vlasov_kappa_star_shift requires the full 4D Jacobian structure; "
+            f"missing keyword arguments: {missing}. "
+            "The v0.3.5 (theta_G, omega_star)-only signature was retired because the "
+            "heuristic formula was incorrect per external audit (see paper/mv_hopf_corrected.md)."
+        )
+
+    # Type-narrow after the None check.
+    Gy_v = float(G_y)  # type: ignore[arg-type]
+    Gv_v = float(G_v)  # type: ignore[arg-type]
+    Gz_v = float(G_z)  # type: ignore[arg-type]
+    kv_v = float(kappa_v)  # type: ignore[arg-type]
+    al_v = float(alpha)  # type: ignore[arg-type]
+    be_v = float(beta)  # type: ignore[arg-type]
+    ga_v = float(gamma)  # type: ignore[arg-type]
+
+    kstar_mv, omega_mv = mckean_vlasov_kappa_star(
+        theta_G=theta_G,
+        G_y=Gy_v,
+        G_v=Gv_v,
+        G_z=Gz_v,
+        kappa_v=kv_v,
+        alpha=al_v,
+        beta=be_v,
+        gamma=ga_v,
+        sigma2_y=sigma2_y,
+        sigma2_v=sigma2_v,
+        kappa_min=kappa_min,
+        kappa_max=kappa_max,
+        n_grid=n_grid,
+    )
+    kstar_single, _ = _kappa_star_single_3d(
+        G_y=Gy_v,
+        G_v=Gv_v,
+        G_z=Gz_v,
+        kappa_v=kv_v,
+        alpha=al_v,
+        beta=be_v,
+        gamma=ga_v,
+        sigma2_y=sigma2_y,
+        sigma2_v=sigma2_v,
+        kappa_min=kappa_min,
+        kappa_max=kappa_max,
+        n_grid=n_grid,
+    )
+    return MVHopfResult(
+        kappa_star_single=float(kstar_single),
+        kappa_star_mv=float(kstar_mv),
+        ratio=float(kstar_mv / kstar_single),
+        omega_star_mv=float(omega_mv),
+        theta_G=float(theta_G),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Canonical-regime closed form (audit anchor; matches mckean_vlasov_kappa_star
+# numerically to floating-point precision).
+# ---------------------------------------------------------------------------
+
+
+def mckean_vlasov_kappa_star_canonical_closed_form(theta_G: float) -> float:
+    r"""Closed-form $\kappa^\star_\mathrm{MV}(\theta_G)$ at the canonical regime.
+
+    Derived in `paper/mv_hopf_corrected.md` for the regime
+    $(G_y, G_v, G_z, \alpha, \beta, \gamma, \kappa_v) = (1/2, -1/2, -1/2,
+    1/2, 1, 1/2, 2)$ with $\sigma^2_y = \sigma^2_v = 0$.  The 4D Liu
+    Hopf condition $a_3 a_2 a_1 - a_1^2 - a_3^2 a_0 = 0$ is quadratic in
+    $\kappa$ at this regime; taking the smaller positive root gives
+
+        kappa_star_MV(t) =
+          [50 t^2 + 143 t + 105 - (2t + 5) sqrt(385 t^2 + 810 t + 441)]
+          / [12 t (t + 1)],   t := theta_G.
+
+    Limits:
+        theta_G -> infty:  (25 - sqrt(385)) / 6 \approx 0.8964  (single-dealer)
+        theta_G -> 0+:     8 / 21 \approx 0.3810   (finite — frozen-dealer limit)
+
+    This function is the audit anchor used by the regression tests.
+    """
+    if theta_G <= 0.0:
+        raise ValueError(f"theta_G must be > 0, got {theta_G}")
+    t = float(theta_G)
+    disc = 385.0 * t * t + 810.0 * t + 441.0
+    if disc < 0.0:  # never, but defensively
+        raise RuntimeError(f"closed-form discriminant negative at theta_G={t}")
+    num = 50.0 * t * t + 143.0 * t + 105.0 - (2.0 * t + 5.0) * math.sqrt(disc)
+    den = 12.0 * t * (t + 1.0)
+    return num / den
+
+
+KAPPA_STAR_SINGLE_CANONICAL: float = (25.0 - math.sqrt(385.0)) / 6.0
+"""Closed-form single-dealer $\\kappa^\\star_\\mathrm{single}$ at the canonical regime
+(theta_G -> infty limit of `mckean_vlasov_kappa_star_canonical_closed_form`)."""
 
 
 def propagation_of_chaos_constant(
