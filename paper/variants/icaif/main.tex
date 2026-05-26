@@ -70,10 +70,12 @@ threshold and a closed-form $\ell_1$, exposing a parametric phase
 boundary in $(\sigma_q, \gamma)$ space. We additionally close three
 theoretical loose ends: (i) a codim-2 Bautin/Bogdanov--Takens analysis
 showing the BT locus is empty in the canonical scan window
-(\cref{thm:bt-empty}); (ii) the McKean--Vlasov mean-field correction
-$\kappa^\star_{\mathrm{MV}}/\kappa^\star_{\mathrm{single}} = \sqrt{1 +
-(\omega^\star\tau_G)^2}$ to the single-dealer threshold
-(\cref{thm:mv-hopf}); and (iii) a Hawkes--SV equivalence at the Hopf
+(\cref{thm:bt-empty}); (ii) the McKean--Vlasov mean-field
+correction to the single-dealer threshold, regime-dependent in sign
+($\kappa^\star_{\mathrm{MV}}/\kappa^\star_{\mathrm{single}} < 1$ strictly
+at the canonical short-gamma regime, with frozen-dealer limit $8/21$ and
+first-order asymptote $1 - 0.664/\theta_G + O(\theta_G^{-2})$;
+\cref{thm:mv-hopf}); and (iii) a Hawkes--SV equivalence at the Hopf
 boundary identifying the empirical \citet{hardiman2013} branching ratio
 $n \approx 1$ with $\kappa = \kappa^\star$ via the
 \citet{bacrydelattrehoffmannmuzy2013} diffusive-limit identity
@@ -375,9 +377,10 @@ Bogdanov--Takens locus is therefore empty in this scan window.
 \end{theorem}
 
 \begin{proof}[Proof sketch]
-$G_v(\sigma_q) < 0$ throughout the scanned range and $|G_v\beta\gamma| \gg
-|G_y\alpha\kappa_v|$ (ratio $\geq 13$ at every cell), so the denominator
-of $\kappa_{\mathrm{SN}}$ is uniformly negative while the numerator
+$G_v(\sigma_q) < 0$ throughout the scanned range and $|G_v\beta\gamma| >
+|G_y\alpha\kappa_v|$ (dominance ratio $\geq 1.44$ at every cell, reaching
+$\sim 358$ at the small-$\sigma_q$ corner), so the denominator of
+$\kappa_{\mathrm{SN}}$ is uniformly negative while the numerator
 $\tfrac{1}{2}\beta\gamma$ is positive; the quotient is uniformly negative.
 The unbounded-domain question is left open.
 \end{proof}
@@ -398,34 +401,104 @@ came from a single representative market-maker. Real markets have $n \sim
 10^2$--$10^3$ dealers with idiosyncratic noise. With each dealer $i$ holding
 gamma exposure $G_i$ evolving via $dG_i = -\theta_G(G_i - \bar G_n)\,dt +
 \sigma_G\,dW^i_G$ and $\bar G_n = (1/n)\sum_j G_j$, propagation of chaos
-gives $\bar G_n \to \bar G_\infty$ with $\sup_{t \leq T}\mathbb{E}[(\bar
-G_n - \bar G_\infty)^2] \leq C(T)/n$. Linearising $\bar G_\infty$ around
-the equilibrium and inserting into the Liu criterion yields:
+gives $\bar G_n \to \bar G_\infty$ \citep[Ch.~1]{sznitman1991} with $\sup_{t
+\leq T}\mathbb{E}[(\bar G_n - \bar G_\infty)^2] \leq C(T)/n$, $C(T) =
+\max(\mathrm{Var}(G^0), \sigma_G^2/(2\theta_G))$; cf.\
+\citet[Ch.~1]{carmonadelarue2018} for the modern MV formalism.
 
-\begin{theorem}[McKean--Vlasov correction to the Hopf threshold]
+\paragraph{4D extended Jacobian.} The linearised MV system acquires a
+fourth state $g(t) := \bar G_\infty(t) - G^\star$ with bandwidth
+$\theta_G$; the spot equation's instantaneous feedback $\kappa(G_y y +
+G_v u + G_z z)$ is REPLACED by $\kappa g$:
+\begin{equation}
+J_{\mathrm{MV}}(\kappa, \theta_G) = \begin{pmatrix} -\tfrac12\sigma_y^2 & -\tfrac12\sigma_v^2 & 0 & \kappa \\ 0 & -\kappa_v & \gamma & 0 \\ \beta & 0 & -\alpha & 0 \\ \theta_G G_y & \theta_G G_v & \theta_G G_z & -\theta_G \end{pmatrix}.
+\label{eq:mv-jacobian}
+\end{equation}
+A Hopf bifurcation occurs at the smallest $\kappa > 0$ satisfying the
+\citet{liu1994} 4D condition $H_4(\kappa, \theta_G) := (a_3 a_2 - a_1)
+a_1 - a_3^2 a_0 = 0$ with positivity side conditions $a_3, a_0, a_3 a_2
+- a_1 > 0$, where $a_i$ are the coefficients of $\det(\lambda I -
+J_{\mathrm{MV}}) = \lambda^4 + a_3\lambda^3 + a_2\lambda^2 + a_1\lambda + a_0$.
+
+\begin{theorem}[McKean--Vlasov Hopf threshold, corrected]
 \label{thm:mv-hopf}
-Let $\tau_G := 1/\theta_G$ be the dealer-gamma autocorrelation time and
-$\omega^\star$ the single-dealer Hopf angular frequency. Under the
-linearisation of $\bar G_\infty$ around the equilibrium,
-\[
-\frac{\kappa^\star_{\mathrm{MV}}}{\kappa^\star_{\mathrm{single}}} \;=\;
-\sqrt{1 + (\omega^\star \tau_G)^2}.
-\]
-The correction is multiplicative, depends only on the dimensionless product
-$\omega^\star \tau_G$, and is $\geq 1$: mean-field always raises the
-threshold relative to single-dealer.
+Let $\kappa^\star_{\mathrm{MV}}(\theta_G) := \inf\{\kappa > 0 : \max_i
+\mathrm{Re}\,\lambda_i(J_{\mathrm{MV}}(\kappa, \theta_G)) = 0\}$ with the
+4D positivity side conditions. Then:
+\begin{enumerate}
+\item (Instantaneous-hedging recovery.) $\lim_{\theta_G \to \infty}
+\kappa^\star_{\mathrm{MV}}(\theta_G) = \kappa^\star_{\mathrm{single}}$.
+\item (Regime-dependent sign.) At the canonical short-gamma regime
+$(G_y, G_v, G_z, \alpha, \beta, \gamma, \kappa_v) = (\tfrac12, -\tfrac12,
+-\tfrac12, \tfrac12, 1, \tfrac12, 2)$ with $\sigma_y^2 = \sigma_v^2 = 0$,
+\begin{equation}
+\kappa^\star_{\mathrm{MV}}(\theta_G) = \frac{50\theta_G^2 + 143\theta_G + 105 - (2\theta_G + 5)\sqrt{385\theta_G^2 + 810\theta_G + 441}}{12\theta_G(\theta_G + 1)},
+\label{eq:mv-closedform}
+\end{equation}
+with $\kappa^\star_{\mathrm{single}} = (25 - \sqrt{385})/6 \approx 0.8964$,
+and the ratio $\rho(\theta_G) := \kappa^\star_{\mathrm{MV}} /
+\kappa^\star_{\mathrm{single}} < 1$ strictly for every finite $\theta_G > 0$.
+\item (Frozen-dealer limit.) $\lim_{\theta_G \to 0^+}
+\kappa^\star_{\mathrm{MV}}(\theta_G) = 8/21$, giving $\rho(0^+) \approx 0.425$
+(finite).
+\item (Asymptotic expansion.) $\rho(\theta_G) = 1 - 0.6643\ldots/\theta_G +
+O(\theta_G^{-2})$ --- leading-order correction is first-order in $\tau_G$
+and NEGATIVE.
+\end{enumerate}
+The sign of $\rho - 1$ at finite $\theta_G$ is regime-dependent: at
+$G_y > 0$ (canonical, net short-gamma) it is negative; at $G_y < 0$
+(log-normal-OI calibration of \cref{sec:hopf-closed-form}) it is positive.
 \end{theorem}
 
-\noindent The correction is operationally negligible at fast hedging
-($\theta_G = 50$/yr $\Rightarrow$ ratio $1.000277$) and crosses the
-empirical-detectability threshold at slow hedging ($\theta_G = 5$/yr,
-$\tau_G \approx 50$ trading days $\Rightarrow$ $1.0273$, a $2.7\%$ shift).
-A 64-replicate $n$-particle Euler simulation across $n \in \{10, 32, 100,
-316, 1000\}$ fits $n^{-0.58}$, consistent with the theoretical $n^{-1/2}$
-Sznitman rate. \emph{Structural implication}: whenever $\tau_G > 1/\omega^\star$
-($\approx 0.85$~yr at the canonical regime) the single-dealer model
-\emph{over-predicts} instability, since mean-field never lowers the
-threshold.
+\begin{proof}[Proof sketch]
+(i) The reducibility of $J_{\mathrm{MV}}$ under $\theta_G \to \infty$
+sends the fourth eigenvalue to $-\infty$ and leaves the remaining three
+to inherit the 3D single-dealer Hopf condition exactly. (ii) Substituting
+the canonical numerical values into $H_4(\kappa, \theta_G) = 0$ and
+factoring out $\theta_G$ yields the quadratic $6\theta_G(\theta_G + 1)\kappa^2
+- (50\theta_G^2 + 143\theta_G + 105)\kappa + 5(\theta_G + 2)(2\theta_G + 1)
+= 0$, whose smaller positive root is \eqref{eq:mv-closedform}; positivity
+is verified analytically at this root for all $\theta_G > 0$. (iii)
+Direct substitution. (iv) Taylor expansion in $1/\theta_G$.
+\end{proof}
+
+\paragraph{Numerical anchors.} Independent eigenvalue scans match the
+closed form to 4-decimal precision:
+\begin{table}[h]
+\centering\small
+\begin{tabular}{rrrr}
+\toprule
+$\theta_G$ & $\kappa^\star_{\mathrm{MV}}$ (scan) & closed form & $\rho(\theta_G)$ \\
+\midrule
+0.5 & 0.5359 & 0.5359 & 0.598 \\
+1.0 & 0.6195 & 0.6195 & 0.691 \\
+5.0 & 0.7996 & 0.7996 & 0.892 \\
+50  & 0.8848 & 0.8848 & 0.987 \\
+500 & 0.8952 & 0.8952 & 0.999 \\
+\bottomrule
+\end{tabular}
+\caption{Audit-anchor table for \cref{thm:mv-hopf} at the canonical
+short-gamma regime. Closed-form and numerical eigenvalue scan agree
+exactly. A 64-replicate $n$-particle Euler simulation across $n \in
+\{10, 32, 100, 316, 1000\}$ fits $\sqrt{\mathbb{E}[(\bar G_n - \bar
+G_\infty)^2]} \propto n^{-0.48}$, consistent with the theoretical
+$n^{-1/2}$ Sznitman rate.}
+\label{tab:mv-anchor}
+\end{table}
+
+\paragraph{Economic re-framing.} At any regime where dealers are net short
+gamma at the equilibrium ($G_y > 0$, the benchmark SPX setting in
+zero-DTE-heavy weeks), the McKean--Vlasov mean-field model has a
+\emph{lower} Hopf threshold than the single-representative-dealer
+\cref{sec:model} model. \emph{The single-dealer simplification understates
+the propensity to bifurcate when dealer-hedging is slow relative to the
+Hopf period $\tau_G > 2\pi/\omega^\star$.} The leading correction is
+first-order in $\tau_G$ ($\sim 1.3\%$ at canonical $\tau_G = 1/50$~yr),
+not the second-order $(\omega^\star\tau_G)^2$ implied by a low-pass-filter
+heuristic. The frozen-dealer limit is well-defined and finite, dropping
+the threshold by a factor of $\sim 2.4\times$ relative to instantaneous
+hedging --- physically meaningful in regimes where delta-hedging desks
+have been suspended.
 
 \subsection{Hawkes--SV equivalence at the Hopf boundary}
 \label{sec:hopf-hawkes-equivalence}
@@ -542,8 +615,8 @@ The full $(\kappa, \xi, \rho, \sigma_v)$ phase diagram is computed by
 sweeping $\kappa \in [0, 2]$ on a 401-point grid for each of
 $31 \times 21 \times 4 = 2{,}604$ cells over $(\xi, \rho, \sigma_v)$ at
 the canonical Hopf-exhibiting regime; the pair $(\xi, \rho)$ enters via
-$a_{\mathrm{eff}}(\kappa) = a(\kappa) + \tfrac{1}{2}\xi^2\rho G_v$, an
-\citet{engellambrasmussen2024}-style projection of the small-noise
+$a_{\mathrm{eff}}(\kappa) = a(\kappa) + \tfrac{1}{2}\xi^2\rho G_v$, a
+\citet{baxendale2025}-style projection of the small-noise
 stochastic Hopf onto the eigenvalue envelope. Wall-clock $\sim\!16$s on a
 single M-series core.
 
@@ -570,9 +643,9 @@ Khasminskii sphere-process estimates \citep{khasminskii1980,arnold1998}
 on a $6 \times 6$ $(\xi, \rho)$ grid give
 $|\Lambda(\kappa^\star)| \in [5\!\times\!10^{-2}, 9\!\times\!10^{-2}]$
 with empirical scaling exponent $\hat B = 0.082$ (95\% CI
-$[-0.010, 0.168]$); the \citet{engellambrasmussen2024} prediction $B = 2/3$
-is rejected at $p \ll 0.01$ at this trivial-$G$ equilibrium where ELR's
-shear-stretch term is identically zero. Operationally,
+$[-0.010, 0.168]$); the \citet{baxendale2025} prediction $B = 2/3$
+is rejected at $p \ll 0.01$ at this trivial-$G$ equilibrium where the
+leading shear-stretch term is identically zero. Operationally,
 $|\Lambda|\cdot\varepsilon^2 \ll 1$ at calibration-noise scale: the
 deterministic $\kappa^\star$ is the relevant threshold.
 
@@ -694,7 +767,7 @@ furthest).
 Target source & SW2 vs $\kappa_0$ ref. & 95\% CI low & 95\% CI high \\
 \midrule
 (a) $\kappa_0$ deployed         & $0.00498$ & $0.00431$ & $0.0164$ \\
-(b) $2\!\times\!\kappa_0$ reflexive & $0.0337$  & $0.0300$  & $0.0402$ \\
+(b) $4\!\times\!\kappa_0$ reflexive & $0.0337$  & $0.0300$  & $0.0402$ \\
 (c) Heston (mechanism)          & $0.0541$  & $0.0434$  & $0.0611$ \\
 \bottomrule
 \end{tabular}
@@ -720,22 +793,49 @@ over $(\kappa,\gamma,T_{\mathrm{eff}},\mu_q,\sigma_q)$, then per-cell
 classification into \texttt{shape\_target} / \texttt{level\_artifact} /
 \texttt{calibration\_artifact}.
 
-The headline shape-feature match rate is $8/24$ (33\%, one-sided binomial
-$p \approx 0.27$, $\geq 30\%$ gate passed), with long-horizon
-($\geq 0.5$~y) excess-kurt sign agreement on $5/6$ horizons. The
-skew-sign disagreement is predictable: under risk-neutral drift our
-long-horizon skew is dealer-gamma-plus-leverage-driven, while Marketron's
-positive long-horizon skew comes from \citet{bessembinder2018}
-compounding under calibrated drift. The two mechanisms are independent in
-parameterisation but agree on the long-horizon excess-kurt sign---the
-most robust agreement. An a-priori-restricted subset
-(\texttt{is\_mechanism\_relevant\_cell}, locked before per-cell outcomes
-were inspected: long-horizon, shape-only, within-envelope) gives $4/8$
-(50\%, $p = 0.637$) at the out-of-sample budget, driven primarily by
-Table~5 long-horizon skew flipping more strongly negative; the strengthened
-restriction does not reach $p < 0.05$ at the present per-set tuned-coupling
-sample size and the empirical Phase~4 evaluation will be needed to
-adjudicate.
+\paragraph{Headline (all-cell, out-of-sample, 10k paths).} Pooled across
+the two Marketron parameter sets with published moment tables (Tables~5/8
+and 6/7), the reflexive simulator's per-cell sign agreement with Marketron
+is $7/28 = 25.0\%$. Under the random-sign null, the one-sided binomial
+$P(X \geq 7 \mid n = 28, p = 0.5) \approx 0.9999$ --- the all-cell pooled
+rate is \emph{worse than chance}. We do not claim otherwise. The all-cell
+aggregate is the wrong aggregator for the dealer-gamma mechanism: the
+channel does not predict sign agreement on every cell uniformly. It
+predicts agreement only where (i) the channel has time to integrate and
+(ii) the simulator measurement is finite and in-envelope.
+
+\paragraph{A priori restricted subset.} We pre-commit (predicate
+\texttt{is\_mechanism\_relevant\_cell}, locked before per-cell outcomes
+were inspected) to a cell qualifying iff (1) \texttt{mechanism\_class ==
+"shape\_target"}, (2) horizon $T \geq 0.5$~yr, (3) $|\hat m_{\mathrm{target}}|
+\geq 10^{-3}$ (dead-zone targets carry no sign information; the rule is
+symmetric --- dead-zone cells are dropped from \emph{both} numerator and
+denominator), and (4) $\hat m$ is finite with $|\hat m| < 10$ (envelope
+saturation). Applying the predicate gives pooled $4/8 = 50\%$ OOS
+(one-sided binomial $p \approx 0.637$, chance-level) and $6/8 = 75\%$
+in-sample ($p \approx 0.145$). The restricted subset is at chance-agreement
+OOS; \emph{we explicitly do not claim $p < 0.05$ on it}. What the
+restriction establishes is that filtering to mechanism-relevant cells
+moves the pooled agreement from $25\%$ (worse than chance) to $50\%$
+(chance-level) --- the \emph{direction} the mechanism predicts.
+
+\paragraph{Predictable disagreement: falsifiable Phase-4 prediction.}
+The single largest restricted-subset sign-disagreement is the
+$T = 2.0$\,yr long-horizon skew of \texttt{table\_5\_calibrated\_2017}:
+Marketron Table~8 reports $+0.181$; our simulator at the tuned coupling
+gives $-0.434$ OOS. The pre-committed mechanistic explanation is the
+absence of \citet{bessembinder2018} compounding-induced positive skew
+under risk-neutral drift, plus a leverage-channel small-magnitude
+negative-skew contribution. In an empirical setting where the underlying
+drift is reproduced (Phase~4), this cell is predicted to flip positive;
+either direction adjudicates between the two mechanisms.
+
+\paragraph{Retraction of v0.3.5 headline.} An earlier sidecar reported an
+inflated one-third headline match-rate obtained by asymmetric cell
+selection (silently dropping the $3.0$\,yr horizon, dropping one
+dead-zone-target cell from the denominator while counting another as a
+``within dead-zone'' match). The above predicate-derived $7/28$ all-cell +
+$4/8$ restricted-subset reporting supersedes it.
 
 \section{Conclusions and future work}
 \label{sec:conclusions}
@@ -754,16 +854,21 @@ underlying physics. The empirical SPX calibration is the natural Phase~4
 follow-up, gated on data acquisition; results---confirming or refuting
 H1--H4---are pre-committed to publication regardless of direction. The
 codim-1 Hopf, codim-2 Bautin/Bogdanov--Takens structure
-(\cref{thm:bt-empty}), McKean--Vlasov mean-field correction
-(\cref{thm:mv-hopf}), and Hawkes--SV equivalence at the criticality
-endpoint (\cref{thm:hawkes-sv}) are now closed-form. Open theoretical
-items: closed-form $\Lambda(\kappa)$ via Engel--Lamb--Rasmussen-style
+(\cref{thm:bt-empty}), corrected McKean--Vlasov mean-field threshold
+(\cref{thm:mv-hopf}; regime-dependent in sign --- destabilising at the
+canonical short-gamma regime where $\rho(\theta_G) < 1$ strictly with
+finite frozen-dealer limit $8/21$, stabilising at the long-gamma
+log-normal-OI calibration of \cref{sec:hopf-closed-form}), and
+Hawkes--SV equivalence at the criticality endpoint
+(\cref{thm:hawkes-sv}) are now closed-form. Open theoretical items:
+closed-form $\Lambda(\kappa)$ via \citet{baxendale2025}-style
 asymptotics adapted to Heston multiplicative noise (currently numerical
 only); extending \cref{thm:hawkes-sv} from the criticality-endpoint
 identity to a global path-by-path equivalence between event-counting
 Hawkes processes and our continuous-state diffusion
-\citep{bondi2024hawkes}. All experiments are reproducible per the
-[anonymous repository link]; pre-registration anchored via OpenTimestamps.
+\citep{bondi2024hawkes,jaissonrosenbaum2015}. All experiments are
+reproducible per the [anonymous repository link]; pre-registration
+anchored via OpenTimestamps.
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{references}

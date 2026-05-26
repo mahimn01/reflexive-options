@@ -176,19 +176,21 @@ $\ell_1 = -4.81\times 10^{-1}$ (supercritical).
 \paragraph{Codim-2 and mean-field nods.} A $71\times 97$ grid scan in
 $(\sigma_q,\gamma)\in[0.05,0.40]\times[0.20,5.00]$ closes the codim-2
 structure: the Bautin curve $\ell_1=0$ partitions the region with
-sub-critical dominating $\sim\!5{:}1$, and the saddle-node coupling
+sub-critical dominating $\sim\!5{:}1$, and saddle-node coupling
 $\kappa_{\mathrm{SN}}\leq -1.31$ at every cell, so the
 \emph{Bogdanov--Takens locus is empty in the canonical scan window}
-(Theorem~2, full version on arXiv). The McKean--Vlasov
-mean-field limit ($n_{\mathrm{dealers}}\to\infty$) gives a strictly
-multiplicative threshold correction $\kappa^\star_{\mathrm{MV}}/\kappa^\star_{\mathrm{single}}
-= \sqrt{1+(\omega^\star\tau_G)^2}\geq 1$ depending only on the
-dimensionless product of the Hopf frequency and the dealer-gamma
-autocorrelation time (Theorem~3, full version on arXiv); operationally
-negligible
-($\sim\!3\times 10^{-4}$) at fast hedging, $2.7\%$ at $\tau_G\approx 50$
-trading days. Single-dealer therefore over-predicts instability whenever
-$\tau_G > 1/\omega^\star$.
+(Theorem~2, full version on arXiv). The McKean--Vlasov mean-field limit
+($n_{\mathrm{dealers}}\to\infty$, propagation of chaos
+\citep[Ch.~1]{sznitman1991}, validated empirically at the theoretical
+$n^{-1/2}$ Sznitman rate) extends the Jacobian to 4D; the
+\citet{liu1994} 4D Hopf condition gives a regime-dependent threshold
+ratio $\rho(\theta_G) := \kappa^\star_{\mathrm{MV}}/\kappa^\star_{\mathrm{single}}$
+with $\rho(\theta_G)<1$ strictly at the canonical short-gamma regime
+($G_y>0$, every finite $\theta_G>0$), recovering
+$\rho\to 1$ at instantaneous hedging. The single-dealer model therefore
+\emph{under-predicts} instability at the benchmark SPX setting ---
+reversing the v0.3.5 claim that mean-field always raises the threshold
+(Theorem~3, full statement and derivation on arXiv).
 
 \paragraph{Hawkes--SV equivalence at the Hopf boundary.} The empirical
 \citet{hardiman2013} Hawkes branching ratio $n\approx 1$ is now the
@@ -227,7 +229,7 @@ representative regime $\{G_x,G_v,G_z\}=\{0.5,-0.5,-0.5\}$, $\alpha=0.5$,
 $\beta=1$, $\gamma=0.5$, $\kappa_v=2$ (constant-vol surrogate). The pair
 $(\xi,\rho)$ enters via the leading shear correction $a_{\mathrm{eff}}(\kappa)=
 a(\kappa)+\tfrac{1}{2}\xi^2\rho G_v$, an
-\citet{engellambrasmussen2024}-style projection of small-noise stochastic
+\citet{baxendale2025}-style projection of small-noise stochastic
 Hopf onto the eigenvalue envelope.
 
 \begin{figure}[h]
@@ -310,27 +312,28 @@ carrier $y$ enters both drifts non-linearly through a potential $V_M(x)$,
 while our $z$ enters only the variance drift via $\gamma z$, and our
 $\kappa=\gamma=0$ collapse is standard Heston while Marketron's is not.
 A 5D $(\kappa,\gamma,T_{\mathrm{eff}},\mu_q,\sigma_q)$ mechanism
-decomposition gives an out-of-sample shape-feature match rate of $8/24$
-(33\%, $p\approx 0.27$, $\geq 30\%$ gate passed) with long-horizon
-excess-kurt sign agreement on $5/6$ horizons; the skew-sign disagreement
-is predictable under risk-neutral drift and constitutes a falsifiable
-Phase~4 prediction.
+decomposition gives an all-cell, out-of-sample shape-feature sign-agreement
+rate of $7/28$ (worse than chance --- we do not claim otherwise; the
+all-cell aggregate is the wrong aggregator). The a priori restricted
+subset (long-horizon $T\geq 0.5$~yr, shape-only, within-envelope,
+dead-zone-symmetric) gives $4/8$ OOS ($p\approx 0.637$, chance-level)
+and $6/8$ in-sample. The predictable long-horizon-skew sign disagreement
+under risk-neutral drift (Bessembinder compounding absent) is the
+falsifiable Phase~4 prediction. This supersedes the earlier inflated
+one-third headline.
 
 We have introduced a 3D reflexive SV simulator, proved a Hopf bifurcation
 theorem with closed-form $\ell_1$ for log-normal OI, closed the codim-2
-Bautin/BT structure (BT-empty in the canonical scan window) and the
-McKean--Vlasov mean-field correction $\kappa^\star_{\mathrm{MV}}/
-\kappa^\star_{\mathrm{single}} = \sqrt{1+(\omega^\star\tau_G)^2}$ (full
-statements on arXiv), and identified the empirical
-\citet{hardiman2013} branching ratio with $\kappa^\star$ via the
-Hawkes--SV equivalence at criticality (\cref{thm:hawkes-sv}). The
-sliced-$W_2$ + Hopf-frequency evaluation pipeline is pre-registered at a
-verifiable git commit hash with an OpenTimestamps Bitcoin-anchored proof;
-synthetic-ground-truth validation of the locked H1 protocol delivers the
-predicted ordering. The empirical SPX calibration is the Phase~4
-follow-up; results---confirming or refuting H1--H4---are pre-committed to
-publication. Full appendix A (closed-form $\ell_1$, 13 symbols), proofs,
-SW2 sample-complexity, and code at [anonymous repository link].
+Bautin/BT structure (BT-empty in the canonical window) and the corrected
+McKean--Vlasov threshold (\cref{thm:mv-hopf}; destabilising at the
+canonical short-gamma regime, stabilising at long-gamma log-normal-OI),
+and identified the empirical \citet{hardiman2013} branching ratio with
+$\kappa^\star$ via Hawkes--SV criticality (\cref{thm:hawkes-sv}). The
+sliced-$W_2$ + Hopf-frequency pipeline is pre-registered with an
+OpenTimestamps proof; synthetic-ground-truth validation of the locked
+H1 protocol returns the predicted ordering. Phase-4 SPX results pre-committed
+to publication regardless of direction. Proofs, closed-form $\ell_1$, and
+code at [anonymous repository link].
 
 \newpage
 \bibliographystyle{plainnat}

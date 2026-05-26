@@ -12,7 +12,7 @@ Length: ~1100 words. Replaces nothing in the current main.tex; additive only.
 
 ### Setup.
 
-Let $y_t = \log(S_t / S^\star)$ be the log-deviation of spot, $R_\tau := y_\tau - y_0 = \int_0^\tau dS_s/S_s$ the integrated future log-return, and $\mathcal{F}_{(-\infty, 0]}^y$ the past spot history. Define the *excess entropy at horizon $\tau$* (in the Crutchfield--Feldman \citep{crutchfeldfeldman2003} sense, conditioned on the present non-spot state):
+Let $y_t = \log(S_t / S^\star)$ be the log-deviation of spot, $R_\tau := y_\tau - y_0 = \int_0^\tau dS_s/S_s$ the integrated future log-return, and $\mathcal{F}_{(-\infty, 0]}^y$ the past spot history. Define the *excess entropy at horizon $\tau$* (in the Crutchfield--Feldman \citep{crutchfieldfeldman2003} sense, conditioned on the present non-spot state):
 \begin{equation}
 E_\tau(\kappa) \;:=\; I\bigl(\mathcal{F}_{(-\infty, 0]}^y;\, R_\tau \,\bigm|\, v_0, z_0\bigr).
 \label{eq:excess-entropy-def}
@@ -87,7 +87,7 @@ Fitted $\hat\beta$ at boundary & $0.998$ & $0.998$ & $1.000$ \\
 
 ### Structural insight — why $E_\tau(\kappa^\star)$ does NOT diverge.
 
-The naïve intuition from the Crutchfield--Feldman \citep{crutchfeldfeldman2003, crutchfield2012complexity} statistical-complexity-at-criticality literature would predict $E_\tau(\kappa^\star) = \infty$. This fails in our setting for a structural reason: the slow-mode collapse at $\kappa^\star$ is *coherent across $(y, u, z)$* — it lives in a 1D eigenvector subspace spanned by $q = (q_y, q_u, q_z)$. Conditioning on the present $(u_0, z_0)$ projects out precisely this coherent mode; what remains is the orthogonal component, governed by the bounded part of $P$. The saturation $E_\tau(\kappa^\star)$ is therefore capped by the eigenvector's "spot-purity ratio" $q_y^2 / (q_u^2 + q_z^2)$ at the boundary — a parametric prediction tying qualitative critical behaviour to spot-vs-vol mode partition.
+The naïve intuition from the Crutchfield--Feldman \citep{crutchfieldfeldman2003, crutchfield2012complexity} statistical-complexity-at-criticality literature would predict $E_\tau(\kappa^\star) = \infty$. This fails in our setting for a structural reason: the slow-mode collapse at $\kappa^\star$ is *coherent across $(y, u, z)$* — it lives in a 1D eigenvector subspace spanned by $q = (q_y, q_u, q_z)$. Conditioning on the present $(u_0, z_0)$ projects out precisely this coherent mode; what remains is the orthogonal component, governed by the bounded part of $P$. The saturation $E_\tau(\kappa^\star)$ is therefore capped by the eigenvector's "spot-purity ratio" $q_y^2 / (q_u^2 + q_z^2)$ at the boundary — a parametric prediction tying qualitative critical behaviour to spot-vs-vol mode partition.
 
 ### Phase-4 testable prediction.
 
