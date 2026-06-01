@@ -56,8 +56,9 @@ separate ingredients: (i) a continuous-time SV backbone with explicit
 dealer-gamma drift; (ii) a formal Hopf bifurcation calculus on the
 deterministic skeleton with first Lyapunov coefficient $\ell_1$ and
 Khasminskii-style stochastic shift $\Lambda$; and (iii) a pre-registered
-sliced-Wasserstein-2 evaluation protocol for RL-trained derivatives
-agents. For a representative dimensionless calibration we obtain
+evaluation protocol whose primary test is a direct, model-free
+dealer-gamma (GEX) regression, complemented by a sliced-Wasserstein-2
+surface metric and a critical-slowing-down detector. For a representative dimensionless calibration we obtain
 $\kappa^\star \approx 0.8964$, $\omega^\star \approx 0.5724$~rad/yr, and
 $\ell_1 \approx -0.025 < 0$ (supercritical: an attracting limit cycle
 in volatility is born for $\kappa > \kappa^\star$). The 2D reduction has
@@ -75,10 +76,10 @@ correction to the single-dealer threshold, regime-dependent in sign
 ($\kappa^\star_{\mathrm{MV}}/\kappa^\star_{\mathrm{single}} < 1$ strictly
 at the canonical short-gamma regime, with frozen-dealer limit $8/21$ and
 first-order asymptote $1 - 0.664/\theta_G + O(\theta_G^{-2})$;
-\cref{thm:mv-hopf}); and (iii) a Hawkes--SV equivalence at the Hopf
-boundary identifying the empirical \citet{hardiman2013} branching ratio
-$n \approx 1$ with $\kappa = \kappa^\star$ via the
-\citet{bacrydelattrehoffmannmuzy2013} diffusive-limit identity
+\cref{thm:mv-hopf}); and (iii) a Hawkes--SV criticality correspondence
+placing \citet{hardiman2013}'s empirical $n \approx 1$ at the
+real-eigenvalue (saddle-node) stratum and the model's Hopf as the
+strictly stronger oscillatory cell beyond any scalar branching ratio
 (\cref{thm:hawkes-sv}).
 \end{abstract}
 
@@ -143,8 +144,9 @@ threshold for log-normal open-interest in moneyness
 the Khasminskii-style stochastic-Hopf shift $\Lambda$ and a parametric
 phase boundary in $(\sigma_q, \gamma)$ space.
 \item A pre-registration of the empirical evaluation pipeline
-(sliced-$W_2$ over 21-day surface windows, $\kappa$-sensitivity slope,
-Hopf-frequency spectral test) at a verifiable git commit hash with an
+(a direct dealer-gamma regression as primary test, sliced-$W_2$ over
+21-day surface windows, $\kappa$-sensitivity slope, and a
+critical-slowing-down detector) at a verifiable git commit hash with an
 OpenTimestamps Bitcoin-anchored proof, in the spirit of
 \citet{camerer2018} adapted for computational finance.
 \end{itemize}
@@ -500,113 +502,69 @@ the threshold by a factor of $\sim 2.4\times$ relative to instantaneous
 hedging --- physically meaningful in regimes where delta-hedging desks
 have been suspended.
 
-\subsection{Hawkes--SV equivalence at the Hopf boundary}
+\subsection{Hawkes criticality and the SV bifurcation endpoint}
 \label{sec:hopf-hawkes-equivalence}
 
-The empirical reflexivity benchmark of \citet{hardiman2013} is a
-self-exciting Hawkes branching ratio $n \approx 1$ on E-mini mid-price
-changes over 1998--2011. This subsection makes the link to $\kappa^\star$
-formal. Let $\lambda(t) = \mu + \sum_i \phi(t - t_i)$ with kernel
-$\phi(s) = \alpha\,e^{-\beta s}$ and $n := \alpha/\beta$. Under the
-diffusive rescaling $t \mapsto t/T$, $\lambda \mapsto T\bar\lambda$ with
-$T \to \infty$, $n \to 1$, the centred intensity converges to an
-Ornstein--Uhlenbeck SDE \citep[Theorem~2]{bacrydelattrehoffmannmuzy2013}:
+The reflexive feedback has a self-exciting point-process representation:
+order flow that begets order flow is, in the linear regime, a Hawkes
+process, and the onset of endogeneity is its approach to criticality. We
+record the precise sense in which the Hawkes criticality boundary
+corresponds to a degeneracy of the drift of a stochastic-volatility (SV)
+diffusion, separating two distinct codimension-one events at that
+boundary: a non-oscillatory \emph{real-eigenvalue} crossing --- the
+literal analogue of the scalar branching-ratio criticality of
+\citet{hardiman2013} and \citet{bacrymastromatteomuzy2015} --- and an
+\emph{oscillatory} Hopf crossing, strictly stronger, which we claim as
+the novel object. Writing the SV variance factor as
 \begin{equation}
-d\bar\lambda = -\beta(1-n)\bar\lambda\,dt + \sigma_\lambda\,dW,
-\label{eq:hawkes-diffusive-limit}
+\mathrm{d} v_t = b(v_t)\,\mathrm{d} t + \sigma(v_t)\,\mathrm{d} W_t,
+\qquad b(v_\star) = 0, \label{eq:sv-drift}
 \end{equation}
-giving $\lambda_{\max}^{(\mathrm{Hawkes})} = -\beta(1-n)$, equivalently
-$n = 1 + \lambda_{\max}^{(\mathrm{Hawkes})}/\beta$. The multivariate
-generalisation \citep[\S2.4]{bacrymastromatteomuzy2015} replaces $n$ by
-the spectral radius of the integrated kernel matrix; the criticality
-endpoint $n = 1 \Leftrightarrow \lambda_{\max} = 0$ is universal across
-kernel shapes. For our 3D reflexive skeleton with Jacobian $J(\kappa)$,
-let $\lambda_{\max}(\kappa) := \max_i \mathrm{Re}\,\lambda_i(J(\kappa))$
-and define the \emph{SV-equivalent branching ratio}
-\begin{equation}
-n_{\mathrm{SV}}(\kappa) \;:=\; 1 + \frac{\lambda_{\max}(\kappa)}{\beta_0},
-\quad \beta_0 := \max_{\kappa \in [0, \kappa^\star]}(-\lambda_{\max}(\kappa)),
-\label{eq:n-sv-definition}
-\end{equation}
-with $\beta_0$ the SV analogue of the Hawkes baseline rate at $n = 0$
-(intrinsic to the skeleton, not a tuning parameter).
+criticality $n \to 1$ is the loss of a stable direction of the drift: an
+eigenvalue of the drift-Jacobian $J$ reaches the imaginary axis. The
+boundary carries two strata --- a \textbf{real-eigenvalue (saddle-node)}
+locus ($\det J = 0$, crossing eigenvalue real; non-oscillatory, no
+intrinsic frequency), and a \textbf{Hopf} locus (a complex pair crosses,
+$\operatorname{Re}\lambda = 0$, $\operatorname{Im}\lambda \neq 0$;
+strictly stronger, producing sustained oscillation).
 
-\begin{theorem}[Hawkes--SV equivalence at the Hopf boundary]
+\begin{theorem}[Hawkes--SV criticality correspondence]
 \label{thm:hawkes-sv}
-\begin{enumerate}
-\item \emph{Critical-endpoint identity.} $n_{\mathrm{SV}}(\kappa^\star) = 1$,
-exactly.
-\item \emph{Monotonicity past the node-spiral transition.} Let
-$\kappa_{\mathrm{NS}} \in [0, \kappa^\star)$ be the smallest $\kappa$ at
-which the leading eigenvalue is a complex pair. Then $n_{\mathrm{SV}}(\kappa)$
-is monotonically non-decreasing on $[\kappa_{\mathrm{NS}}, \kappa^\star]$,
-strictly increasing wherever $\partial\lambda_{\max}/\partial\kappa > 0$.
-\item \emph{Hawkes correspondence.} For an exponential-kernel univariate
-Hawkes process satisfying \eqref{eq:hawkes-diffusive-limit}, $n_{\mathrm{Hawkes}}
-= 1 - |\lambda_{\max}^{(\mathrm{Hawkes})}|/\beta$, identical in form to
-\eqref{eq:n-sv-definition}; the two coincide at criticality
-($n = 1 \Leftrightarrow \lambda_{\max} = 0$) independently of the kernel
-shape (universality of the stability boundary,
-\citealp[\S2.4]{bacrymastromatteomuzy2015}).
-\end{enumerate}
+Under the diffusive near-critical limit of
+\citet{bacrydelattrehoffmannmuzy2013} and \citet{jaissonrosenbaum2015},
+Hawkes branching-ratio criticality $n \to 1$ coincides with the
+real-eigenvalue (saddle-node) stratum of the SV drift boundary
+\eqref{eq:sv-drift}, the literal analogue of \citet{hardiman2013}. The
+Hopf stratum of the same boundary is a strictly stronger, oscillatory
+instability that lies beyond any scalar branching-ratio criterion: it has
+no representation as a single real branching ratio and is the genuinely
+new ``unoccupied cell'' of the endogeneity--bifurcation correspondence.
 \end{theorem}
 
-\begin{proof}
-Claim (1) is immediate: $\lambda_{\max}(\kappa^\star) = 0$ by Hopf-threshold
-definition, so $n_{\mathrm{SV}}(\kappa^\star) = 1$. Claim (2): the
-implicit function theorem applied to the characteristic polynomial at the
-slow-mode complex pair (non-defective on $[\kappa_{\mathrm{NS}}, \kappa^\star]$
-by definition) plus Hopf transversality ($\partial\,\mathrm{Re}\,\lambda/\partial\kappa
-> 0$ at $\kappa^\star$) gives the result by continuity. Claim (3) is the
-BDHM (2013) diffusive-limit identity restated for the kernel-universal
-stability boundary.
-\end{proof}
-
-\noindent\emph{Honest scope.} \Cref{thm:hawkes-sv} is exact at the
-criticality endpoint and exact for the 1D exponential-kernel Hawkes
-globally. Hardiman's empirical $n$ is the $L^1$ norm of a fitted
-multivariate Hawkes kernel on order-flow events, not a path-by-path
-identity with our diffusion; the identification rests on the universality
-of the $n = 1 \Leftrightarrow \lambda_{\max} = 0$ boundary across
-continuous-time reflexive systems. The empirical-phase test of the
-equivalence is to (i) calibrate $G(\cdot)$ from the empirical SPX OI
-grid, (ii) compute $n_{\mathrm{SV}}(\kappa_0)$ at the calibrated $\kappa_0$,
-(iii) compare against the Hardiman band on event-window-matched windows.
-We pre-commit this protocol to Phase~4.
-
-\paragraph{Numerical anchor.} At the \cref{sec:hopf-thm} regime
-\eqref{eq:n-sv-definition} on a 1001-point $\kappa$-grid gives $\beta_0 =
-0.214$ at $\kappa_{\mathrm{ref}} = 0.124$ (the node-spiral transition,
-exactly as predicted by claim~(2)); $n_{\mathrm{SV}}(\kappa^\star_4) =
-0.99996$ at the published 4-decimal $\kappa^\star_4 = 0.8964$, with the
-$\sim\!4 \times 10^{-5}$ residual being truncation in the 4-decimal
-threshold (at machine-precision $\kappa^\star = 0.8964305216$ the identity
-is exact to $< 10^{-15}$); $n_{\mathrm{SV}}(2\kappa^\star) = 2.11$.
-\Cref{fig:hawkes-sv-equivalence} renders the curve.
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=\columnwidth]{figures/hawkes_sv_equivalence.pdf}
-\caption{\textbf{SV-equivalent Hawkes branching ratio $n_{\mathrm{SV}}(\kappa)$.}
-\emph{Top:} leading-eigenvalue real part of $J(\kappa)$ with the
-most-stable point at the node-spiral transition $\kappa_{\mathrm{ref}} =
-0.124$ ($\beta_0 \approx 0.214$) and the Hopf threshold at
-$\kappa^\star = 0.8964$. \emph{Bottom:} $n_{\mathrm{SV}}(\kappa) = 1 +
-\lambda_{\max}/\beta_0$; the empirical \citet{hardiman2013}
-$n \approx 1$ is the dashed red line, intersecting at $\kappa = \kappa^\star$.}
-\Description{Two-panel figure: leading-eigenvalue real part vs kappa,
-and the derived SV-equivalent Hawkes branching ratio vs kappa, with the
-empirical Hardiman value marked.}
-\label{fig:hawkes-sv-equivalence}
-\end{figure}
-
-\noindent Inverting at $n_{\mathrm{Hawkes}} = 1.0$ maps directly to
-$\lambda_{\max} = 0$: \emph{the empirical SPX market sits exactly at
-$\kappa^\star$ under any reflexive SV calibration whose deterministic
-skeleton matches the empirical event-rate ACF in the diffusive limit}.
-This is the strong testable prediction of \cref{thm:hawkes-sv} for
-Phase~4: an SPX-calibrated $\kappa_0$ should satisfy $n_{\mathrm{SV}}(\kappa_0)
-\approx 1$.
+\noindent\emph{Position, not identity.} A scalar branching ratio
+\citep{hardiman2013,bacrymastromatteomuzy2015} can only encode a real
+crossing, so the oscillatory Hopf endpoint is invisible to it by
+construction. We do \emph{not} assert a verified numerical identity
+between a Hawkes quantity and an SV quantity; an earlier draft introduced
+a dimensionless ratio engineered so that the identity held by definition,
+which is a tautology, and which we have removed (amendment~A10). The
+content of \cref{thm:hawkes-sv} is structural --- it places the
+oscillatory instability strictly beyond the real branching-ratio edge and
+names the cell. In our dealer-gamma model the saddle-node locus is itself
+unphysical at the canonical specification (\cref{thm:bt-empty}:
+$\kappa_{\mathrm{SN}} \leq -1.31$ over the scan window), so the operative
+instability is precisely the Hopf. The two strata are distinguished by a
+falsifiable \emph{observable}: a complex drift-eigenvalue pair imprints a
+finite-frequency peak in the autocovariance of realised volatility,
+whereas the real crossing imprints monotone (zero-frequency) critical
+slowing-down. The discriminator \texttt{classify\_stratum}
+(\texttt{theory/hawkes\_sv\_bifurcation.py}) separates the Hopf side
+(peak prominence $5.4$--$9.6$) from the real/stable side ($1.8$--$2.4$)
+with zero overlap on simulator ground truth. We claim no realised Hopf
+edge in any dataset --- only the statistic that would detect one --- and
+whether the Hopf cell survives a heavy-tailed (rough-volatility, $H<1/2$)
+kernel limit \citep{jaissonrosenbaum2016,euchrosenbaum2019} we flag as
+future work, expecting a negative answer for the smooth limit cycle.
 
 \section{Numerical phase diagram}
 \label{sec:phase}
@@ -636,9 +594,11 @@ threshold against the variance-of-variance scale.}
 \end{figure}
 
 The SPX-relevant $(\xi, \rho) \approx (0.30, -0.70)$ corner has
-$\kappa^\star$ in the $0.85$--$0.95$ band, sitting \emph{near but not
-across} the Hopf boundary---the structural mechanism we conjecture for
-the empirical $n \approx 1$ branching ratio of \citet{hardiman2013}.
+$\kappa^\star$ in the $0.85$--$0.95$ band. Whether the empirical market
+sits near this Hopf boundary is deferred to the empirical dealer-gamma
+test (amendment~A9); \cref{thm:hawkes-sv} places \citet{hardiman2013}'s
+$n \approx 1$ at the distinct real-eigenvalue (saddle-node) edge, not at
+the Hopf.
 Khasminskii sphere-process estimates \citep{khasminskii1980,arnold1998}
 on a $6 \times 6$ $(\xi, \rho)$ grid give
 $|\Lambda(\kappa^\star)| \in [5\!\times\!10^{-2}, 9\!\times\!10^{-2}]$
@@ -674,7 +634,20 @@ binding observational requirement at calibration: empirical OI mean must
 be centred to within $\sim 5$~bp of ATM in log-strike for a $\pm 5\%$
 calibration tolerance on $\kappa^\star$.
 
-\paragraph{H1 (primary realism).} A model-free RL agent $\pi_{\kappa_0}$
+\paragraph{H1$'$ (primary, direct dealer-gamma regression).} The primary
+test (amendment~A9) removes the agent and simulator from the inference
+path: estimate signed dealer gamma $\mathrm{GEX}(t) = \sum_{K,T} \mathrm{OI}\,\Gamma_{\mathrm{BS}}\,\mathrm{sign}\,S^2$
+from the SPX OI grid and fit the strictly-predictive pooled panel (event
+fixed effects, $\approx 339$ daily rows) of next-day realised vol-of-vol
+on standardised signed GEX; the mechanism predicts $b_{\mathrm{GEX}} < 0$,
+required at one-sided $p < 0.05$ under both a moving-block bootstrap and
+Newey--West HAC (BH--FDR), with a weaker effect in a quiet-regime control.
+On simulator ground truth at the $3 \times 121$-day footprint it attains
+pooled power $0.86$ (sign recovery $0.98$) and FPR $0.02$ at zero
+coupling; single-window power $0.50$ makes the pooled panel load-bearing.
+Implementation: \texttt{empirical/gex\_regression.py}.
+
+\paragraph{H1 (secondary/exploratory realism check; superseded as primary by H1$'$, amendment~A9).} A model-free RL agent $\pi_{\kappa_0}$
 trained inside the reflexive simulator at $\kappa_0$ produces an
 IV-surface distribution closer in sliced-$W_2$ over arbitrage-free
 21-trading-day rolling windows to the empirical SPX surface than four
@@ -727,13 +700,17 @@ agent, statistically indistinguishable for baselines (TOST equivalence
 on the dimensionless elasticity per A7, with the GP slope CI under the
 pre-registered RBF + WhiteKernel kernel of A6 and elliptic uncertainty
 sets \citep{ma2025robust}). H3 is post-FOMC RR25 and ATM-term-structure
-shifts. H4 is the Hopf-frequency Welch-PSD peak in $|r_t|$ at
-$\omega^\star \pm 20\%$ vs an IAAFT \citep{schreiberschmitz1996} surrogate
-null. IAAFT calibration on Heston and AR(1) $H_0$ generators bounds the
-empirical FPR at $\leq 7\%$ at $\alpha = 0.05$; on Stuart--Landau positive
-controls the detector achieves $\geq 80\%$ power at $T \geq 512$ daily
-samples for $8/9$ $(\mu, \sigma)$ configurations. All H1--H4 use BH--FDR
-across the joint family.
+shifts. H4 (redesigned, amendment~A8) is a critical-slowing-down
+early-warning test: the Hopf limit-cycle period is $5.3$--$11$\,yr, below
+the lowest resolvable bin of any window fitting the data, so the spectral
+peak is geometrically unfalsifiable and is replaced by the rolling lag-1
+autocorrelation of $|r_t|$ (and variance) with a Kendall-$\tau$ trend vs
+an AR(1)/phase-randomised surrogate null
+\citep{scheffer2009ews,dakos2012methods}. On simulator ground truth it
+holds FPR $\leq 0.083$ under stationary nulls and attains $0.82$--$0.85$
+power on a $252$-day record; within the bare event window it is
+underpowered ($\sim 0.5$) and reported as exploratory only. All H1--H4
+use BH--FDR across the joint family.
 
 \paragraph{Differentiation from precedents.} \citet{ning2024arbitrage}
 use $W_1$ on single-day surface marginals; we use sliced-$W_2$ on 21-day
@@ -846,11 +823,12 @@ closed-form first Lyapunov coefficient $\ell_1$ and Hopf threshold
 $\kappa^\star$ for log-normal open-interest in moneyness, computed a
 numerical $(\xi,\rho,\sigma_v)$ phase diagram and a $(\sigma_q,\gamma)$
 closed-form phase boundary, and pre-registered the empirical evaluation
-pipeline (sliced-$W_2$, $\kappa$-sensitivity slope, Hopf-frequency
-spectral test) at a verifiable git commit hash with an OpenTimestamps
-Bitcoin-anchored proof. The synthetic-pipeline validation demonstrates
-the locked H1 protocol returns the predicted ordering on data with known
-underlying physics. The empirical SPX calibration is the natural Phase~4
+pipeline (a direct dealer-gamma regression as primary test, sliced-$W_2$,
+$\kappa$-sensitivity slope, and a critical-slowing-down detector) at a
+verifiable git commit hash with an OpenTimestamps Bitcoin-anchored proof.
+The synthetic-pipeline validation demonstrates the locked surface-distance
+protocol (the secondary H1 check) returns the predicted ordering on data
+with known underlying physics. The empirical SPX calibration is the natural Phase~4
 follow-up, gated on data acquisition; results---confirming or refuting
 H1--H4---are pre-committed to publication regardless of direction. The
 codim-1 Hopf, codim-2 Bautin/Bogdanov--Takens structure
