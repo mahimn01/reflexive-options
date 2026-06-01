@@ -1,10 +1,15 @@
-"""Tests for `theory/hawkes_equivalence.py` — Theorem 2 (paper §3.7).
+"""Tests for `theory/hawkes_equivalence.py` (paper §3.11 / amendment A10).
 
-Three core properties of the n_SV(κ) construction:
+These are self-consistency regression tests of the λ_max(κ) eigenvalue
+track and the *definitional* n_SV(κ) rescaling — NOT verification of a
+paper theorem. The v0.3.9 reposition (A10) demoted the n_SV equivalence to
+a definitional identity; the operative falsifiable construct is the spectral
+discriminator in `theory/hawkes_sv_bifurcation.py`. Three properties:
 
-1. **Criticality endpoint is exact.** n_SV(κ★) = 1 by construction, to
-   numerical precision when κ★ sits exactly on the input grid (and to
-   linear-interpolation accuracy when it does not).
+1. **Criticality endpoint holds by construction.** n_SV(κ★) = 1 is a
+   definitional identity of the β₀ gauge (a tautology, not a result); the
+   test confirms the arithmetic to numerical precision when κ★ sits exactly
+   on the input grid (and to linear-interpolation accuracy when it does not).
 2. **Monotonicity on the post-node-spiral interval.** Once the slow
    mode is a complex pair (typically κ ≳ 0.13 in the §4.2 regime),
    n_SV(κ) is non-decreasing in κ up to κ★. This is the rigorous
@@ -63,7 +68,7 @@ def _jac_constant_vol(kappa: float) -> NDArray[np.float64]:
 
 
 def test_n_sv_at_kappa_star_equals_one() -> None:
-    """Theorem 2's headline: n_SV(κ★) = 1 by construction.
+    """Definitional identity: n_SV(κ★) = 1 by construction of the β₀ gauge.
 
     Place κ★ exactly on the grid (within 1e-6) so the located
     `result.kappa_star` equals the paper value, and check that the
@@ -85,7 +90,7 @@ def test_n_sv_at_kappa_star_equals_one() -> None:
     # n_SV at the located κ★ should be ≈ 1.
     n_at_star = float(np.interp(_KAPPA_STAR_PAPER, result.kappa_grid, result.n_sv))
     assert abs(n_at_star - 1.0) < 1e-3, (
-        f"Theorem 2 critical-endpoint identity failed: n_SV(κ★) = {n_at_star} ≠ 1; "
+        f"definitional critical-endpoint identity failed: n_SV(κ★) = {n_at_star} ≠ 1; "
         f"residual = {abs(n_at_star - 1.0):.3e}"
     )
 
@@ -121,25 +126,23 @@ def test_n_sv_monotonic_in_complex_pair_regime() -> None:
 
 
 def test_n_sv_at_brent_root_is_machine_epsilon() -> None:
-    """High-precision validation of the §3.9 truncation-vs-noise claim.
+    """Self-consistency: the Routh-Hurwitz Hopf root and the eigenvalue-derived
+    n_SV agree to machine precision.
 
-    The paper claims:
-        |n_SV(κ★_4) - 1| = 3.85e-5 at the published 4-decimal κ★_4 = 0.8964
-        is *truncation in κ★_4*, not eigenvalue-solver noise; at the
-        higher-precision Brent root κ★ ≈ 0.8964305216, the residual drops
-        to < 1e-15 (the machine-ε floor on a 3×3 matrix).
+    Two *independent* criteria locate the Hopf threshold: the Routh-Hurwitz
+    condition H(κ) = c_1·c_2 - c_0 = 0, and the leading-eigenvalue condition
+    λ_max(κ) = 0 (which makes the definitional n_SV = 1 + λ_max/β₀ equal 1).
+    This test confirms they coincide:
 
-    This test pins both halves of that claim:
+      (a) at the published 4-decimal κ★_4 = 0.8964, |n_SV - 1| ≈ 3.85e-5 — a
+          *truncation* artefact of rounding κ★ to 4 decimals, not solver noise;
+      (b) at the higher-precision Brent root of H (xtol=1e-14, rtol=1e-15),
+          the residual drops below 1e-12, confirming λ_max(κ★) = 0 there to
+          machine ε.
 
-      (a) at the published 4-decimal κ★_4, |n_SV - 1| < 1e-3 (matches the
-          published 3.85e-5 residual);
-      (b) at the Brent-located κ★ (xtol=1e-14, rtol=1e-15), |n_SV - 1| <
-          1e-12 — a tight bound; should actually be < 1e-15 if the eigen
-          machinery is clean.
-
-    A failure at (b) at the < 1e-12 level is a real finding: either the
-    n_SV implementation has a numerical bug or the §3.9 definitional
-    identity claim is wrong.
+    A failure at (b) would mean the Routh-Hurwitz root and the eigenvalue zero
+    disagree — i.e. a numerical bug in the eigenvalue machinery. (n_SV(κ★) = 1
+    is itself definitional, not a result; see §3.11 / amendment A10.)
     """
 
     # Solve H(κ) = c_1·c_2 - c_0 = 0 via Brent at machine-precision tolerances.
@@ -183,17 +186,18 @@ def test_n_sv_at_brent_root_is_machine_epsilon() -> None:
     n_at_brent = n_sv_at_kappa(kappa_star_brent, _jac_constant_vol, beta_zero=beta_zero)
     residual_brent = abs(n_at_brent - 1.0)
     assert residual_brent < 1e-12, (
-        f"§3.9 machine-ε claim FAILS: |n_SV(κ★_brent={kappa_star_brent:.12f}) - 1| = "
-        f"{residual_brent:.3e}, expected < 1e-12. Truncation-vs-noise framing in the "
-        "paper is unsupported — either the n_SV implementation has a numerical bug or "
-        "the definitional-identity claim is wrong."
+        f"Routh-Hurwitz/eigenvalue self-consistency FAILS: "
+        f"|n_SV(κ★_brent={kappa_star_brent:.12f}) - 1| = {residual_brent:.3e}, "
+        "expected < 1e-12 — λ_max should vanish at the H(κ)=0 root, so this "
+        "indicates a numerical bug in the eigenvalue machinery."
     )
 
     # Truncation dominance: the high-precision residual is many orders of
     # magnitude smaller than the published-4-decimal residual.
     assert residual_brent < residual_paper / 1e6, (
         f"residual_brent ({residual_brent:.3e}) not strictly dominated by truncation "
-        f"in 4-decimal κ★ ({residual_paper:.3e}); truncation-vs-noise claim weakened"
+        f"in 4-decimal κ★ ({residual_paper:.3e}); truncation-vs-solver-noise "
+        "self-consistency weakened"
     )
 
 

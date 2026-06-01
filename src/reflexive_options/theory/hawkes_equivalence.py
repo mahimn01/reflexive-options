@@ -1,12 +1,24 @@
-"""Hawkes branching ratio ↔ SV-Jacobian eigenvalue equivalence.
+"""Hawkes branching ratio ↔ SV-Jacobian eigenvalue mapping.
 
-This module operationalises **Theorem 2 (Hawkes-SV equivalence at the Hopf
-boundary)** from paper §3.7. It maps the empirical Hawkes branching ratio
-n of Hardiman-Bercot-Bouchaud (2013) into the continuous-time SV
-eigenvalue language of our 3D reflexive skeleton, so the empirical
-n ≈ 1 finding can be related to our Hopf threshold κ★.
+This module computes the leading-eigenvalue real part λ_max(κ) of the 3D
+reflexive skeleton's Jacobian and the *definitional* Hawkes-branching-ratio
+rescaling n_SV(κ) := 1 + λ_max(κ)/β₀ that maps Hardiman-Bercot-Bouchaud
+(2013)'s branching ratio into the SV eigenvalue language.
 
-Derivation (compact, see paper §3.7 for the full chain):
+⚠ v0.3.9 reposition (pre-data amendment A10). The identity n_SV(κ★) = 1 is
+**definitional, not a result** — it holds by construction of the β₀ gauge,
+so any check that it equals 1 "to machine precision" is verifying arithmetic
+self-consistency, not a theorem. The paper's repositioned Theorem 4 (§3.11)
+no longer claims a scalar n_SV equivalence: it places Hardiman's n ≈ 1 at the
+*real-eigenvalue (saddle-node)* stratum and the model's Hopf threshold κ★ as
+the strictly-stronger oscillatory cell beyond it. The operative, falsifiable
+construct is now the spectral discriminator in `theory/hawkes_sv_bifurcation.py`
+(classify_stratum). This module is retained for the genuinely useful pieces —
+the λ_max(κ) computation and the BDHM-2013 diffusive-limit mapping below — not
+as evidence for any n_SV claim.
+
+Derivation of the mapping (the BDHM diffusive-limit chain is exact; the n_SV
+rescaling is definitional — see paper §3.11 / amendment A10 for the reposition):
 
 1. **Hawkes baseline.** A 1D self-exciting Hawkes intensity λ(t) = μ +
    Σᵢ φ(t − tᵢ) with kernel φ(s) = α e^{−βs} has branching ratio
@@ -127,7 +139,8 @@ def n_sv_from_eigenvalues(
     """Compute the SV-equivalent branching ratio from a leading-eigenvalue
     array and a baseline relaxation rate.
 
-    Implements n_SV(κ) = 1 + λ_max(κ) / β₀ (paper §3.7, Eq. for n_SV).
+    Implements the definitional rescaling n_SV(κ) = 1 + λ_max(κ) / β₀
+    (paper §3.11 / amendment A10; n_SV(κ★) = 1 holds by construction).
 
     Args:
         lambda_max_real: leading-eigenvalue real-parts at each κ. Should
@@ -163,7 +176,8 @@ def hawkes_branching_ratio_curve(
 ) -> HawkesEquivalenceResult:
     """Compute the SV-equivalent Hawkes branching ratio n_SV(κ) over a κ grid.
 
-    Implements **Theorem 2** of paper §3.7 numerically. Pipeline:
+    Computes the λ_max(κ) eigenvalue track and the definitional n_SV(κ)
+    rescaling (paper §3.11 / amendment A10). Pipeline:
 
     1. Evaluate the leading-eigenvalue real part λ_max(κ) on the grid.
     2. Locate the Hopf threshold κ★ as the smallest κ with λ_max(κ) ≥ 0.
