@@ -1,5 +1,7 @@
 # Manuscript Skeleton — *Reflexivity in Options Markets*
 
+> **⚠ Superseded planning artifact (pre-v0.3.9).** This skeleton predates the v0.3.9 empirical-leg redesign. Wherever it describes **H1** as a "primary realism" RL-agent / sliced-W2 test or **H4** as a "Hopf-frequency spectral peak via Welch's method", those are retracted: the primary empirical test is now a direct, model-free **dealer-gamma (GEX) regression (H1′)** and H4 is a **critical-slowing-down** early-warning test. The Hawkes–SV theorem was repositioned (no `n_SV` numerology) and theorem numbering shifted (Hawkes–SV is now Theorem 5). The authoritative state is `paper/main.tex` + amendments **A8–A11** in `paper/pre_registration_amendments.md`. Kept as the historical authoring blueprint, not a current spec.
+
 **Target.** 8-page workshop format (NeurIPS GenAI in Finance Workshop 2026, expected double-blind). The same skeleton scales to 24 pages for a journal version (e.g., *Quantitative Finance*) by expanding the proofs, the empirical roadmap, and the threats-to-validity section.
 
 **How to use this file.** Each section below is a self-contained authoring brief. For each section: (a) the title and word-count target; (b) the equations to include and where they live in `paper/theory.md`; (c) the figures to include from `paper/figures/`; (d) the tables to write; (e) the citations to lift from `paper/related_work.md`; (f) the *status* tag, telling you whether prose is ready to lift, needs new prose, or borrows from a `~/Documents/reflexivity-research/*_brief.md` source.

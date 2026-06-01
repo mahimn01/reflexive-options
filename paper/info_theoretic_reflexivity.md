@@ -1,14 +1,16 @@
 # Information-Theoretic Reflexivity (LaTeX-ready section)
 
-This file is a self-contained, LaTeX-friendly writeup of the §3.10 Theorem-5 contribution, intended for direct integration into `paper/main.tex` (as either a new §3.10 immediately after the Hawkes-SV equivalence §3.9, or as Appendix B). All math uses `$...$` / `$$...$$`; citations use `\citep{...}` against the keys added to `paper/references.bib`; cross-references use `\cref{...}` against the existing label scheme.
+This file is a self-contained, LaTeX-friendly writeup of the critical-excess-entropy contribution, **now integrated into `paper/main.tex` as §3.12 (Theorem 6), immediately after the Hawkes–SV correspondence §3.11**. All math uses `$...$` / `$$...$$`; citations use `\citep{...}` against the keys added to `paper/references.bib`; cross-references use `\cref{...}` against the existing label scheme.
+
+> **v0.3.9 note.** References below to the Hawkes–SV theorem's `$n_{\mathrm{SV}}(\kappa^\star)=1$` framing are superseded: that dimensionless rescaling was a definitional tautology and was removed in pre-data amendment A10. The Hopf threshold is characterised purely spectrally by `$\mathrm{Re}\,\lambda_{\max}(J(\kappa^\star))=0$`; see §3.11 / amendment A10 for the repositioned correspondence. The excess-entropy result itself is unaffected.
 
 Length: ~1100 words. Replaces nothing in the current main.tex; additive only.
 
 ---
 
-## §3.10. Information-Theoretic Characterisation of the Critical Edge
+## §3.12. Information-Theoretic Characterisation of the Critical Edge
 
-\cref{thm:hopf} (Theorem~1) and \cref{thm:hawkes-sv} (Theorem~4) characterise the Hopf threshold $\kappa^\star$ spectrally: $\kappa^\star$ is the smallest $\kappa$ at which $\mathrm{Re}\,\lambda_{\max}(J(\kappa)) = 0$, equivalently $n_{\mathrm{SV}}(\kappa^\star) = 1$ in the Bacry--Delattre--Hoffmann--Muzy diffusive language \citep{bacrydelattrehoffmannmuzy2013, bacrymastromatteomuzy2015}. We now add an *information-theoretic* characterisation that complements these spectral statements: how many nats of information does the dealer-gamma channel leak from past spot to future returns?
+\cref{thm:hopf} (Theorem~1) and \cref{thm:hawkes-sv} (Theorem~5) characterise the Hopf threshold $\kappa^\star$ spectrally: $\kappa^\star$ is the smallest $\kappa$ at which $\mathrm{Re}\,\lambda_{\max}(J(\kappa)) = 0$ (the real-eigenvalue/Hopf strata of the Bacry--Delattre--Hoffmann--Muzy diffusive limit \citep{bacrydelattrehoffmannmuzy2013, bacrymastromatteomuzy2015}; the earlier $n_{\mathrm{SV}}(\kappa^\star) = 1$ rescaling was definitional and was removed in amendment A10). We now add an *information-theoretic* characterisation that complements these spectral statements: how many nats of information does the dealer-gamma channel leak from past spot to future returns?
 
 ### Setup.
 
@@ -99,10 +101,10 @@ For an SPX market window with calibrated dealer-gamma series $\hat G_t$ and obse
 should be statistically significant ($p < 0.05$) under an IAAFT-surrogate null on the source series, AND should be larger on event windows where the system is conjectured to sit closer to $\kappa^\star$ (Volmageddon Feb~2018, COVID Mar~2020, Yen carry Aug~2024) than on quiescent windows.
 \end{corollary}
 
-The corollary has two pieces — (i) directional significance under IAAFT, (ii) event-window dependence — logically independent of \cref{thm:hawkes-sv}'s $n_{\mathrm{SV}}(\kappa_0) \approx 1$ prediction. The IAAFT null preserves $G$'s marginal and linear ACF while randomising its nonlinear cross-coupling to $r$ (matching the pre-registration amendment A5 detector convention), so the test asks whether the nonlinear feedback channel is informative beyond what $G$'s own autocorrelation explains. Implementation: \texttt{transfer\_entropy\_iaaft\_pvalue} in \texttt{info\_theoretic.py}.
+The corollary has two pieces — (i) directional significance under IAAFT, (ii) event-window dependence — logically independent of \cref{thm:hawkes-sv}'s structural placement of the empirical branching-ratio edge. The IAAFT null preserves $G$'s marginal and linear ACF while randomising its nonlinear cross-coupling to $r$ (matching the pre-registration amendment A5 detector convention), so the test asks whether the nonlinear feedback channel is informative beyond what $G$'s own autocorrelation explains. Implementation: \texttt{transfer\_entropy\_iaaft\_pvalue} in \texttt{info\_theoretic.py}.
 
 ### Relation to \cref{thm:hawkes-sv}.
 
-\cref{thm:hawkes-sv} characterises $\kappa^\star$ spectrally via $n_{\mathrm{SV}}(\kappa^\star) = 1$. \cref{thm:excess-entropy} characterises the *same* boundary information-theoretically via the finite saturation $E_\tau(\kappa^\star) > 0$. The two are independent characterisations, not consequences of each other: $n_{\mathrm{SV}}$ depends only on the leading eigenvalue of $J(\kappa)$, while $E_\tau$ depends on the full Lyapunov-equation solution and the noise covariance. Two markets with identical $\lambda_{\max}(\kappa)$ but different noise structures will have different $E_\tau$ curves. The two theorems are therefore complementary diagnostics: \cref{thm:hawkes-sv} measures *how close to the boundary* the system is; \cref{thm:excess-entropy} measures *how much past-spot information* the system actually leaks at that distance.
+\cref{thm:hawkes-sv} characterises $\kappa^\star$ spectrally via $\mathrm{Re}\,\lambda_{\max}(J(\kappa^\star)) = 0$. \cref{thm:excess-entropy} characterises the *same* boundary information-theoretically via the finite saturation $E_\tau(\kappa^\star) > 0$. The two are independent characterisations, not consequences of each other: the spectral condition depends only on the leading eigenvalue of $J(\kappa)$, while $E_\tau$ depends on the full Lyapunov-equation solution and the noise covariance. Two markets with identical $\lambda_{\max}(\kappa)$ but different noise structures will have different $E_\tau$ curves. The two theorems are therefore complementary diagnostics: \cref{thm:hawkes-sv} measures *how close to the boundary* the system is; \cref{thm:excess-entropy} measures *how much past-spot information* the system actually leaks at that distance.
 
 Relation to \citep{lizier2012local}'s "active information storage" framework: the conditioning on $(v_0, z_0)$ in \eqref{eq:excess-entropy-def} is precisely Lizier--Prokopenko--Zomaya's "fixed-history baseline" — \cref{thm:excess-entropy} can be read as a Hopf-boundary application of that framework to a continuous-time SDE channel.
