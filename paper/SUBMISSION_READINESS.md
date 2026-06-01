@@ -37,7 +37,7 @@ All three variants build clean under `latexmk -pdf` against TeXLive 2024 (the ar
 | §3.4 | Numerical anchor (incl. limit-cycle validation, $\Lambda$ scaling fit) | `sec:hopf-numerical` |
 | §3.5 | Closed-form $\kappa^\star$ and $\ell_1$ for log-normal OI in moneyness | `sec:hopf-closed-form` |
 | §3.6 | Codim-2 bifurcation structure (Bautin curve + Theorem 3 BT-empty) | `sec:codim2` |
-| §3.7 | Hawkes-SV equivalence at the Hopf boundary (Theorem 2) | `sec:hopf-hawkes-equivalence` |
+| §3.11 | Hawkes–SV criticality correspondence (Theorem 4; repositioned in A10) | `sec:hopf-hawkes-equivalence` |
 | §4 | Numerical phase diagram | `sec:phase` |
 | §5 | Pre-registered evaluation framework (incl. SW2 sample-complexity, H4 power on Stuart–Landau) | `sec:eval` |
 | §5.4 | Synthetic pipeline validation (H1) | `sec:eval-synthetic-validation` |
@@ -53,7 +53,7 @@ All three variants build clean under `latexmk -pdf` against TeXLive 2024 (the ar
 | # | Statement | Location | Type |
 |---|---|---|---|
 | Theorem 1 | Hopf bifurcation in the gamma-coupled SV skeleton (with closed-form $\ell_1$ for log-normal OI as Eq. `eq:lognorm-ell1`) | §3.3, label `thm:hopf` | Existence + super/subcritical classification |
-| Theorem 2 | Hawkes-SV equivalence at the Hopf boundary | §3.7, label `thm:hawkes-sv` | Critical-endpoint identity $n_{\mathrm{SV}}(\kappa^\star) = 1$ + monotonicity past node–spiral + Hawkes correspondence (BDHM 2013 + BMM 2015) |
+| Theorem 4 | Hawkes–SV criticality correspondence | §3.11, label `thm:hawkes-sv` | Hardiman $n\approx1$ = real-eigenvalue (saddle-node) stratum; the model's Hopf is the strictly-stronger oscillatory "unoccupied cell" beyond any scalar branching ratio (BDHM 2013 + JR 2015 + BMM 2015). Falsifiable spectral discriminator replaces the tautological $n_{\mathrm{SV}}$ "verification" (removed, A10) |
 | Theorem 3 | BT locus empty in the canonical scan window | §3.6, label `thm:bt-empty` | Closed-form exclusion: $\kappa_{\mathrm{SN}} \leq -1.31$ across the $71 \times 97$ $(\sigma_q, \gamma)$ grid |
 
 Theorem 1 carries five labelled assumptions (A1)–(A5) on smoothness, equilibrium uniqueness, parameter regularity, the Routh–Hurwitz/Liu condition at $\kappa^\star$, and $\ell_1(\kappa^\star) \neq 0$.
@@ -205,7 +205,7 @@ ICAIF is the most-load-bearing archival venue if the workshop track does not acc
 
 **Wave 1 + Wave 2 (substantive theoretical + numerical extensions):**
 
-- **Theorem 2 — Hawkes-SV equivalence at the Hopf boundary.** Formal identification of Hardiman 2013's $n \approx 1$ with our $\kappa^\star$ via the BDHM 2013 diffusive-limit identity and the BMM 2015 kernel-universal stability boundary. Definitional identity $n_{\mathrm{SV}}(\kappa^\star) = 1$ exact at machine precision. Implementation: `theory/hawkes_equivalence.py`, `experiments/hawkes_sv_equivalence.py`, 3 new tests.
+- **Theorem 4 — Hawkes–SV criticality correspondence (repositioned, amendment A10).** Via the BDHM 2013 + Jaisson–Rosenbaum 2015 diffusive near-critical limit, Hardiman 2013's $n \approx 1$ is the literal analogue of the *real-eigenvalue (saddle-node)* stratum; the model's *Hopf* threshold $\kappa^\star$ is a strictly-stronger oscillatory instability beyond any scalar branching ratio — the genuinely novel "unoccupied cell". A falsifiable spectral discriminator (`theory/hawkes_sv_bifurcation.py`) separates the strata with zero overlap on synthetic ground truth; the earlier tautological $n_{\mathrm{SV}}$ "machine-precision verification" was removed. Empirical proximity to $\kappa^\star$ is indeterminate (κ-rescaling map) and deferred to the GEX test (A9).
 - **Theorem 3 — BT locus empty in the canonical scan window.** Closed-form argument that $G_v < 0$ uniformly dominates $G_y \alpha \kappa_v / (\beta\gamma)$ on the scanned $(\sigma_q, \gamma) \in [0.05, 0.40] \times [0.20, 5.00]$ window, forcing $\kappa_{\mathrm{SN}} < 0$ and excluding Bogdanov–Takens bifurcations there. Falsifiable economic prediction: no homoclinic burst-relax dynamics from this model at fixed parameters.
 - **Bautin curve.** 6 anchors at the canonical specification, characterising the supercritical → sub-critical transition in $(\sigma_q, \gamma)$ space. New experiment `experiments/codim2_analysis.py`, 8 new tests.
 - **Closed-form $\ell_1$ in symbolic form (Appendix A).** Symbolic Kuznetsov-formula expansion in the 13-symbol parameter space, verified to $\sim 10^{-13}$ relative against the numerical pipeline at the canonical regime. Auto-generated `paper/figures/ell1_closed_form.tex` (10.6 KB, layered presentation).

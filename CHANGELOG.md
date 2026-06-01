@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.9] - 2026-06-01
+
+### Changed — empirical-leg redesign (pre-data amendments A8–A11) + Theorem 4 reposition
+
+Corrects two material specification errors and one over-claim in the empirical leg
+and the Hawkes–SV theorem, found through pre-data analysis + independent expert
+review — all **before any SPX data is loaded**. Formalised as amendments A8–A11 in
+`paper/pre_registration_amendments.md`; the original pre-registration is preserved
+(git history + `pre_registration.md.v1.ots`) and the amended pre-reg re-stamped via
+OpenTimestamps.
+
+- **A8 — H4 redesigned (critical slowing down).** The original spectral H4 sought a
+  peak at the Hopf frequency ω⋆, but the limit-cycle period is 5.3–11 yr — below the
+  lowest resolvable bin of any window fitting the data, so the test was geometrically
+  unfalsifiable. Replaced by a critical-slowing-down early-warning test (rolling lag-1
+  autocorrelation of |r_t| vs AR(1)/phase-randomised surrogate; Scheffer 2009, Dakos
+  2012), validated to 0.82–0.85 power on a 252-day record at FPR ≤ 0.083.
+  New `theory/critical_slowing_down.py` (+14 tests).
+- **A9 — primary H1 replaced by a direct dealer-gamma (GEX) regression.** The original
+  H1 routed the reflexivity claim through a Mamba+PPO+EWC RL agent, confounding the
+  mechanism with the estimator. H1′ removes agent and simulator: it regresses next-day
+  realised vol-of-vol on signed dealer GEX from the OI grid, pooled over three event
+  windows with a quiet-regime control. Synthetic pooled power 0.86 / sign 0.98 /
+  FPR 0.02. RL tournament demoted to secondary/exploratory. New `empirical/` package
+  (gex_regression, gex_simulator, gex_validation; +15 tests).
+- **A10 — Theorem 4 (Hawkes–SV) repositioned; tautological n_SV "verification" removed.**
+  The dimensionless n_SV := c0/(c1 c2) "verified to 1e-15" was a definitional tautology.
+  Removed. Repositioned: Hardiman's n≈1 = the real-eigenvalue (saddle-node) stratum;
+  the model's Hopf is the strictly-stronger oscillatory "unoccupied cell" beyond any
+  scalar branching ratio. Falsifiable spectral discriminator
+  `theory/hawkes_sv_bifurcation.py` (zero-overlap strata separation on synthetic data).
+  κ unit-chain made explicit (`theory/kappa_rescaling.py`): empirical proximity to κ⋆
+  is indeterminate, deferred to the GEX test, not asserted.
+- **A11 — corrections.** Event-window dates reconciled to `event_windows.txt`
+  (pandas_market_calendars); §4 strike grid corrected to 11 (7×11=77); quiet-regime
+  control window 2017-05-01 → 2017-10-20 added; researcher-DOF locks; Faff/Brailsford
+  reference DOI corrected (.101837, Faff 2023).
+
+### Added
+- 8 verified bib entries: Scheffer 2009, Dakos 2012, Lenton 2011 (early-warning);
+  Jaisson–Rosenbaum 2016, Gatheral–Jaisson–Rosenbaum 2018, El Euch–Rosenbaum 2018/2019,
+  Abi Jaber 2019 (rough volatility, cited as future-work precedent).
+
+### Notes
+- 567 tests pass; 37-page master PDF compiles clean (0 undefined refs). Variants
+  (ICAIF/workshop) still carry v0.3.6 Hawkes-SV/H1/H4 content — a known follow-up re-sync.
+- Intervening v0.3.3–v0.3.8 are recorded in git tags; this CHANGELOG had fallen behind
+  at v0.3.2-in-flight and resumes here.
+
 ## [Unreleased] — v0.3.2 in-flight (2026-05-14)
 
 ### Added — substantive theoretical extensions
