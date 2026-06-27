@@ -51,14 +51,12 @@ grid via a G\^arleanu--Pedersen--Poteshman \citep{garleanu2009demand}
 demand-pressure mapping. The model state is three-dimensional---spot
 $S_t$, instantaneous variance $v_t$, and a low-pass-filtered log-spot
 memory variable $\chi_t$---and reduces to standard time-dependent Heston
-\citep{heston1993} at zero coupling. We synthesise three previously
-separate ingredients: (i) a continuous-time SV backbone with explicit
-dealer-gamma drift; (ii) a formal Hopf bifurcation calculus on the
-deterministic skeleton with first Lyapunov coefficient $\ell_1$ and
-Khasminskii-style stochastic shift $\Lambda$; and (iii) a pre-registered
-evaluation protocol whose primary test is a direct, model-free
-dealer-gamma (GEX) regression, complemented by a sliced-Wasserstein-2
-surface metric and a critical-slowing-down detector. For a representative dimensionless calibration we obtain
+\citep{heston1993} at zero coupling. We work out the Hopf bifurcation of
+the deterministic skeleton, with first Lyapunov coefficient $\ell_1$ and a
+Khasminskii-style stochastic shift $\Lambda$, and we pre-register the
+evaluation protocol before touching any data: a direct, model-free
+dealer-gamma (GEX) regression as the primary test, with a
+sliced-Wasserstein-2 surface metric and a critical-slowing-down detector. For a representative dimensionless calibration we obtain
 $\kappa^\star \approx 0.8964$, $\omega^\star \approx 0.5724$~rad/yr, and
 $\ell_1 \approx -0.025 < 0$ (supercritical: an attracting limit cycle
 in volatility is born for $\kappa > \kappa^\star$). The 2D reduction has
