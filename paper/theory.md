@@ -8,18 +8,18 @@ This document is the canonical writeup of the analytical contributions of the pa
 
 A complete comparison against the closest precedents — Halperin and Itkin's Marketron framework (arXiv:2508.09863, August 2025), Dai's gamma-squeeze recursion (arXiv:2511.22766, November 2025), Brock–Hommes-style heterogeneous-agent dynamics (Brock, Hommes & Wagener, *JEDC* 2009; He, Li & Zheng, *Economic Modelling* 2009; Chiarella, He & Hommes, UTS QFRC RP 268, 2006), the He–Sutter–Gonon adversarial deep-hedging line (arXiv:2508.14757, NeurIPS 2025), and the Ning–Jaimungal Wasserstein-on-surfaces work (arXiv:2108.04941, *SIAM SIFIN* 2024) — is in `related_work.md`. Each has 1–2 of the ingredients we combine; none has all.
 
-Let $S_t$ be the underlying spot price, $v_t$ the instantaneous variance, and $z_t$ a memory variable encoding low-pass-filtered price history. The reflexive system is
+Let $S_t$ be the underlying spot price, $v_t$ the instantaneous variance, and $\chi_t$ a memory variable encoding low-pass-filtered price history. The reflexive system is
 
 $$
-\frac{dS_t}{S_t} = \bigl(\mu + \kappa \cdot G(S_t, z_t, v_t)\bigr)\, dt + \sigma(S_t, v_t)\, dW^S_t, \tag{1a}
-$$
-
-$$
-dv_t = \bigl(\kappa_v(\theta_v - v_t) + \gamma\, z_t\bigr)\, dt + \xi \sqrt{v_t}\, dW^v_t, \tag{1b}
+\frac{dS_t}{S_t} = \bigl(\mu + \kappa \cdot G(S_t, \chi_t, v_t)\bigr)\, dt + \sigma(S_t, v_t)\, dW^S_t, \tag{1a}
 $$
 
 $$
-dz_t = \bigl(-\alpha\, z_t + \beta\, \log(S_t / S_0)\bigr)\, dt, \tag{1c}
+dv_t = \bigl(\kappa_v(\theta_v - v_t) + \gamma\, \chi_t\bigr)\, dt + \xi \sqrt{v_t}\, dW^v_t, \tag{1b}
+$$
+
+$$
+d\chi_t = \bigl(-\alpha\, \chi_t + \beta\, \log(S_t / S_0)\bigr)\, dt, \tag{1c}
 $$
 
 $$
@@ -30,7 +30,7 @@ with $\kappa \geq 0$ the reflexive coupling, $\gamma \geq 0$ the leverage-feedba
 
 ### 1.1 Why three states?
 
-A reduced 2D specification — dropping $z_t$ and the $\gamma z$ term — is the obvious starting point. It is also wrong for our purposes. The Jacobian of the deterministic skeleton in deviation variables $(y, u)$ around an equilibrium reads
+A reduced 2D specification — dropping $\chi_t$ and the $\gamma \chi$ term — is the obvious starting point. It is also wrong for our purposes. The Jacobian of the deterministic skeleton in deviation variables $(y, u)$ around an equilibrium reads
 
 $$
 J_{2D}(\kappa) = \begin{pmatrix} a(\kappa) & b(\kappa) \\ 0 & -\kappa_v \end{pmatrix},
@@ -38,23 +38,23 @@ $$
 
 which is *upper triangular* — eigenvalues $\{a(\kappa), -\kappa_v\}$ are always real. The 2D system can have at most a transcritical / saddle-node bifurcation as $a(\kappa)$ crosses zero (this recovers Dai 2025, arXiv:2511.22766, who derives precisely this static onset). It cannot Hopf.
 
-The structural reason is that $v$ has no $S$-dependence in its drift, so variance relaxes deterministically to $\theta_v$ regardless of price moves. To get cyclic behaviour, the feedback must flow in *both* directions: price → variance and variance → price. The minimal modification is the leverage channel $\gamma z$ with the auxiliary memory equation (1c). This matches the marketron memory variable in Halperin–Itkin (2025) and is empirically defensible — trended markets feed dealer rebalancing which feeds variance.
+The structural reason is that $v$ has no $S$-dependence in its drift, so variance relaxes deterministically to $\theta_v$ regardless of price moves. To get cyclic behaviour, the feedback must flow in *both* directions: price → variance and variance → price. The minimal modification is the leverage channel $\gamma \chi$ with the auxiliary memory equation (1c). This matches the marketron memory variable in Halperin–Itkin (2025) and is empirically defensible — trended markets feed dealer rebalancing which feeds variance.
 
 ---
 
 ## 2. Equilibria and Jacobian
 
-Drop the Brownian terms and work in log-deviation variables $(y, u, z) = (\log(S/S^\star), v - \theta_v, z - z^\star)$ around the unique equilibrium $(S^\star, \theta_v, z^\star)$ defined by
+Drop the Brownian terms and work in log-deviation variables $(y, u, \chi) = (\log(S/S^\star), v - \theta_v, \chi - \chi^\star)$ around the unique equilibrium $(S^\star, \theta_v, \chi^\star)$ defined by
 
 $$
-\mu - \tfrac{1}{2}\sigma^2(S^\star, \theta_v) + \kappa\, G(S^\star, z^\star, \theta_v) = 0, \qquad z^\star = \frac{\beta}{\alpha}\log(S^\star/S_0). \tag{2}
+\mu - \tfrac{1}{2}\sigma^2(S^\star, \theta_v) + \kappa\, G(S^\star, \chi^\star, \theta_v) = 0, \qquad \chi^\star = \frac{\beta}{\alpha}\log(S^\star/S_0). \tag{2}
 $$
 
-To linear order, the deterministic skeleton (1a–c) becomes $\dot{\boldsymbol{x}} = J(\kappa)\, \boldsymbol{x}$ with $\boldsymbol{x} = (y, u, z)^\top$ and
+To linear order, the deterministic skeleton (1a–c) becomes $\dot{\boldsymbol{x}} = J(\kappa)\, \boldsymbol{x}$ with $\boldsymbol{x} = (y, u, \chi)^\top$ and
 
 $$
 J(\kappa) = \begin{pmatrix}
-a(\kappa) & b(\kappa) & \kappa\, G_z \\
+a(\kappa) & b(\kappa) & \kappa\, G_\chi \\
 0 & -\kappa_v & \gamma \\
 \beta & 0 & -\alpha
 \end{pmatrix}, \tag{3}
@@ -64,7 +64,7 @@ where
 
 - $a(\kappa) = \kappa\, G_x - \tfrac{1}{2}\partial_x\sigma^2$
 - $b(\kappa) = \kappa\, G_v - \tfrac{1}{2}\partial_v\sigma^2$
-- $G_x, G_v, G_z$ denote partial derivatives of $G$ at the equilibrium.
+- $G_x, G_v, G_\chi$ denote partial derivatives of $G$ at the equilibrium.
 
 ---
 
@@ -80,8 +80,8 @@ with
 
 $$
 c_2 = -a + \kappa_v + \alpha, \qquad
-c_1 = -a\kappa_v - a\alpha + \kappa_v\alpha - \kappa\, G_z\, \beta, \qquad
-c_0 = -a\kappa_v\alpha - \beta\bigl(\kappa\, G_z\, \kappa_v + b\,\gamma\bigr).
+c_1 = -a\kappa_v - a\alpha + \kappa_v\alpha - \kappa\, G_\chi\, \beta, \qquad
+c_0 = -a\kappa_v\alpha - \beta\bigl(\kappa\, G_\chi\, \kappa_v + b\,\gamma\bigr).
 $$
 
 A 3D system Hopf's iff (Liu's criterion, equivalent to Routh–Hurwitz with one zero):
@@ -105,8 +105,8 @@ At $\kappa = \kappa^\star$ the Jacobian has a pure imaginary eigenvalue pair $\l
 > **Theorem 1.** *Let the deterministic system (1a–c) (with Brownian terms removed) satisfy:*
 >
 > - **(A1)** *$G \in C^3$ and $\sigma^2 \in C^3$ in their arguments, with $\sigma^2$ bounded below by a positive constant.*
-> - **(A2)** *There exists a locally unique equilibrium $(S^\star, \theta_v, z^\star)$ given by (2) for every $\kappa$ in some interval $[0, \kappa_{\max}]$, in some open neighborhood of which the linearization (3) is non-degenerate. Multiple equilibria may exist globally; our analysis is local.*
-> - **(A3)** *The map $\kappa \mapsto (a(\kappa), G_z, G_v)$ is $C^3$.*
+> - **(A2)** *There exists a locally unique equilibrium $(S^\star, \theta_v, \chi^\star)$ given by (2) for every $\kappa$ in some interval $[0, \kappa_{\max}]$, in some open neighborhood of which the linearization (3) is non-degenerate. Multiple equilibria may exist globally; our analysis is local.*
+> - **(A3)** *The map $\kappa \mapsto (a(\kappa), G_\chi, G_v)$ is $C^3$.*
 > - **(A4)** *There exists $\kappa^\star \in (0, \kappa_{\max})$ satisfying (5) with $\omega^\star := \sqrt{c_1(\kappa^\star)} > 0$.*
 > - **(A5)** *The first Lyapunov coefficient $\ell_1(\kappa^\star) \neq 0$ (Kuznetsov 2004, eq. 3.20).*
 >
@@ -124,7 +124,7 @@ The full derivation, including the explicit formula for $\ell_1$ via the bilinea
 
 | Item | Closed form? |
 |------|---|
-| $\kappa^\star$ via Routh–Hurwitz $H(\kappa) = 0$ | Yes, given $G_x, G_v, G_z$ at equilibrium |
+| $\kappa^\star$ via Routh–Hurwitz $H(\kappa) = 0$ | Yes, given $G_x, G_v, G_\chi$ at equilibrium |
 | Frequency $\omega^\star = \sqrt{c_1(\kappa^\star)}$ | Yes |
 | Existence of Hopf (Theorem 1) | Yes |
 | Sign of $\ell_1$ | Yes — closed form for log-normal OI in moneyness (§4.3, Eq. 17–18); numerical otherwise |
@@ -134,9 +134,9 @@ The implementation in `src/reflexive_options/theory/bifurcation.py` does the num
 
 ### 4.2 Numerical $\ell_1$ and $\Lambda$ at a representative parameter set
 
-The default `BifurcationConfig` in `experiments/bifurcation_scan.py` is dimensionally tuned to the empirical dealer-gamma magnitudes ($G_x \sim 10^{-3}$, $G_z \sim 10^{-3}$ per USD-of-dollar-gamma) and *does not exhibit a Hopf within the literature-prior κ range*. The structural reason: the memory channel decay $\alpha = 252$/yr (≈ 1-day half-life) is fast relative to $\kappa_v = 2$/yr, and the small first-derivative magnitudes mean the cross-coupling $\kappa G_z \beta$ in $c_1$ never overpowers $\kappa_v \alpha$. Whether the empirical market sits near the Hopf threshold $\kappa^\star$ is an open question deferred to the empirical dealer-gamma test (amendment A9), and is *not* settled by HBB's $n \approx 1$: Theorem 2 (§6) identifies that branching ratio with the distinct real-eigenvalue (saddle-node) edge, with the Hopf as the strictly-stronger oscillatory cell beyond it.
+The default `BifurcationConfig` in `experiments/bifurcation_scan.py` is dimensionally tuned to the empirical dealer-gamma magnitudes ($G_x \sim 10^{-3}$, $G_\chi \sim 10^{-3}$ per USD-of-dollar-gamma) and *does not exhibit a Hopf within the literature-prior κ range*. The structural reason: the memory channel decay $\alpha = 252$/yr (≈ 1-day half-life) is fast relative to $\kappa_v = 2$/yr, and the small first-derivative magnitudes mean the cross-coupling $\kappa G_\chi \beta$ in $c_1$ never overpowers $\kappa_v \alpha$. Whether the empirical market sits near the Hopf threshold $\kappa^\star$ is an open question deferred to the empirical dealer-gamma test (amendment A9), and is *not* settled by HBB's $n \approx 1$: Theorem 2 (§6) identifies that branching ratio with the distinct real-eigenvalue (saddle-node) edge, with the Hopf as the strictly-stronger oscillatory cell beyond it.
 
-For a worked numerical example we instead use a representative *dimensionless* regime where $\{G_x, G_v, G_z\} = \{0.5, -0.5, -0.5\}$, $\alpha = 0.5$/yr (multi-day memory), $\beta = 1$, $\gamma = 0.5$, $\kappa_v = 2$/yr, and quadratic / cubic Taylor coefficients $G_{xx} = -0.1$, $G_{xxx} = -0.2$ (representative of a smooth, locally concave dealer-gamma functional around ATM in a long-gamma regime). For this example we use a *constant-vol surrogate* ($\partial_v \sigma^2 = 0$) rather than the Heston $\sigma^2 = v$ of §1; this isolates the $\kappa$-dependence of the bifurcation from the Itô-correction term in $b(\kappa) = \kappa G_v - \tfrac{1}{2}\partial_v \sigma^2$ and lets the $\{G_x, G_v, G_z, \kappa_v, \alpha, \beta, \gamma\}$ prescribed values stand alone. The §4.3 closed-form analysis returns to the $\sigma^2 = v$ Heston backbone. The deterministic skeleton then satisfies:
+For a worked numerical example we instead use a representative *dimensionless* regime where $\{G_x, G_v, G_\chi\} = \{0.5, -0.5, -0.5\}$, $\alpha = 0.5$/yr (multi-day memory), $\beta = 1$, $\gamma = 0.5$, $\kappa_v = 2$/yr, and quadratic / cubic Taylor coefficients $G_{xx} = -0.1$, $G_{xxx} = -0.2$ (representative of a smooth, locally concave dealer-gamma functional around ATM in a long-gamma regime). For this example we use a *constant-vol surrogate* ($\partial_v \sigma^2 = 0$) rather than the Heston $\sigma^2 = v$ of §1; this isolates the $\kappa$-dependence of the bifurcation from the Itô-correction term in $b(\kappa) = \kappa G_v - \tfrac{1}{2}\partial_v \sigma^2$ and lets the $\{G_x, G_v, G_\chi, \kappa_v, \alpha, \beta, \gamma\}$ prescribed values stand alone. The §4.3 closed-form analysis returns to the $\sigma^2 = v$ Heston backbone. The deterministic skeleton then satisfies:
 
 | Quantity | Value |
 |---|---|
@@ -215,11 +215,11 @@ $$
 
 That is: $G$ is a Gaussian in $a$ centred near (a translation of) the OI mean $\mu_q$, with width $\tau(v)$ that mixes the OI spread $\sigma_q$ and the implied-vol scale $\sqrt{v\,T_{\mathrm{eff}}}$ in quadrature, modulated by the $1/S = e^{-a}$ factor that comes from the per-share normalisation of $\Gamma_{\mathrm{BS}}$. Verified symbolically in `notebooks/closed_form_ell1_derivation.py` (sympy, 30 s wall-clock).
 
-**Vanishing $z$-channel.** $G$ in (15a) does not depend on $z$ — the OI grid is exogenous to the slow trend variable. Therefore $G_z = 0$, and the Jacobian (3) loses its $(1, 3)$ entry. **This does *not* eliminate the Hopf** — the leverage channel $\gamma z$ in $\dot u$ keeps the $(2,3)$ entry alive, so cross-coupling persists through the variance row.
+**Vanishing $\chi$-channel.** $G$ in (15a) does not depend on $\chi$ — the OI grid is exogenous to the slow trend variable. Therefore $G_\chi = 0$, and the Jacobian (3) loses its $(1, 3)$ entry. **This does *not* eliminate the Hopf** — the leverage channel $\gamma \chi$ in $\dot u$ keeps the $(2,3)$ entry alive, so cross-coupling persists through the variance row.
 
 #### 4.3.2 Closed-form Hopf threshold $\kappa^\star$
 
-With $G_z = 0$ and $\sigma^2 = v$ (whence $\partial_y\sigma^2 = 0$ and $\partial_v\sigma^2 = 1$), the Routh–Hurwitz polynomial $H(\kappa) := c_1 c_2 - c_0$ degree-collapses from cubic to **quadratic** in $\kappa$ (we write $G_y := \partial_a G$ throughout this closed-form section; identical to the $G_x$ of §2 up to the choice of deviation symbol):
+With $G_\chi = 0$ and $\sigma^2 = v$ (whence $\partial_y\sigma^2 = 0$ and $\partial_v\sigma^2 = 1$), the Routh–Hurwitz polynomial $H(\kappa) := c_1 c_2 - c_0$ degree-collapses from cubic to **quadratic** in $\kappa$ (we write $G_y := \partial_a G$ throughout this closed-form section; identical to the $G_x$ of §2 up to the choice of deviation symbol):
 
 $$
 H(\kappa) \;=\; G_y^2\,(\alpha + \kappa_v)\,\kappa^2 \;+\; \bigl(G_v\,\beta\gamma - G_y\,(\alpha + \kappa_v)^2\bigr)\,\kappa \;+\; \alpha\kappa_v(\alpha + \kappa_v) - \tfrac{1}{2}\beta\gamma. \tag{16}
@@ -251,7 +251,7 @@ g_{avv} &= \frac{T_{\mathrm{eff}}^2}{\tau^4} - \frac{2\delta T_{\mathrm{eff}}^2}
 \end{aligned}
 $$
 
-Combined with the prefactor $\mathcal{C}(v)$ via the product rule on $\log G = \log\mathcal{C}(v) + g(a, v)$ — using $h_p := -T_{\mathrm{eff}}/(2\tau^2)$, $h_{pp} := T_{\mathrm{eff}}^2/(2\tau^4)$, $h_{ppp} := -T_{\mathrm{eff}}^3/\tau^6$ for $h(v) := \log\mathcal{C}(v)$, and $L_k := h^{(k)} + g_{vv\cdots v}$ for the log-G $v$-partials — one obtains the closed-form $\{G_a, G_v, G_{aa}, G_{av}, G_{vv}, G_{aaa}, G_{aav}, G_{avv}, G_{vvv}\}$ in 18 multiply-add steps. All other partials ($G_z, G_{vz}, G_{aaz}, \ldots$) are zero.
+Combined with the prefactor $\mathcal{C}(v)$ via the product rule on $\log G = \log\mathcal{C}(v) + g(a, v)$ — using $h_p := -T_{\mathrm{eff}}/(2\tau^2)$, $h_{pp} := T_{\mathrm{eff}}^2/(2\tau^4)$, $h_{ppp} := -T_{\mathrm{eff}}^3/\tau^6$ for $h(v) := \log\mathcal{C}(v)$, and $L_k := h^{(k)} + g_{vv\cdots v}$ for the log-G $v$-partials — one obtains the closed-form $\{G_a, G_v, G_{aa}, G_{av}, G_{vv}, G_{aaa}, G_{aav}, G_{avv}, G_{vvv}\}$ in 18 multiply-add steps. All other partials ($G_\chi, G_{vz}, G_{aaz}, \ldots$) are zero.
 
 The bilinear and trilinear tensors at $\kappa^\star$ are then assembled from these partials: $B_{1,j,k} = \kappa^\star \cdot G_{\{a,v\}\{a,v\}}$ for $j, k \in \{0, 1\}$, all other $B$-entries zero (the variance and memory equations are linear); $C$ is similarly populated only on the $i = 1$ slice. Substituting into Kuznetsov 2004 eq. 3.20,
 
@@ -594,7 +594,7 @@ The diffusive limit of §6.1 assumes a short-memory (integrable, light-tailed) H
 
 ## 7. Stationary density
 
-The Fokker–Planck PDE for the joint density $\pi(S, v, z, t)$ admits no general closed-form stationary solution. We compute the stationary marginal density $\pi^\star(\log S)$ numerically by Monte-Carlo: long simulations past the mixing time, KDE on the marginal, with a long-run mean re-centring to remove the unbounded drift component (no martingale property under the physical measure). The Heston comparator is the closed-form Feller stationary density on $v$,
+The Fokker–Planck PDE for the joint density $\pi(S, v, \chi, t)$ admits no general closed-form stationary solution. We compute the stationary marginal density $\pi^\star(\log S)$ numerically by Monte-Carlo: long simulations past the mixing time, KDE on the marginal, with a long-run mean re-centring to remove the unbounded drift component (no martingale property under the physical measure). The Heston comparator is the closed-form Feller stationary density on $v$,
 
 $$
 \pi^\star_\text{Heston}(v) = \frac{(2\kappa_v / \xi^2)^a}{\Gamma(a)}\, v^{a-1}\, e^{-2\kappa_v v / \xi^2},\qquad a = \frac{2\kappa_v\theta_v}{\xi^2}, \tag{6}
@@ -784,28 +784,28 @@ Figure: `paper/figures/mckean_vlasov_propagation_chaos.pdf` (RMSE vs $n$ on log-
 Let $R_\tau := \int_0^\tau dS_s/S_s = y_\tau - y_0$ in log-deviation coordinates. The *excess entropy* of the spot process at horizon $\tau$ is
 
 $$
-E_\tau(\kappa) \;:=\; I\bigl(\mathcal{F}_{(-\infty, 0]}^y\,;\, R_\tau \,\big|\, v_0, z_0\bigr), \tag{26}
+E_\tau(\kappa) \;:=\; I\bigl(\mathcal{F}_{(-\infty, 0]}^y\,;\, R_\tau \,\big|\, v_0, \chi_0\bigr), \tag{26}
 $$
 
-the conditional mutual information between the past-spot history and the integrated future log-return, conditioned on the present non-spot state $(v_0, z_0)$. This is the natural measure of "how much past-spot information is needed to predict the next $\tau$-worth of returns, beyond what the present variance and memory state already tell us".
+the conditional mutual information between the past-spot history and the integrated future log-return, conditioned on the present non-spot state $(v_0, \chi_0)$. This is the natural measure of "how much past-spot information is needed to predict the next $\tau$-worth of returns, beyond what the present variance and memory state already tell us".
 
-The conditioning kills the contribution of past spot that has been absorbed into the present $(v_0, z_0)$ — it isolates the *direct* feedback channel from past spot to future returns mediated by the dealer-gamma drift $\kappa G(\cdot)$. At $\kappa = 0$, the SDE (1a) reduces to standard Heston: future returns are a deterministic function of $v_0$ plus integrated noise, completely independent of past spot. So $E_\tau(0) = 0$ exactly — the Markov closure. For $\kappa > 0$, $G$ depends on the current spot $S$, so past spot enters the future drift, and $E_\tau(\kappa) > 0$.
+The conditioning kills the contribution of past spot that has been absorbed into the present $(v_0, \chi_0)$ — it isolates the *direct* feedback channel from past spot to future returns mediated by the dealer-gamma drift $\kappa G(\cdot)$. At $\kappa = 0$, the SDE (1a) reduces to standard Heston: future returns are a deterministic function of $v_0$ plus integrated noise, completely independent of past spot. So $E_\tau(0) = 0$ exactly — the Markov closure. For $\kappa > 0$, $G$ depends on the current spot $S$, so past spot enters the future drift, and $E_\tau(\kappa) > 0$.
 
 For the linearised 3D OU $dx = J(\kappa) x\,dt + \Sigma\,dW$ around the equilibrium (constant-vol surrogate of §4.2, with $\Sigma = \mathrm{diag}(\sqrt{\theta_v},\,\xi\sqrt{\theta_v},\,0)$), the conditional MI admits a closed form. Let $P$ solve the Lyapunov equation $J P + P J^\top + \Sigma\Sigma^\top = 0$ (well-defined whenever $J(\kappa)$ is Hurwitz, i.e. for $\kappa \in (0, \kappa^\star)$). Then by Gaussian conditioning + the Markov property of the full 3D state:
 
 $$
-\boxed{\;E_\tau(\kappa) \;=\; \tfrac{1}{2}\,\log\!\left(1 \;+\; \frac{v_1^2 \cdot \sigma^2_{y \mid u, z}}{m_y(\tau)}\right),\;} \tag{27}
+\boxed{\;E_\tau(\kappa) \;=\; \tfrac{1}{2}\,\log\!\left(1 \;+\; \frac{v_1^2 \cdot \sigma^2_{y \mid u, \chi}}{m_y(\tau)}\right),\;} \tag{27}
 $$
 
 where
 
 $$
 v_1 := \bigl[e^{J(\kappa)\tau} - I\bigr]_{11}, \quad
-\sigma^2_{y \mid u, z} := P_{11} - P_{1,(2,3)}\, P_{(2,3),(2,3)}^{-1}\, P_{(2,3),1}, \quad
+\sigma^2_{y \mid u, \chi} := P_{11} - P_{1,(2,3)}\, P_{(2,3),(2,3)}^{-1}\, P_{(2,3),1}, \quad
 m_y(\tau) := \bigl[P - e^{J\tau} P\, e^{J^\top \tau}\bigr]_{11}.
 $$
 
-$v_1$ is the (1,1) entry of the transition operator minus identity (how much the linearised future spot depends on present spot, scalar); $\sigma^2_{y|u,z}$ is the Schur complement of $P$ — the residual variance of $y_0$ after conditioning on $(u_0, z_0)$; and $m_y(\tau)$ is the conditional variance of $R_\tau$ given the full present state, i.e. the *noise floor*. Both numerator factors vanish at $\kappa = 0$ ($v_1 = 0$ because the first row of $J(0)$ is identically zero in the constant-vol surrogate, so $e^{J(0)\tau}$ has first row $(1, 0, 0)$), recovering Markov closure.
+$v_1$ is the (1,1) entry of the transition operator minus identity (how much the linearised future spot depends on present spot, scalar); $\sigma^2_{y|u,\chi}$ is the Schur complement of $P$ — the residual variance of $y_0$ after conditioning on $(u_0, \chi_0)$; and $m_y(\tau)$ is the conditional variance of $R_\tau$ given the full present state, i.e. the *noise floor*. Both numerator factors vanish at $\kappa = 0$ ($v_1 = 0$ because the first row of $J(0)$ is identically zero in the constant-vol surrogate, so $e^{J(0)\tau}$ has first row $(1, 0, 0)$), recovering Markov closure.
 
 ### 10.2 Theorem 5 — Critical excess entropy at the Hopf boundary
 
@@ -824,11 +824,11 @@ The *global* monotonicity claim — $\partial E_\tau / \partial \kappa \geq 0$ o
 
 **(1) Markov closure.** At $\kappa = 0$ the constant-vol surrogate has Jacobian $J(0)$ with first row identically zero. Hence $J(0)^k$ has first row zero for all $k \geq 1$, so $e^{J(0)\tau}$ has first row $(1, 0, 0)$, giving $v_1 = 0$. The numerator of (27) vanishes and $E_\tau(0) = \tfrac{1}{2}\log 1 = 0$. By continuity of $v_1$ in $\kappa$ (the matrix exponential is analytic in $J$ which is analytic in $\kappa$), $\lim_{\kappa \to 0^+} E_\tau(\kappa) = 0$. $\square$
 
-**(2) Finite saturation.** As $\kappa \uparrow \kappa^\star$ the leading complex pair $\lambda_\pm(\kappa)$ has real part $\alpha(\kappa) \to 0$. The stationary covariance $P(\kappa)$ that solves the Lyapunov equation diverges in the direction of the slow-mode eigenvector (i.e., $\lVert P(\kappa) \rVert \to \infty$), with the leading divergence $\propto 1/|\alpha(\kappa)|$ in the rank-1 projection onto the eigenvector. *But this divergence is coherent across the three state components* — it lives in a 1D subspace spanned by the eigenvector $q = (q_y, q_u, q_z)$ of $\lambda_+(\kappa^\star)$. The conditional variance $\sigma^2_{y|u,z}$ — the Schur complement of the rank-1-plus-bounded $P$ — extracts the component of the diverging mode that is orthogonal to $\mathrm{span}\{e_2, e_3\}$ in the metric induced by the bounded-part of $P$. After algebra (Carlson 1986 §3 on Schur complements of low-rank perturbations of positive-definite matrices), the Schur complement remains *finite* in the limit, with explicit form $\sigma^2_{y|u,z}(\kappa^\star) = q_y^2 / (q_u^2 \beta_u + q_z^2 \beta_z)$ for some positive constants $\beta_u, \beta_z$ determined by the bounded part of $P$. The factor $v_1$ in (27) is bounded — $\lVert e^{J\tau} \rVert$ stays bounded for fixed $\tau$ when one eigenvalue's real part touches zero — and $m_y(\tau)$ likewise stays bounded. Hence $E_\tau(\kappa^\star)$ is finite. Positivity at $\kappa^\star$ is immediate from positivity at any interior point + monotonicity (proved next). $\square$
+**(2) Finite saturation.** As $\kappa \uparrow \kappa^\star$ the leading complex pair $\lambda_\pm(\kappa)$ has real part $\alpha(\kappa) \to 0$. The stationary covariance $P(\kappa)$ that solves the Lyapunov equation diverges in the direction of the slow-mode eigenvector (i.e., $\lVert P(\kappa) \rVert \to \infty$), with the leading divergence $\propto 1/|\alpha(\kappa)|$ in the rank-1 projection onto the eigenvector. *But this divergence is coherent across the three state components* — it lives in a 1D subspace spanned by the eigenvector $q = (q_y, q_u, q_\chi)$ of $\lambda_+(\kappa^\star)$. The conditional variance $\sigma^2_{y|u,\chi}$ — the Schur complement of the rank-1-plus-bounded $P$ — extracts the component of the diverging mode that is orthogonal to $\mathrm{span}\{e_2, e_3\}$ in the metric induced by the bounded-part of $P$. After algebra (Carlson 1986 §3 on Schur complements of low-rank perturbations of positive-definite matrices), the Schur complement remains *finite* in the limit, with explicit form $\sigma^2_{y|u,\chi}(\kappa^\star) = q_y^2 / (q_u^2 \beta_u + q_\chi^2 \beta_\chi)$ for some positive constants $\beta_u, \beta_\chi$ determined by the bounded part of $P$. The factor $v_1$ in (27) is bounded — $\lVert e^{J\tau} \rVert$ stays bounded for fixed $\tau$ when one eigenvalue's real part touches zero — and $m_y(\tau)$ likewise stays bounded. Hence $E_\tau(\kappa^\star)$ is finite. Positivity at $\kappa^\star$ is immediate from positivity at any interior point + monotonicity (proved next). $\square$
 
-**(3) Mean-field linear exponent.** Plug into (27) and expand $\sigma^2_{y|u,z}(\kappa^\star - \delta) = \sigma^2_{y|u,z}(\kappa^\star) - C_1 \delta + O(\delta^2)$ and similarly for $v_1, m_y(\tau)$ — each is real-analytic in $\kappa$ on the punctured neighbourhood $(\kappa^\star - \delta_0, \kappa^\star) \cup (\kappa^\star, \kappa^\star + \delta_0)$ because the Lyapunov-equation solution is analytic in the Hurwitz matrix (Bhatia 1997 §VII). The logarithm in (27) is then a smooth function of $(v_1^2 \sigma^2 / m)$, and a first-order Taylor expansion gives the linear scaling claimed. The constant $C_\tau = \tfrac{1}{2} \cdot d/d\kappa[\log(1 + v_1^2 \sigma^2 / m)]\rvert_{\kappa^\star}$ collects all derivative terms. $\square$
+**(3) Mean-field linear exponent.** Plug into (27) and expand $\sigma^2_{y|u,\chi}(\kappa^\star - \delta) = \sigma^2_{y|u,\chi}(\kappa^\star) - C_1 \delta + O(\delta^2)$ and similarly for $v_1, m_y(\tau)$ — each is real-analytic in $\kappa$ on the punctured neighbourhood $(\kappa^\star - \delta_0, \kappa^\star) \cup (\kappa^\star, \kappa^\star + \delta_0)$ because the Lyapunov-equation solution is analytic in the Hurwitz matrix (Bhatia 1997 §VII). The logarithm in (27) is then a smooth function of $(v_1^2 \sigma^2 / m)$, and a first-order Taylor expansion gives the linear scaling claimed. The constant $C_\tau = \tfrac{1}{2} \cdot d/d\kappa[\log(1 + v_1^2 \sigma^2 / m)]\rvert_{\kappa^\star}$ collects all derivative terms. $\square$
 
-**(4) Local monotonicity.** $C_\tau$ in (3) is the leading-order coefficient of the linear approach. We claim $C_\tau > 0$. The fastest-growing contribution near $\kappa^\star$ is from $\sigma^2_{y|u,z}$: the Schur complement's bounded-part denominator $q_u^2 \beta_u + q_z^2 \beta_z$ *decreases* with $\delta = \kappa^\star - \kappa$ because the bounded part of $P$ has a sub-leading $\delta$-contribution from the off-diagonal Lyapunov terms — explicitly, both $\beta_u$ and $\beta_z$ are increasing in $\alpha(\kappa) = O(\delta)$. So $\sigma^2_{y|u,z}$ *increases* as $\delta \to 0$, $v_1$ stays bounded above 0, $m_y(\tau)$ has only a sub-leading $O(\delta)$ correction, and the ratio $v_1^2 \sigma^2 / m$ is monotonically increasing in $\kappa$ on $(\kappa^\star - \delta, \kappa^\star)$. The log is monotone, so $E_\tau$ is too. The sign of the leading coefficient $C_\tau$ is positive. $\square$
+**(4) Local monotonicity.** $C_\tau$ in (3) is the leading-order coefficient of the linear approach. We claim $C_\tau > 0$. The fastest-growing contribution near $\kappa^\star$ is from $\sigma^2_{y|u,\chi}$: the Schur complement's bounded-part denominator $q_u^2 \beta_u + q_\chi^2 \beta_\chi$ *decreases* with $\delta = \kappa^\star - \kappa$ because the bounded part of $P$ has a sub-leading $\delta$-contribution from the off-diagonal Lyapunov terms — explicitly, both $\beta_u$ and $\beta_\chi$ are increasing in $\alpha(\kappa) = O(\delta)$. So $\sigma^2_{y|u,\chi}$ *increases* as $\delta \to 0$, $v_1$ stays bounded above 0, $m_y(\tau)$ has only a sub-leading $O(\delta)$ correction, and the ratio $v_1^2 \sigma^2 / m$ is monotonically increasing in $\kappa$ on $(\kappa^\star - \delta, \kappa^\star)$. The log is monotone, so $E_\tau$ is too. The sign of the leading coefficient $C_\tau$ is positive. $\square$
 
 **Honest scope.** The proof of (4) gives *local* monotonicity on a one-sided neighbourhood of $\kappa^\star$; the sign argument relies on the explicit Schur-complement asymptotics near criticality and does not propagate to the whole $(0, \kappa^\star)$ interval. Global monotonicity is checked numerically on the canonical 101-grid in §10.4 — and is *empirically true* in our regime — but a closed-form proof on the entire interval would require Routh-Hurwitz-style sign tracking of $\partial E_\tau/\partial \kappa$ as the Jacobian moves through the node-spiral transition at $\kappa_{\mathrm{NS}} \approx 0.124$, which we leave open.
 
@@ -844,15 +844,15 @@ Implementation: `src/reflexive_options/theory/info_theoretic.py`. Reproducer: `p
 | Monotone on $(10^{-4}, \kappa^\star)$? | yes | yes | yes |
 | Fitted $\hat\beta$ at boundary | $0.998$ | $0.998$ | $1.000$ |
 
-The fitted $\hat\beta \approx 1$ to 3 decimals matches the Theorem 5(3) mean-field prediction. The critical-edge enhancement ratio of $\sim 10^8$ is dominated by the small-$\kappa$ anchor; the more interpretable headline is the *saturation value itself* — $E_1(\kappa^\star) \approx 0.05$ nats per year of horizon, or roughly $7\%$ of a uniform-bin's worth of predictability beyond what $(v_0, z_0)$ encode. This is operationally meaningful: a reflexive market at the critical edge leaks $\sim 0.05$ nats of return-direction information per year through the dealer-gamma channel alone.
+The fitted $\hat\beta \approx 1$ to 3 decimals matches the Theorem 5(3) mean-field prediction. The critical-edge enhancement ratio of $\sim 10^8$ is dominated by the small-$\kappa$ anchor; the more interpretable headline is the *saturation value itself* — $E_1(\kappa^\star) \approx 0.05$ nats per year of horizon, or roughly $7\%$ of a uniform-bin's worth of predictability beyond what $(v_0, \chi_0)$ encode. This is operationally meaningful: a reflexive market at the critical edge leaks $\sim 0.05$ nats of return-direction information per year through the dealer-gamma channel alone.
 
 Figure: `paper/figures/excess_entropy_curve.pdf`. Top panel: $E_\tau(\kappa)$ vs $\kappa$ at the three τ values with the $\kappa^\star$ anchor marked; bottom panel: log-log inset showing the $(\kappa^\star - \kappa)^1$ linear approach to saturation (slope = $\beta = 1$).
 
 ### 10.5 Structural insight — why the excess entropy does NOT diverge
 
-The naive Crutchfield-Feldman intuition for second-order phase transitions ("statistical complexity diverges at criticality") *fails* in our setting, and the reason is itself structurally informative. The slow-mode collapse at the Hopf bifurcation is *coherent across $(y, u, z)$* — it lives in a 1D eigenvector subspace spanned by $q = (q_y, q_u, q_z)$ rather than in the $y$-direction alone. Conditioning $E_\tau$ on the present $(u_0, z_0)$ removes the component of past spot that flows through that *coherent* slow mode (which is the divergent one); what remains is the *orthogonal* component, which the bounded part of $P$ governs and which stays finite.
+The naive Crutchfield-Feldman intuition for second-order phase transitions ("statistical complexity diverges at criticality") *fails* in our setting, and the reason is itself structurally informative. The slow-mode collapse at the Hopf bifurcation is *coherent across $(y, u, \chi)$* — it lives in a 1D eigenvector subspace spanned by $q = (q_y, q_u, q_\chi)$ rather than in the $y$-direction alone. Conditioning $E_\tau$ on the present $(u_0, \chi_0)$ removes the component of past spot that flows through that *coherent* slow mode (which is the divergent one); what remains is the *orthogonal* component, which the bounded part of $P$ governs and which stays finite.
 
-This is a positive finding rather than a defect of the formulation. It says: the dealer-gamma channel at criticality is informative, but its information content is *capped* by the Schur complement of the bounded part of $P$ — explicitly $\sigma^2_{y|u,z}(\kappa^\star) = q_y^2 / (q_u^2 \beta_u + q_z^2 \beta_z)$. The ratio $q_y^2 / (q_u^2 + q_z^2)$ — the eigenvector's "spot-purity" at criticality — is the structural object that sets the saturation. A market whose Hopf eigenvector is mostly $(u, z)$-loaded ($q_y$ small) saturates at a small $E_\tau(\kappa^\star)$ even at criticality, whereas a market whose Hopf eigenvector is mostly $y$-loaded saturates at a large $E_\tau(\kappa^\star)$. This is a parametric prediction that ties qualitative critical behaviour to spot-vs-vol mode partition at the boundary — testable in Phase 4 once the eigenvector decomposition is calibrated from SPX data.
+This is a positive finding rather than a defect of the formulation. It says: the dealer-gamma channel at criticality is informative, but its information content is *capped* by the Schur complement of the bounded part of $P$ — explicitly $\sigma^2_{y|u,\chi}(\kappa^\star) = q_y^2 / (q_u^2 \beta_u + q_\chi^2 \beta_\chi)$. The ratio $q_y^2 / (q_u^2 + q_\chi^2)$ — the eigenvector's "spot-purity" at criticality — is the structural object that sets the saturation. A market whose Hopf eigenvector is mostly $(u, \chi)$-loaded ($q_y$ small) saturates at a small $E_\tau(\kappa^\star)$ even at criticality, whereas a market whose Hopf eigenvector is mostly $y$-loaded saturates at a large $E_\tau(\kappa^\star)$. This is a parametric prediction that ties qualitative critical behaviour to spot-vs-vol mode partition at the boundary — testable in Phase 4 once the eigenvector decomposition is calibrated from SPX data.
 
 ### 10.6 Phase-4 testable prediction — Corollary to Theorem 5
 
@@ -871,7 +871,7 @@ Theorem 2 (§6) places $\kappa^\star$ relative to the Hawkes branching-ratio edg
 
 Two markets with the same $\lambda_{\max}(\kappa)$ trajectory can have very different $E_\tau$ curves if their noise structures differ. The two theorems are therefore complementary diagnostics: the spectral condition $\lambda_{\max}(\kappa)$ measures *how close to the Hopf boundary the system is*, while $E_\tau$ measures *how much past-spot information the system actually leaks through the dealer-gamma channel*.
 
-Relation to the Crutchfield "complexity at criticality" literature (Crutchfield-Feldman 2003 *Chaos*, Crutchfield 2012 *Nat Phys*): for many lattice models the statistical complexity $C_\mu$ — the entropy of causal states — *diverges* at second-order critical points. Our finding $E_\tau(\kappa^\star) < \infty$ is *not* a contradiction: $E_\tau$ is a *conditional* mutual information that subtracts off the contribution of the present non-spot state, which is precisely the projection onto the coherent slow mode that would have produced the divergence. An unconditional excess-entropy proxy on the spot path alone *would* diverge at $\kappa^\star$ (it would inherit the $1/|\alpha(\kappa)|$ blowup of the stationary variance of the slow mode). The conditional formulation is the natural information-theoretic anchor for the dealer-gamma channel because it isolates the feedback signal from the non-feedback common-mode noise. This is in line with the more recent Lizier-Prokopenko-Zomaya (2012) "active information storage" framework, where the relevant question is the predictive information beyond a fixed-history baseline — exactly the role $(v_0, z_0)$ plays here.
+Relation to the Crutchfield "complexity at criticality" literature (Crutchfield-Feldman 2003 *Chaos*, Crutchfield 2012 *Nat Phys*): for many lattice models the statistical complexity $C_\mu$ — the entropy of causal states — *diverges* at second-order critical points. Our finding $E_\tau(\kappa^\star) < \infty$ is *not* a contradiction: $E_\tau$ is a *conditional* mutual information that subtracts off the contribution of the present non-spot state, which is precisely the projection onto the coherent slow mode that would have produced the divergence. An unconditional excess-entropy proxy on the spot path alone *would* diverge at $\kappa^\star$ (it would inherit the $1/|\alpha(\kappa)|$ blowup of the stationary variance of the slow mode). The conditional formulation is the natural information-theoretic anchor for the dealer-gamma channel because it isolates the feedback signal from the non-feedback common-mode noise. This is in line with the more recent Lizier-Prokopenko-Zomaya (2012) "active information storage" framework, where the relevant question is the predictive information beyond a fixed-history baseline — exactly the role $(v_0, \chi_0)$ plays here.
 
 ---
 

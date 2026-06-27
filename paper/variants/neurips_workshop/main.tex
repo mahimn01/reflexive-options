@@ -34,7 +34,7 @@ Dealer-Gamma Feedback and a Pre-Registered Evaluation Framework}
 \maketitle
 
 \begin{abstract}
-We introduce a 3D reflexive stochastic-volatility SDE $(S_t, v_t, z_t)$
+We introduce a 3D reflexive stochastic-volatility SDE $(S_t, v_t, \chi_t)$
 coupling the spot to its own option market via a
 G\^arleanu--Pedersen--Poteshman dealer-gamma drift, prove a Hopf
 bifurcation theorem with closed-form first Lyapunov coefficient $\ell_1$
@@ -87,8 +87,8 @@ jin2025diffusion,cohenreisingerwang}, evaluators that discriminate
 agent across an environmental sweep---with pre-committed multiple-testing
 corrections---are scarce. The closed-form $\kappa^\star$ and $\ell_1$
 pin down where dealer-gamma feedback flips a stable Heston regime into
-an attracting limit cycle. \citet{halperin2025marketron} share the
-model-structural axis but do not perform the bifurcation analysis;
+an attracting limit cycle. \citet{halperin2025marketron} is the
+nearest such model but uses a latent stochastic memory and no bifurcation analysis;
 \citet{dai2025gamma} share the dealer-gamma axis but produce only a
 saddle-node onset; \citet{hesuttergonon2025} share the
 RL-with-environmental-sweep idea but train separate agents per grid
@@ -97,12 +97,12 @@ point. Full preprint with proofs and appendix A on arXiv [anonymous].
 \section{The reflexive model}
 \label{sec:model}
 
-Let $S_t$ be the spot, $v_t$ the variance, and $z_t$ a memory variable. The
+Let $S_t$ be the spot, $v_t$ the variance, and $\chi_t$ a memory variable. The
 reflexive system is
 \begin{align}
-\frac{dS_t}{S_t} &= \bigl(\mu + \kappa\, G(S_t, z_t, v_t)\bigr)\, dt + \sigma(S_t, v_t)\, dW^S_t, \\
-dv_t &= \bigl(\kappa_v(\theta_v - v_t) + \gamma\, z_t\bigr)\, dt + \xi \sqrt{v_t}\, dW^v_t, \\
-dz_t &= \bigl(-\alpha\, z_t + \beta\, \log(S_t / S_0)\bigr)\, dt,
+\frac{dS_t}{S_t} &= \bigl(\mu + \kappa\, G(S_t, \chi_t, v_t)\bigr)\, dt + \sigma(S_t, v_t)\, dW^S_t, \\
+dv_t &= \bigl(\kappa_v(\theta_v - v_t) + \gamma\, \chi_t\bigr)\, dt + \xi \sqrt{v_t}\, dW^v_t, \\
+d\chi_t &= \bigl(-\alpha\, \chi_t + \beta\, \log(S_t / S_0)\bigr)\, dt,
 \end{align}
 with $d\langle W^S, W^v\rangle = \rho\, dt$, reflexive coupling
 $\kappa \geq 0$, leverage strength $\gamma \geq 0$, memory decay
@@ -111,12 +111,12 @@ via the GPP demand-pressure mapping. At $\kappa = \gamma = 0$ the system
 collapses to time-dependent Heston \citep{heston1993} (verified in
 \texttt{tests/test\_simulator.py}).
 
-\paragraph{Why three states.} A 2D reduction (drop $z_t$ and $\gamma z$)
+\paragraph{Why three states.} A 2D reduction (drop $\chi_t$ and $\gamma \chi$)
 has Jacobian
 $J_{2D} = \bigl(\begin{smallmatrix} a(\kappa) & b(\kappa) \\ 0 & -\kappa_v\end{smallmatrix}\bigr)$,
 upper triangular with real eigenvalues $\{a(\kappa), -\kappa_v\}$: only
 saddle-node bifurcations are admissible. To Hopf, the feedback must flow
-in both directions, which the leverage channel $\gamma z$ together with
+in both directions, which the leverage channel $\gamma \chi$ together with
 the auxiliary memory equation supplies. This is the structural reason
 \citet{dai2025gamma} get a saddle-node onset where we get a Hopf.
 
@@ -124,7 +124,7 @@ the auxiliary memory equation supplies. This is the structural reason
 \label{sec:hopf}
 
 Linearise the deterministic skeleton at the equilibrium
-$(S^\star, \theta_v, z^\star)$, in deviation variables $(y, u, z)$. The
+$(S^\star, \theta_v, \chi^\star)$, in deviation variables $(y, u, \chi)$. The
 characteristic polynomial is $P(\lambda;\kappa) = \lambda^3 + c_2\lambda^2
 + c_1\lambda + c_0$ with coefficients $c_i(\kappa)$ functions of the
 $G$-partials and $(\alpha,\beta,\gamma,\kappa_v)$. Liu's criterion
@@ -137,7 +137,7 @@ $\lambda_\pm = \pm i\omega^\star$, $\omega^\star = \sqrt{c_1(\kappa^\star)}$.
 \label{thm:hopf}
 Under regularity (A1) $G,\sigma^2 \in C^3$ with $\sigma^2$ bounded below;
 (A2) locally unique equilibrium with non-degenerate linearisation;
-(A3)~$\kappa\mapsto(a,G_z,G_v)$ in $C^3$;
+(A3)~$\kappa\mapsto(a,G_\chi,G_v)$ in $C^3$;
 (A4) $\kappa^\star\in(0,\kappa_{\max})$ satisfying the Liu criterion with
 $\omega^\star>0$; (A5) $\ell_1(\kappa^\star)\neq 0$:
 the equilibrium undergoes a Hopf bifurcation at $\kappa = \kappa^\star$.
@@ -233,7 +233,7 @@ deferred to the empirical dealer-gamma test (amendment~A9).
 
 We sweep $\kappa\in[0,2]$ on a 401-point grid for each of
 $31\times 21\times 4 = 2{,}604$ cells in $(\xi,\rho,\sigma_v)$ at the
-representative regime $\{G_x,G_v,G_z\}=\{0.5,-0.5,-0.5\}$, $\alpha=0.5$,
+representative regime $\{G_x,G_v,G_\chi\}=\{0.5,-0.5,-0.5\}$, $\alpha=0.5$,
 $\beta=1$, $\gamma=0.5$, $\kappa_v=2$ (constant-vol surrogate). The pair
 $(\xi,\rho)$ enters via the leading shear correction $a_{\mathrm{eff}}(\kappa)=
 a(\kappa)+\tfrac{1}{2}\xi^2\rho G_v$, an
@@ -326,7 +326,7 @@ on synthetic ground truth---only the empirical SPX target is missing.''
 
 \citet{halperin2025marketron} is a different mechanism: their memory
 carrier $y$ enters both drifts non-linearly through a potential $V_M(x)$,
-while our $z$ enters only the variance drift via $\gamma z$, and our
+while our $\chi$ enters only the variance drift via $\gamma \chi$, and our
 $\kappa=\gamma=0$ collapse is standard Heston while Marketron's is not.
 A 5D $(\kappa,\gamma,T_{\mathrm{eff}},\mu_q,\sigma_q)$ mechanism
 decomposition gives an all-cell, out-of-sample shape-feature sign-agreement

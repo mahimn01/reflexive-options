@@ -50,7 +50,7 @@ through a dealer-gamma feedback channel, derived from the open-interest
 grid via a G\^arleanu--Pedersen--Poteshman \citep{garleanu2009demand}
 demand-pressure mapping. The model state is three-dimensional---spot
 $S_t$, instantaneous variance $v_t$, and a low-pass-filtered log-spot
-memory variable $z_t$---and reduces to standard time-dependent Heston
+memory variable $\chi_t$---and reduces to standard time-dependent Heston
 \citep{heston1993} at zero coupling. We synthesise three previously
 separate ingredients: (i) a continuous-time SV backbone with explicit
 dealer-gamma drift; (ii) a formal Hopf bifurcation calculus on the
@@ -129,11 +129,11 @@ quantifies it should be evaluated against historical surface dynamics.
 
 We contribute the following.
 \begin{itemize}
-\item A 3D reflexive SV simulator $(S_t, v_t, z_t)$ with explicit
+\item A 3D reflexive SV simulator $(S_t, v_t, \chi_t)$ with explicit
 dealer-gamma feedback derived from the option open-interest grid via the
 \citet{garleanu2009demand} demand-pressure mapping. The variance backbone
 is Heston \citep{heston1993}; the memory equation
-$\dot z = -\alpha z + \beta \log(S/S_0)$ closes the leverage feedback
+$\dot \chi = -\alpha \chi + \beta \log(S/S_0)$ closes the leverage feedback
 channel that the 2D reduction lacks.
 \item A Hopf bifurcation theorem (Theorem~\ref{thm:hopf}) for the
 deterministic skeleton at $\kappa^\star$ given by Liu's criterion, with
@@ -152,8 +152,10 @@ OpenTimestamps Bitcoin-anchored proof, in the spirit of
 \end{itemize}
 
 \paragraph{Closest precedents.} \citet{halperin2025marketron} (Marketron)
-share the model-structural axis but do not perform the bifurcation
-analysis. \citet{dai2025gamma} share the dealer-gamma axis but produce a
+is the nearest continuous-time, options-aware model with a memory channel,
+but its memory is a latent stochastic factor coupled through a nonlinear
+potential, ours is a deterministic price filter, and it carries no
+bifurcation analysis. \citet{dai2025gamma} share the dealer-gamma axis but produce a
 saddle-node onset. \citet{hesuttergonon2025} (NeurIPS 2025) share the
 RL-with-environmental-sweep idea but train separate agents per grid point
 rather than reporting the slope at an anchor. The continuous-time HAM-Hopf
@@ -169,12 +171,12 @@ foundations are
 \label{sec:model}
 
 Let $S_t$ be the underlying spot price, $v_t$ the instantaneous variance,
-and $z_t$ a memory variable encoding low-pass-filtered price history.
+and $\chi_t$ a memory variable encoding low-pass-filtered price history.
 The reflexive system is
 \begin{align}
-\frac{dS_t}{S_t} &= \bigl(\mu + \kappa\, G(S_t, z_t, v_t)\bigr)\, dt + \sigma(S_t, v_t)\, dW^S_t, \label{eq:reflexive-S}\\
-dv_t &= \bigl(\kappa_v(\theta_v - v_t) + \gamma\, z_t\bigr)\, dt + \xi \sqrt{v_t}\, dW^v_t, \label{eq:reflexive-v}\\
-dz_t &= \bigl(-\alpha\, z_t + \beta\, \log(S_t / S_0)\bigr)\, dt, \label{eq:reflexive-z}
+\frac{dS_t}{S_t} &= \bigl(\mu + \kappa\, G(S_t, \chi_t, v_t)\bigr)\, dt + \sigma(S_t, v_t)\, dW^S_t, \label{eq:reflexive-S}\\
+dv_t &= \bigl(\kappa_v(\theta_v - v_t) + \gamma\, \chi_t\bigr)\, dt + \xi \sqrt{v_t}\, dW^v_t, \label{eq:reflexive-v}\\
+d\chi_t &= \bigl(-\alpha\, \chi_t + \beta\, \log(S_t / S_0)\bigr)\, dt, \label{eq:reflexive-z}
 \end{align}
 with $d\langle W^S, W^v\rangle = \rho\, dt$, reflexive coupling
 $\kappa \geq 0$, leverage strength $\gamma \geq 0$, memory decay
@@ -189,16 +191,17 @@ following the SqueezeMetrics dealer-net convention
 to standard Heston \citep{heston1993} (verified numerically). For variance
 we use the full-truncation Euler scheme of \citet{lordkoekkoekvandijk2010}.
 
-\paragraph{Why three states.} A 2D specification (drop $z_t$ and the
-$\gamma z$ term) has a Jacobian
+\paragraph{Why three states.} A 2D specification (drop $\chi_t$ and the
+$\gamma \chi$ term) has a Jacobian
 $J_{2D}=\bigl(\begin{smallmatrix}a(\kappa)&b(\kappa)\\0&-\kappa_v\end{smallmatrix}\bigr)$,
 upper triangular with real eigenvalues: only saddle-node /
 transcritical bifurcations are admissible. To Hopf, the feedback must flow
-in both directions; the leverage channel $\gamma z$ together with the
+in both directions; the leverage channel $\gamma \chi$ together with the
 auxiliary memory equation \eqref{eq:reflexive-z} is the minimal structural
-modification that supplies it---structurally analogous to the memory
-variable in Marketron \citep{halperin2025marketron} though with very
-different mechanistic content.
+modification that supplies it. Here $\chi$ is a deterministic moving
+average of log-price, distinct from the latent stochastic memory of
+Marketron \citep{halperin2025marketron}, whose memory carries its own
+Brownian motion through a nonlinear potential.
 
 \section{Hopf bifurcation theorem and closed-form \texorpdfstring{$\ell_1$}{ell-1}}
 \label{sec:hopf}
@@ -207,15 +210,15 @@ different mechanistic content.
 \label{sec:hopf-jac}
 
 Drop the Brownian terms and work in log-deviation variables
-$(y, u, z) = (\log(S/S^\star), v - \theta_v, z - z^\star)$ around the
-equilibrium $(S^\star, \theta_v, z^\star)$ defined by
+$(y, u, \chi) = (\log(S/S^\star), v - \theta_v, \chi - \chi^\star)$ around the
+equilibrium $(S^\star, \theta_v, \chi^\star)$ defined by
 \begin{equation}
-\mu - \tfrac{1}{2}\sigma^2(S^\star, \theta_v) + \kappa\, G(S^\star, z^\star, \theta_v) = 0, \quad z^\star = \tfrac{\beta}{\alpha}\log(S^\star/S_0).
+\mu - \tfrac{1}{2}\sigma^2(S^\star, \theta_v) + \kappa\, G(S^\star, \chi^\star, \theta_v) = 0, \quad \chi^\star = \tfrac{\beta}{\alpha}\log(S^\star/S_0).
 \end{equation}
 The deterministic skeleton becomes $\dot{\bm{x}} = J(\kappa)\bm{x}$ with
 \begin{equation}
 J(\kappa) = \begin{pmatrix}
-a(\kappa) & b(\kappa) & \kappa\, G_z \\
+a(\kappa) & b(\kappa) & \kappa\, G_\chi \\
 0 & -\kappa_v & \gamma \\
 \beta & 0 & -\alpha
 \end{pmatrix},
@@ -226,7 +229,7 @@ $b(\kappa) = \kappa G_v - \tfrac{1}{2}\partial_v\sigma^2$. The
 characteristic polynomial is
 $P(\lambda;\kappa) = \lambda^3 + c_2\lambda^2 + c_1\lambda + c_0$ with
 $c_2 = -a + \kappa_v + \alpha$, $c_1 = -a\kappa_v - a\alpha + \kappa_v\alpha
-- \kappa G_z\beta$, $c_0 = -a\kappa_v\alpha - \beta(\kappa G_z\kappa_v + b\gamma)$.
+- \kappa G_\chi\beta$, $c_0 = -a\kappa_v\alpha - \beta(\kappa G_\chi\kappa_v + b\gamma)$.
 A 3D system Hopfs iff (Liu's criterion):
 \begin{equation}
 c_2 > 0,\ c_0 > 0,\ H(\kappa) := c_1 c_2 - c_0 = 0,\ H'(\kappa) \neq 0.
@@ -250,7 +253,7 @@ constant;
 (A2) a locally unique equilibrium for every
 $\kappa \in [0, \kappa_{\max}]$ with non-degenerate linearisation
 (multiple equilibria may exist globally; analysis is local);
-(A3) $\kappa \mapsto (a(\kappa), G_z, G_v)$ in $C^3$;
+(A3) $\kappa \mapsto (a(\kappa), G_\chi, G_v)$ in $C^3$;
 (A4) there exists $\kappa^\star \in (0, \kappa_{\max})$ satisfying
 \eqref{eq:hopf-condition} with $\omega^\star := \sqrt{c_1(\kappa^\star)} > 0$;
 (A5) $\ell_1(\kappa^\star) \neq 0$ \citep[eq.~3.20]{kuznetsov2004}.
@@ -277,7 +280,7 @@ yield (1)--(3).
 \end{proof}
 
 \paragraph{Numerical anchor.} For
-$\{G_x, G_v, G_z\}{=}\{0.5,{-}0.5,{-}0.5\}$, $\alpha{=}0.5$/yr,
+$\{G_x, G_v, G_\chi\}{=}\{0.5,{-}0.5,{-}0.5\}$, $\alpha{=}0.5$/yr,
 $\beta{=}1$, $\gamma{=}0.5$, $\kappa_v{=}2$/yr (constant-vol surrogate):
 $\kappa^\star {=} 0.8964$, $\omega^\star {=} 0.5724$~rad/yr,
 $\lambda_3 {=} -2.052$, $\ell_1 {=} -2.53\times 10^{-2}$ (supercritical).
@@ -301,7 +304,7 @@ G(a, v) \;=\; \mathcal{C}(v)\cdot e^{-a}\cdot \exp\!\bigl(-\tfrac{(a - m(v))^2}{
 with $\mathcal{C}(v) = \kappa_u e^{-q_{\mathrm{div}}T_{\mathrm{eff}}}/\sqrt{2\pi\tau^2(v)}$,
 $\tau^2(v) = \sigma_q^2 + v\,T_{\mathrm{eff}}$,
 $m(v) = \mu_q - (r - q_{\mathrm{div}} + \tfrac{1}{2}v)T_{\mathrm{eff}}$.
-With $G_z = 0$ and $\sigma^2 = v$, $H(\kappa) = c_1 c_2 - c_0$
+With $G_\chi = 0$ and $\sigma^2 = v$, $H(\kappa) = c_1 c_2 - c_0$
 degree-collapses from cubic to quadratic; writing $A = \alpha + \kappa_v$,
 $M = \alpha\kappa_v$, $L = \beta\gamma$, the Hopf threshold is
 \begin{equation}
@@ -411,9 +414,9 @@ gives $\bar G_n \to \bar G_\infty$ \citep[Ch.~1]{sznitman1991} with $\sup_{t
 \paragraph{4D extended Jacobian.} The linearised MV system acquires a
 fourth state $g(t) := \bar G_\infty(t) - G^\star$ with bandwidth
 $\theta_G$; the spot equation's instantaneous feedback $\kappa(G_y y +
-G_v u + G_z z)$ is REPLACED by $\kappa g$:
+G_v u + G_\chi \chi)$ is REPLACED by $\kappa g$:
 \begin{equation}
-J_{\mathrm{MV}}(\kappa, \theta_G) = \begin{pmatrix} -\tfrac12\sigma_y^2 & -\tfrac12\sigma_v^2 & 0 & \kappa \\ 0 & -\kappa_v & \gamma & 0 \\ \beta & 0 & -\alpha & 0 \\ \theta_G G_y & \theta_G G_v & \theta_G G_z & -\theta_G \end{pmatrix}.
+J_{\mathrm{MV}}(\kappa, \theta_G) = \begin{pmatrix} -\tfrac12\sigma_y^2 & -\tfrac12\sigma_v^2 & 0 & \kappa \\ 0 & -\kappa_v & \gamma & 0 \\ \beta & 0 & -\alpha & 0 \\ \theta_G G_y & \theta_G G_v & \theta_G G_\chi & -\theta_G \end{pmatrix}.
 \label{eq:mv-jacobian}
 \end{equation}
 A Hopf bifurcation occurs at the smallest $\kappa > 0$ satisfying the
@@ -431,7 +434,7 @@ Let $\kappa^\star_{\mathrm{MV}}(\theta_G) := \inf\{\kappa > 0 : \max_i
 \item (Instantaneous-hedging recovery.) $\lim_{\theta_G \to \infty}
 \kappa^\star_{\mathrm{MV}}(\theta_G) = \kappa^\star_{\mathrm{single}}$.
 \item (Regime-dependent sign.) At the canonical short-gamma regime
-$(G_y, G_v, G_z, \alpha, \beta, \gamma, \kappa_v) = (\tfrac12, -\tfrac12,
+$(G_y, G_v, G_\chi, \alpha, \beta, \gamma, \kappa_v) = (\tfrac12, -\tfrac12,
 -\tfrac12, \tfrac12, 1, \tfrac12, 2)$ with $\sigma_y^2 = \sigma_v^2 = 0$,
 \begin{equation}
 \kappa^\star_{\mathrm{MV}}(\theta_G) = \frac{50\theta_G^2 + 143\theta_G + 105 - (2\theta_G + 5)\sqrt{385\theta_G^2 + 810\theta_G + 441}}{12\theta_G(\theta_G + 1)},
@@ -761,8 +764,8 @@ acceptance conditions are satisfied.}
 
 The reflexive simulator and the Marketron quasi-particle SDE
 \citep{halperin2025marketron} are not the same mechanism: in our model
-the memory carrier is the low-pass-filtered log-price $z$ entering only
-the variance drift via $\gamma z$; in Marketron it is the unobservable $y$
+the memory carrier is the low-pass-filtered log-price $\chi$ entering only
+the variance drift via $\gamma \chi$; in Marketron it is the unobservable $y$
 entering both drifts non-linearly through a potential $V_M(x)$. Even at
 zero coupling our model collapses to standard Heston while Marketron does
 not. We instead report mechanism decomposition: a 5D coarse-grid tuning
@@ -817,7 +820,7 @@ $4/8$ restricted-subset reporting supersedes it.
 \section{Conclusions and future work}
 \label{sec:conclusions}
 
-We have introduced a 3D reflexive SV simulator $(S_t, v_t, z_t)$ with
+We have introduced a 3D reflexive SV simulator $(S_t, v_t, \chi_t)$ with
 explicit dealer-gamma drift, proved a Hopf bifurcation theorem with
 closed-form first Lyapunov coefficient $\ell_1$ and Hopf threshold
 $\kappa^\star$ for log-normal open-interest in moneyness, computed a
