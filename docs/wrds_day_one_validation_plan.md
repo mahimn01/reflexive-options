@@ -1,5 +1,11 @@
 # WRDS day-one validation plan
 
+**Timing (from UofT WRDS rep, 2026-07-03).** Masters accounts are locked until September;
+the summer restriction lifts in September and **all accounts expire September 30** (renewal
+window: early October). Therefore: run this day-one session in the **first week of
+September**, and the full extraction (step 8) immediately after — once the data is local,
+account-renewal friction cannot touch the pipeline.
+
 **Purpose.** The first WRDS session validates *access, coverage, and field mapping* against the
 locked pre-registration — it does **not** run any pre-registered test. Everything here is
 designed so that the confirmatory H1′/H4 pipeline runs exactly once, later, on a fully
