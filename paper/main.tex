@@ -9,9 +9,8 @@
 \usepackage[round]{natbib}
 \bibliographystyle{plainnat}
 
-% ORCID command shim — if you have the `orcidlink` package, replace this line with
-% `\usepackage{orcidlink}` and use `\orcidlink{XXXX-XXXX-XXXX-XXXX}` for the icon-link.
-\providecommand{\orcid}[1]{\\\texttt{ORCID: #1}}
+% ORCID command shim — renders a hyperlinked ORCID line in the author block.
+\providecommand{\orcid}[1]{\\\href{https://orcid.org/#1}{\texttt{ORCID: #1}}}
 
 \newtheorem{theorem}{Theorem}
 \newtheorem{assumption}{Assumption}
@@ -21,8 +20,7 @@
 A Stochastic-Volatility Model with Dealer-Gamma Feedback, \\
 Hopf Bifurcation Calculus, and a Pre-Registered Evaluation Framework}
 
-\author{Mahimn Patel\\Department of Economics, University of Toronto\\\texttt{mahimn.patel@mail.utoronto.ca}}
-% \orcid{XXXX-XXXX-XXXX-XXXX}  % register at orcid.org/register, then uncomment
+\author{Mahimn Patel\\Department of Economics, University of Toronto\\\texttt{mahimn.patel@mail.utoronto.ca}\orcid{0009-0002-2422-9005}}
 
 \date{July 2026}
 

@@ -1,7 +1,7 @@
 Title: Reflexivity in Options Markets: A Stochastic-Volatility Model with Dealer-Gamma Feedback, Hopf Bifurcation Calculus, and a Pre-Registered Evaluation Framework
 
-Authors: Mahimn Patel (Department of Economics, University of Toronto; mahimn.patel.k@gmail.com)
-ORCID: <FILL_IN_AT_SUBMISSION via orcid.org/register, see paper/orcid_setup.md>
+Authors: Mahimn Patel (Department of Economics, University of Toronto; mahimn.patel@mail.utoronto.ca)
+ORCID: 0009-0002-2422-9005
 
 Subjects:
   Primary:    q-fin.MF

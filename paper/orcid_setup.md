@@ -1,5 +1,7 @@
 # ORCID registration walkthrough
 
+> **DONE (2026-07-03).** iD: `0009-0002-2422-9005` — wired into `main.tex` author block and `arxiv_metadata.txt`. This walkthrough is retained for reference.
+
 ## What ORCID is
 
 A unique persistent identifier for researchers (16 digits in four groups of four), required by most journals and by arXiv for new author submissions in 2026 and beyond — disambiguates "Mahimn Patel" from any other researcher with the same name across the literature.
