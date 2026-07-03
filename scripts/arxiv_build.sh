@@ -1,8 +1,8 @@
 #!/bin/sh
 # arxiv_build.sh — build a reproducible arXiv source tarball for the
-# "Reflexivity in Options Markets" paper (v0.3.9).
+# "Reflexivity in Options Markets" paper (v0.3.10).
 #
-# Output: dist/arxiv_v0.3.9.tar.gz
+# Output: dist/arxiv_v0.3.10.tar.gz
 # Log:    dist/arxiv_build.log
 #
 # Idempotent: same source -> bit-identical tarball
@@ -23,9 +23,9 @@ DIST_DIR="$REPO_ROOT/dist"
 BUILD_DIR="$DIST_DIR/arxiv_build"
 EXTRACT_TEST_DIR="$DIST_DIR/arxiv_extract_test"
 LOG="$DIST_DIR/arxiv_build.log"
-VERSION="v0.3.9"
+VERSION="v0.3.10"
 TARBALL="$DIST_DIR/arxiv_${VERSION}.tar.gz"
-EXPECTED_PAGES=38
+EXPECTED_PAGES=39
 MAX_TARBALL_BYTES=$((5 * 1024 * 1024))   # 5 MB hard ceiling
 PDF_TOLERANCE_BYTES=8192                  # 8 KB drift tolerance (build-timestamp)
 

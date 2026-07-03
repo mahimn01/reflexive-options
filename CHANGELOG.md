@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.10] - 2026-07-03
+
+### Changed — reviewer-response corrections + full readability/comprehension overhaul
+
+The arc from Andrey Itkin's review (2026-06-02) through the pre-submission
+polish. The paper is now the ICAIF/arXiv submission candidate.
+
+- **Marketron correction + memory-variable rename (Itkin review).** The memory
+  variable z renamed z → χ throughout paper, theory.md, and both variants
+  (their z is a market signal, their memory is y with its own Brownian motion);
+  the "structurally analogous / closest model-structure precedent" claims
+  replaced with an honest contrast (their memory = latent stochastic factor via
+  the potential V_M; ours = deterministic price filter). §7 now states χ's full
+  correlation with spot as a design property and that κ★ lives in the drift.
+- **Three prose passes** (abstract de-LLM rewrite; 10-finding audit round;
+  full-paper sentence-level pass, 19 spans): plain register, em-dashes 66 → 38,
+  no CAPS emphasis, no filler. Verified by an adversarial 3-lens fidelity check;
+  4 self-introduced claim-strength drifts caught and reverted; a stray
+  uncommitted h4_detector_power.pdf with divergent plotted data reverted to the
+  repro-pinned version.
+- **Fresh-eyes comprehension pass** (5 zero-context readers, 79 findings; all
+  sections judged substantive): fixed two foundational gaps — the dealer-gamma
+  functional is now G(S, χ, v) with trend-dependent open interest q(χ), and the
+  equilibrium gains the missing variance stationarity condition + S₀ = S★
+  normalisation. MV particle SDE corrected to relax toward g(S, χ, v) (sympy-
+  verified load-bearing). Hawkes–SV theorem gains a Perron–Frobenius proof
+  sketch. Hartman–Grobman misuse → centre manifold + normal form. Defined:
+  κ_NS, κ_u, τ_G, σ_v := ∂_vσ², m̂, r/q_div; expanded IAAFT/TOST/RR25/CSD/DOW;
+  "Phase 4" and the amendment ledger (A1–A11) introduced for outside readers;
+  "canonical log-normal-OI specification" disambiguated from the dimensionless
+  regime; κ-scale reconciliation note added. Foundational fixes ported to both
+  variants.
+- **Author email** → mahimn.patel@mail.utoronto.ca; date → July 2026 (39 pp).
+- **arXiv build** bumped to v0.3.10 / 39 pp; tarball verified via simulated
+  arXiv build (sha256 4ef6187c…).
+- **New:** `docs/wrds_day_one_validation_plan.md` — the locked-spec WRDS/
+  OptionMetrics day-one validation protocol (coverage gate through 2025-02-05
+  for the Yen CSD record, field mapping, two-date validation, disclosure log).
+
 ## [0.3.9] - 2026-06-01
 
 ### Changed — empirical-leg redesign (pre-data amendments A8–A11) + Theorem 4 reposition
