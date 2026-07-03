@@ -106,8 +106,8 @@ d\chi_t &= \bigl(-\alpha\, \chi_t + \beta\, \log(S_t / S_0)\bigr)\, dt,
 \end{align}
 with $d\langle W^S, W^v\rangle = \rho\, dt$, reflexive coupling
 $\kappa \geq 0$, leverage strength $\gamma \geq 0$, memory decay
-$\alpha > 0$, and $G$ the aggregate dealer gamma derived from the OI grid
-via the GPP demand-pressure mapping. At $\kappa = \gamma = 0$ the system
+$\alpha > 0$, and $G$ the aggregate dealer gamma computed from the OI grid
+(coupling motivated by GPP demand pressure). At $\kappa = \gamma = 0$ the system
 collapses to time-dependent Heston \citep{heston1993} (verified in
 \texttt{tests/test\_simulator.py}).
 

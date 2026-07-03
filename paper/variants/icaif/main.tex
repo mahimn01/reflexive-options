@@ -46,9 +46,9 @@ and a Pre-Registered Evaluation Framework}
 \begin{abstract}
 We study a continuous-time Heston-like stochastic-volatility model in
 which the underlying spot price is coupled to its own option market
-through a dealer-gamma feedback channel, derived from the open-interest
-grid via a G\^arleanu--Pedersen--Poteshman \citep{garleanu2009demand}
-demand-pressure mapping. The model state is three-dimensional---spot
+through a dealer-gamma feedback channel, computed from the open-interest
+grid, with the drift coupling motivated by G\^arleanu--Pedersen--Poteshman
+\citep{garleanu2009demand} demand pressure. The model state is three-dimensional---spot
 $S_t$, instantaneous variance $v_t$, and a low-pass-filtered log-spot
 memory variable $\chi_t$---and reduces to standard time-dependent Heston
 \citep{heston1993} at zero coupling. We work out the Hopf bifurcation of
@@ -128,8 +128,8 @@ quantifies it should be evaluated against historical surface dynamics.
 We contribute the following.
 \begin{itemize}
 \item A 3D reflexive SV simulator $(S_t, v_t, \chi_t)$ with explicit
-dealer-gamma feedback derived from the option open-interest grid via the
-\citet{garleanu2009demand} demand-pressure mapping. The variance backbone
+dealer-gamma feedback computed from the option open-interest grid, the
+coupling motivated by \citet{garleanu2009demand} demand pressure. The variance backbone
 is Heston \citep{heston1993}; the memory equation
 $\dot \chi = -\alpha \chi + \beta \log(S/S_0)$ closes the leverage feedback
 channel that the 2D reduction lacks.
@@ -181,11 +181,14 @@ $\kappa \geq 0$, leverage strength $\gamma \geq 0$, memory decay
 $\alpha > 0$, $\beta$ dimensionless, and $G$ the aggregate dealer-gamma
 exposure derived from the OI grid:
 \begin{equation}
-G(S, t) \;=\; \sum_{K, T} q_{K, T}\,\Gamma_{K, T}(S, t)\,\mathrm{sign}(K, T),
+G(S, \chi, v) \;=\; \sum_{K, T} q_{K, T}(\chi)\,\Gamma_{K, T}(S, v)\,\mathrm{sign}(K, T),
 \label{eq:G-aggregator}
 \end{equation}
-following the SqueezeMetrics dealer-net convention
-\citep{squeezemetrics2017}. When $\kappa = \gamma = 0$ the system collapses
+following the SqueezeMetrics dealer-net sign convention
+\citep{squeezemetrics2017}. $G$ is treated as a general $C^3$ functional
+of $(S, \chi, v)$: trend-dependent open interest $q_{K,T}(\chi)$ gives
+$G_\chi \neq 0$, while a static grid gives $G_\chi = 0$ (the closed-form
+case below). When $\kappa = \gamma = 0$ the system collapses
 to standard Heston \citep{heston1993} (verified numerically). For variance
 we use the full-truncation Euler scheme of \citet{lordkoekkoekvandijk2010}.
 
@@ -208,11 +211,14 @@ Brownian motion through a nonlinear potential.
 \label{sec:hopf-jac}
 
 Drop the Brownian terms and work in log-deviation variables
-$(y, u, \chi) = (\log(S/S^\star), v - \theta_v, \chi - \chi^\star)$ around the
-equilibrium $(S^\star, \theta_v, \chi^\star)$ defined by
+$(y, u, \chi) = (\log(S/S^\star), v - \theta_v, \chi - \chi^\star)$ around a
+locally unique equilibrium $(S^\star, v^\star, \chi^\star)$ defined by the three
+stationarity conditions
 \begin{equation}
-\mu - \tfrac{1}{2}\sigma^2(S^\star, \theta_v) + \kappa\, G(S^\star, \chi^\star, \theta_v) = 0, \quad \chi^\star = \tfrac{\beta}{\alpha}\log(S^\star/S_0).
+\mu - \tfrac{1}{2}\sigma^2(S^\star, v^\star) + \kappa\, G(S^\star, \chi^\star, v^\star) = 0, \quad \kappa_v(\theta_v - v^\star) + \gamma\chi^\star = 0, \quad \chi^\star = \tfrac{\beta}{\alpha}\log(S^\star/S_0).
 \end{equation}
+We normalise $S_0 = S^\star$ (a choice of origin for $\chi$, no loss of
+generality), giving $\chi^\star = 0$ and $v^\star = \theta_v$ exactly.
 The deterministic skeleton becomes $\dot{\bm{x}} = J(\kappa)\bm{x}$ with
 \begin{equation}
 J(\kappa) = \begin{pmatrix}
