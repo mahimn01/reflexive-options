@@ -1,14 +1,14 @@
 # reflexive-options
 
 [![release](https://img.shields.io/github/v/tag/mahimn01/reflexive-options?sort=semver&label=release)](https://github.com/mahimn01/reflexive-options/releases)
-[![tests](https://img.shields.io/badge/tests-409%20passing-brightgreen)](#quality)
-[![coverage](https://img.shields.io/badge/coverage-88.10%25-brightgreen)](#quality)
+[![tests](https://img.shields.io/badge/tests-579%20passing-brightgreen)](#quality)
+[![coverage](https://img.shields.io/badge/coverage-89.47%25-brightgreen)](#quality)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![paper](https://img.shields.io/badge/paper-PDF%20(30%20pp)-blue)](paper/main.pdf)
+[![paper](https://img.shields.io/badge/paper-PDF%20(40%20pp)-blue)](paper/main.pdf)
 
-**Reflexive options market simulator with dealer-gamma feedback, four bifurcation theorems, RL-trained agents, and a pre-registered evaluation framework.**
+**Reflexive options market simulator with dealer-gamma feedback, six bifurcation-theoretic results (four theorems, two propositions), RL-trained agents, and a pre-registered evaluation framework.**
 
-In-progress research codebase for the working paper *Reflexivity in Options Markets* (Patel, 2026). Current release: **v0.3.3** (master 30 pp + ICAIF 6 pp + NeurIPS workshop 4-body variant).
+In-progress research codebase for the working paper *Reflexivity in Options Markets* (Patel, 2026). Current release: **v0.3.11** (master 40 pp + ICAIF + NeurIPS workshop variants).
 
 ## What's here
 
@@ -28,12 +28,13 @@ A full implementation of:
 
 4. **An RL training infrastructure** (Mamba state-space + cross-attention transformer, PPO + behavioral cloning + EWC + curriculum learning) vendored from the [`mahimn01/trading-algo`](https://github.com/mahimn01/trading-algo) ATLAS module.
 
-5. **Five bifurcation-theoretic results** (synthesis of established machinery in a configuration not previously published in this combination — see `paper/related_work.md` §1 for the precedent comparison against Halperin–Itkin Marketron, Dai 2025, Brock–Hommes–Wagener, and He–Li–Zheng 2009):
+5. **Six bifurcation-theoretic results (four theorems, two propositions)** (synthesis of established machinery in a configuration not previously published in this combination — see `paper/related_work.md` §1 for the precedent comparison against Halperin–Itkin Marketron, Dai 2025, Brock–Hommes–Wagener, and He–Li–Zheng 2009):
    - **Theorem 1 (Hopf):** critical coupling $\kappa^\star$ at which endogenous limit cycles in volatility appear, with closed-form first Lyapunov coefficient $\ell_1$ for log-normal open-interest.
-   - **Theorem 2 (BT-empty):** Bogdanov-Takens locus is empty in the canonical scan window; the model is structurally Hopf-only and cannot generate excitable spike-and-recovery dynamics from its autonomous skeleton alone.
-   - **Theorem 3 (No-Hopf-wedge global stability):** in the no-Hopf wedge the autonomous skeleton is asymptotically stable on the entire physical $\kappa$-half-line $[0, \infty)$ — no codim-1 bifurcation occurs outside the Hopf region (parameter-global in $\kappa$, not state-space-global).
-   - **Theorem 4 (McKean-Vlasov correction):** $\kappa^\star_{\mathrm{MV}}/\kappa^\star_{\mathrm{single}} = \sqrt{1 + (\omega^\star \tau_G)^2}$, strictly multiplicative; single-dealer model is structurally biased toward over-predicting instability when dealer-hedging is slower than the Hopf period.
-   - **Theorem 5 (Hawkes–SV criticality correspondence):** via the Bacry-Delattre-Hoffmann-Muzy + Jaisson-Rosenbaum diffusive near-critical limit, Hardiman 2013's critical branching ratio $n \approx 1$ is the literal analogue of the *real-eigenvalue (saddle-node)* stratum of the SV drift boundary; the model's *Hopf* threshold $\kappa^\star$ is a strictly stronger, oscillatory instability beyond any scalar branching ratio — the genuinely novel "unoccupied cell." A falsifiable spectral discriminator separates the two strata on synthetic ground truth (the earlier tautological $n_{\mathrm{SV}}$ "verification" was removed in pre-data amendment A10).
+   - **Proposition 1 (BT-empty):** the Bogdanov-Takens locus is empty on the canonical scan window; the model is structurally Hopf-only there and cannot generate excitable spike-and-recovery dynamics from its autonomous skeleton alone.
+   - **Theorem 2 (No-Hopf-wedge global stability):** in the no-Hopf wedge the autonomous skeleton is asymptotically stable on the entire physical $\kappa$-half-line $[0, \infty)$ — no codim-1 bifurcation occurs outside the Hopf region (parameter-global in $\kappa$, not state-space-global).
+   - **Theorem 3 (McKean-Vlasov correction):** with $n_{\mathrm{dealers}} \to \infty$, a rational closed form for the Hopf-threshold ratio $\kappa^\star_{\mathrm{MV}}/\kappa^\star_{\mathrm{single}}$ (recovers the single-dealer threshold as $\theta_G \to \infty$; frozen-dealer limit $8/21$). The sign of the finite-$\theta_G$ correction is **regime-dependent**: $<1$ at $G_y>0$ (canonical short-gamma; single-dealer *under*-states the propensity to bifurcate) and $>1$ at $G_y<0$ (the log-normal-OI calibration; single-dealer *over*-states it).
+   - **Proposition 2 (Hawkes–SV criticality correspondence):** via the Bacry-Delattre-Hoffmann-Muzy + Jaisson-Rosenbaum diffusive near-critical limit, Hardiman 2013's critical branching ratio $n \approx 1$ is the literal analogue of the *real-eigenvalue (saddle-node)* stratum of the SV drift boundary; the model's *Hopf* threshold $\kappa^\star$ is a strictly stronger, oscillatory instability beyond any scalar branching ratio — the genuinely novel "unoccupied cell." A falsifiable spectral discriminator separates the two strata on synthetic ground truth (the earlier tautological $n_{\mathrm{SV}}$ "verification" was removed in pre-data amendment A10).
+   - **Theorem 4 (critical excess entropy):** the dealer-gamma channel's excess entropy $E_\tau(\kappa)$ saturates to a finite, strictly-positive limit at $\kappa^\star$ (linear, exponent-1 approach) and vanishes at $\kappa=0$ (Markov closure).
    - The reflexive simulator's stationary marginal density, contrasted analytically with Heston's known stationary distribution.
 
 6. **An evaluation framework** (each ingredient borrowed; combination not previously published — see `paper/related_work.md` §§2–3 for the comparison against He–Li–Zheng 2025 NeurIPS, Ning et al. 2021/2024, VolGAN, FuNVol, Subbaswamy–Saria 2022, Packer 2018):
@@ -115,12 +116,12 @@ The arXiv submission metadata (subjects, MSC codes, license, comments) lives in 
 | ATLAS vendored (Mamba + BC + EWC + RAT) | **vendored (~3,700 LOC, 8 smoke tests pass)** |
 | Gymnasium RL env + state/action/reward + curriculum | **implemented + tested** |
 | Theorem 1 (Hopf) + closed-form $\ell_1$ + symbolic ℓ_1 (Appendix A) | **derived + computed (closed-form-OI regime, §3.5): $\kappa^\star = 17.81$, $\omega^\star = 1.18$, $\ell_1 = -0.48$ (supercritical). Symbolic 7.8 KB rational verified against numerical to ~$10^{-13}$. Limit cycle past $\kappa^\star$ validated: $T = 10.561$ yr vs theory 10.977 yr (3.79%)** |
-| Theorem 2 (BT-empty, §3.8) + Bautin curve with 6 anchors | **proved (closed-form $G_v < 0$ dominance argument); 71×97 scan confirms $\kappa_{\mathrm{SN}} \leq -1.31$ everywhere** |
-| Theorem 3 (No-Hopf-wedge global stability, §3.9) | **proved: asymptotically stable on the entire physical $\kappa$-half-line $[0,\infty)$ in the no-Hopf wedge; no codim-1 bifurcation outside the Hopf region (parameter-global in $\kappa$)** |
-| Theorem 4 (McKean-Vlasov correction, §3.10) | **derived + numerically validated: propagation-of-chaos slope -0.58 (theory -0.5); MV/single ratio 1.000277 at canonical $\theta_G = 50$/yr** |
-| Theorem 5 (Hawkes–SV criticality correspondence, §3.11) | **repositioned (amendment A10): Hardiman $n\approx1$ = real-eigenvalue/saddle-node stratum; the model's Hopf is the strictly-stronger oscillatory "unoccupied cell". Falsifiable spectral discriminator (`hawkes_sv_bifurcation.py`) separates the strata with zero overlap on synthetic data. Tautological $n_{\mathrm{SV}}$ "1e-15 verification" removed** |
-| Theorem 6 (critical excess entropy, §3.12) | **derived: the dealer-gamma channel's excess entropy $E_\tau(\kappa)$ saturates to a finite, strictly-positive limit at $\kappa^\star$ with mean-field exponent $\beta=1$; vanishes at $\kappa=0$ (Markov closure)** |
-| Empirical $\|\Lambda\| \sim \|\rho\xi\|^B$ fit | **measured: $\hat B = 0.082$, 95% CI $[-0.010, 0.168]$ — refutes ELR $B = 2/3$ prediction at the trivial-equilibrium regime ($p \ll 0.01$, 13σ)** |
+| Proposition 1 (BT-empty, §3.8) + Bautin curve with 6 anchors | **proved (closed-form $G_v < 0$ dominance argument); 71×97 scan confirms $\kappa_{\mathrm{SN}} \leq -1.31$ everywhere** |
+| Theorem 2 (No-Hopf-wedge global stability, §3.9) | **proved: asymptotically stable on the entire physical $\kappa$-half-line $[0,\infty)$ in the no-Hopf wedge; no codim-1 bifurcation outside the Hopf region (parameter-global in $\kappa$)** |
+| Theorem 3 (McKean-Vlasov correction, §3.10) | **derived + validated: rational closed form for $\kappa^\star_{\mathrm{MV}}(\theta_G)$; ratio regime-dependent ($<1$ at $G_y>0$: 0.987 at $\theta_G=50$/yr; $>1$ at $G_y<0$); propagation-of-chaos slope -0.48 (theory -0.5)** |
+| Proposition 2 (Hawkes–SV criticality correspondence, §3.11) | **repositioned (amendment A10): Hardiman $n\approx1$ = real-eigenvalue/saddle-node stratum; the model's Hopf is the strictly-stronger oscillatory "unoccupied cell". Falsifiable spectral discriminator (`hawkes_sv_bifurcation.py`) separates the strata with zero overlap on synthetic data. Tautological $n_{\mathrm{SV}}$ "1e-15 verification" removed** |
+| Theorem 4 (critical excess entropy, §3.12) | **derived: the dealer-gamma channel's excess entropy $E_\tau(\kappa)$ saturates to a finite, strictly-positive limit at $\kappa^\star$ with a linear (exponent-1) approach; vanishes at $\kappa=0$ (Markov closure)** |
+| Empirical $\|\Lambda\| \sim \|\rho\xi\|^B$ fit | **measured: $\hat B = 0.082$, 95% CI $[-0.010, 0.168]$ (flat). Baxendale's large-shear $b^{2/3}$ asymptotic is not activated at the trivial $G\equiv0$ equilibrium (shear term zero) — outside its hypotheses, not a test of it** |
 | Fokker-Planck stationary density vs Heston (analytical + MC) | **derived: H_tail confirmed, H_skew confirmed; H_bimod refuted on 1D marginal, *supported* on 2D PCA-projection at $\kappa = 1.05 \kappa^\star_{\mathrm{env}}$ ($p = 0.033$)** |
 | $\kappa^\star$ robustness to OI misspecification (§3.6) | **elasticities $\eta_{\sigma_q} = -1.58$, $\eta_{\mu_q} = +703$; calibration tolerance for Phase 4: $\mu_q$ to $\pm 5$bp is binding** |
 | H1 synthetic-pipeline validation (§5.4) | **demonstrated working: SW2(κ_0) < SW2(2κ_0) < SW2(Heston) with disjoint bootstrap CIs** |
@@ -129,16 +130,16 @@ The arXiv submission metadata (subjects, MSC codes, license, comments) lives in 
 | κ-sensitivity transfer experiment (BC-trained MLP, ~15-20 min/run) | **implemented + tested** |
 | Marketron mechanism decomposition | **8/24 OOS shape-cell match (33.3%) at per-set tuned coupling; a priori long-horizon restricted subset 7/10 in-sample ($p = 0.172$)** |
 | Pre-registration document | **locked + OpenTimestamps Bitcoin-anchored proof (`paper/pre_registration.md.ots`). A1–A7 amendments closed at commit `63078f5`; no further amendments permitted post-data-load** |
-| Manuscript variants | **NeurIPS GenAI Finance Workshop + ICAIF 2026 double-blind ACM sigconf, both re-synced to v0.3.9 and compiled clean (7 pp each)** |
-| Test suite | **409 passing, 88.10% branch coverage** [^cov] |
+| Manuscript variants | **NeurIPS GenAI Finance Workshop + ICAIF 2026 double-blind ACM sigconf, both re-synced to v0.3.11 and compiled clean (7 pp each)** |
+| Test suite | **579 passing, 89.47% branch coverage** [^cov] |
 | CI (GitHub Actions) | **green on Python 3.12 / 3.13 / 3.14** |
 
-[^cov]: Coverage measured by the most recent `bash scripts/verify.sh` run (88.10% as of v0.3.3); gated at ≥ 85% in CI via `[tool.coverage.report] fail_under = 85`.
+[^cov]: Coverage measured by the most recent `bash scripts/verify.sh` run (89.47% as of v0.3.11); gated at ≥ 85% in CI via `[tool.coverage.report] fail_under = 85`.
 
-**v0.3.3 shipped** (2026-05-14) — see [`CHANGELOG.md`](CHANGELOG.md) for the full release notes. Highlights:
-- 4 theorems (Hopf + BT-empty + MV-Hopf + Hawkes-SV) with closed-form proofs / proof sketches.
+**v0.3.11 shipped** (2026-07-03) — see [`CHANGELOG.md`](CHANGELOG.md) for the full release notes. Highlights:
+- Four theorems (Hopf, No-Hopf-wedge, McKean-Vlasov, excess-entropy) + two propositions (BT-empty, Hawkes-SV), with closed-form proofs / proof sketches.
 - Closed-form symbolic $\ell_1$ as Appendix A (7.8 KB rational in 13 symbols, machine-verified).
-- Empirical $|\Lambda| \sim |\rho\xi|^B$ scaling fit ($\hat B = 0.082$, refutes ELR).
+- Empirical $|\Lambda| \sim |\rho\xi|^B$ scaling fit ($\hat B = 0.082$, flat): Baxendale's large-shear $b^{2/3}$ regime is inactive at the trivial-$G$ equilibrium (outside its hypotheses).
 - Limit cycle past $\kappa^\star$ numerically validated to 3.79%.
 - H1 synthetic pipeline demonstrated end-to-end before empirical SPX target.
 - 2D bimodality flip on $(\log S, v)$ joint PCA-projection.
@@ -155,7 +156,7 @@ If you use this software or paper, please cite:
                   A Stochastic-Volatility Model with Dealer-Gamma Feedback,
                   Hopf Bifurcation Calculus, and a Pre-Registered Evaluation Framework},
   year         = 2026,
-  version      = {v0.3.3},
+  version      = {v0.3.11},
   url          = {https://github.com/mahimn01/reflexive-options},
   note         = {Pre-registered at commit 268c061 via OpenTimestamps proof}
 }

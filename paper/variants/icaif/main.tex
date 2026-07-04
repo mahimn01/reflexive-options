@@ -24,6 +24,7 @@
 \usepackage[capitalize, nameinlink]{cleveref}
 
 \newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
 \newtheorem{assumption}{Assumption}
 
 \begin{document}
@@ -377,13 +378,13 @@ constant Routh--Hurwitz coefficient $c_0(\kappa) = -\kappa(G_y\alpha\kappa_v
 saddle-node coupling is $\kappa_{\mathrm{SN}}(\sigma_q, \gamma) =
 \tfrac{1}{2}\beta\gamma\,/\,(G_y\alpha\kappa_v + G_v\beta\gamma)$.
 
-\begin{theorem}[BT locus empty in canonical scan window]
+\begin{proposition}[BT locus empty in canonical scan window]
 \label{thm:bt-empty}
 On the $71 \times 97$ grid over $(\sigma_q, \gamma) \in [0.05, 0.40]\times
 [0.20, 5.00]$ at the canonical specification, $\kappa_{\mathrm{SN}}(\sigma_q,
 \gamma) \leq -1.31$ at every cell (range $[-68.05, -1.31]$); the
 Bogdanov--Takens locus is therefore empty in this scan window.
-\end{theorem}
+\end{proposition}
 
 \begin{proof}[Proof sketch]
 $G_v(\sigma_q) < 0$ throughout the scanned range and $|G_v\beta\gamma| >
@@ -429,7 +430,7 @@ a_1 - a_3^2 a_0 = 0$ with positivity side conditions $a_3, a_0, a_3 a_2
 - a_1 > 0$, where $a_i$ are the coefficients of $\det(\lambda I -
 J_{\mathrm{MV}}) = \lambda^4 + a_3\lambda^3 + a_2\lambda^2 + a_1\lambda + a_0$.
 
-\begin{theorem}[McKean--Vlasov Hopf threshold, corrected]
+\begin{theorem}[McKean--Vlasov Hopf threshold]
 \label{thm:mv-hopf}
 Let $\kappa^\star_{\mathrm{MV}}(\theta_G) := \inf\{\kappa > 0 : \max_i
 \mathrm{Re}\,\lambda_i(J_{\mathrm{MV}}(\kappa, \theta_G)) = 0\}$ with the
@@ -535,7 +536,7 @@ intrinsic frequency), and a \textbf{Hopf} locus (a complex pair crosses,
 $\operatorname{Re}\lambda = 0$, $\operatorname{Im}\lambda \neq 0$;
 strictly stronger, producing sustained oscillation).
 
-\begin{theorem}[Hawkes--SV criticality correspondence]
+\begin{proposition}[Hawkes--SV criticality correspondence]
 \label{thm:hawkes-sv}
 Under the diffusive near-critical limit of
 \citet{bacrydelattrehoffmannmuzy2013} and \citet{jaissonrosenbaum2015},
@@ -546,7 +547,7 @@ Hopf stratum of the same boundary is a strictly stronger, oscillatory
 instability that lies beyond any scalar branching-ratio criterion: it has
 no representation as a single real branching ratio and is the genuinely
 new ``unoccupied cell'' of the endogeneity--bifurcation correspondence.
-\end{theorem}
+\end{proposition}
 
 \noindent\emph{Position, not identity.} A scalar branching ratio
 \citep{hardiman2013,bacrymastromatteomuzy2015} can only encode a real
@@ -610,9 +611,10 @@ Khasminskii sphere-process estimates \citep{khasminskii1980,arnold1998}
 on a $6 \times 6$ $(\xi, \rho)$ grid give
 $|\Lambda(\kappa^\star)| \in [5\!\times\!10^{-2}, 9\!\times\!10^{-2}]$
 with empirical scaling exponent $\hat B = 0.082$ (95\% CI
-$[-0.010, 0.168]$); the \citet{baxendale2025} prediction $B = 2/3$
-is rejected at $p \ll 0.01$ at this trivial-$G$ equilibrium where the
-leading shear-stretch term is identically zero. Operationally,
+$[-0.010, 0.168]$); \citet{baxendale2025}'s large-shear $b^{2/3}$
+asymptotic is not activated at this trivial-$G$ equilibrium (the leading
+shear-stretch term is identically zero), so the flat $\hat B$ is the
+expected pure-$\varepsilon^2$ floor, not a test of that law. Operationally,
 $|\Lambda|\cdot\varepsilon^2 \ll 1$ at calibration-noise scale: the
 deterministic $\kappa^\star$ is the relevant threshold.
 

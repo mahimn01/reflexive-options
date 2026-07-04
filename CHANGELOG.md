@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.11] - 2026-07-03
+
+### Changed — referee-panel response (submission freeze candidate)
+
+A simulated 3-referee panel (math-finance academic, ICAIF reviewer, stochastic-analysis
+skeptic) + meta-review rated the paper substantive and correct (all three re-derived the
+core math), embarrassment-risk low once seven concrete, permanent, adversarially-checkable
+items were fixed. All applied and adversarially re-verified:
+
+- **Baxendale B=2/3 "refutation" retracted.** The Lyapunov-shift scan claimed to
+  "empirically refute (p<<0.01)" Baxendale's B=2/3. That is his *large-shear* (twist b->inf)
+  asymptotic; the scan runs at small |rho*xi| and at the trivial G=0 equilibrium where the
+  shear term is identically zero — outside the hypotheses, not a refutation. Reframed in
+  main.tex, both variants, and the README (which still said "refutes ELR ... 13 sigma").
+- **Hallucination comment removed from references.bib** (it shipped "was a hallucination" in
+  the arXiv source). The engellambrasmussen2024 -> baxendale2025 lineage is otherwise clean.
+- **README synced to the corrected McKean-Vlasov theorem.** It stated the *superseded*
+  pre-v0.3.6 result (ratio = sqrt(1+(omega* tau_G)^2) > 1, opposite economic sign); now the
+  rational closed form with the regime-dependent sign (ratio<1 at G_y>0, >1 at G_y<0).
+- **Hawkes-SV dimensional slip fixed.** The Jaisson-Rosenbaum near-critical limit is 1D
+  (CIR), so its drift boundary has no Hopf stratum; the Hopf lives only in the
+  higher-dimensional dealer-gamma model. Statement corrected; sharpens the "unoccupied cell".
+- **Theorem right-sizing.** BT-empty (grid-scoped) and Hawkes-SV (a position, not an
+  identity) downgraded Theorem -> Proposition. Now 4 theorems + 2 propositions.
+- **excess-entropy "mean-field critical exponent beta=1"** relabelled the generic linear
+  (exponent-1) approach (mean-field beta is 1/2; the linear rate is just analyticity).
+- **Honesty caveats up front:** abstract now states the model does not Hopf at
+  empirically-scaled dealer gamma; a timescale paragraph confronts the ~11 yr canonical cycle
+  vs intraday reflexivity.
+- SUBMISSION_READINESS certification banner (v0.3.11, 40 pp, 579 tests, 89.47% coverage,
+  verify.sh green — the stale "84.04% dip" is resolved). arXiv build -> v0.3.11 / 40 pp.
+
+Builds clean: main 40 pp, ICAIF 7 pp, workshop 7 pp, zero undefined references; arXiv tarball
+verified via simulated build. Paper body and both variants numerically identical pre/post
+except the intended reframes.
+
 ## [0.3.10] - 2026-07-03
 
 ### Changed — reviewer-response corrections + full readability/comprehension overhaul

@@ -1,7 +1,19 @@
 # Submission Readiness — *Reflexivity in Options Markets*
 
-**Author.** Mahimn Patel (Independent Researcher)
-**Date of refresh.** 2026-05-14
+> **CURRENT CERTIFICATION (v0.3.11, 2026-07-03).** Freeze candidate for arXiv + ICAIF.
+> Master `main.tex` = **40 pp**, 4 theorems + 2 propositions, 15 figures; ICAIF and NeurIPS
+> workshop variants build clean at venue lengths. `bash scripts/verify.sh` **green on the
+> current head**: ruff + format + mypy clean, **579 tests pass, 89.47% coverage** (≥ 85%
+> gate) — the v0.3.2-era "84.04% dip" noted in the body below is resolved. This round applied
+> the referee-panel corrections: the Baxendale $B=2/3$ "refutation" reframed as
+> outside-hypotheses (not a refutation), the shipped `references.bib` hallucination comment
+> removed, the public README synced to the corrected McKean–Vlasov theorem, the Hawkes–SV
+> dimensional statement fixed and (with BT-empty) relabelled Proposition, and honest
+> empirical-scale / timescale caveats added. **The body below is the historical v0.3.1/v0.3.2
+> ledger, retained for provenance; where it conflicts with this banner, the banner governs.**
+
+**Author.** Mahimn Patel (University of Toronto)
+**Date of refresh.** 2026-05-14 (historical; see banner above for current)
 **Repo head at refresh.** `780afd9` (`v0.3.1: second-pass grill cleanup — bib hygiene, Λ honesty, GP-CI fix`)
 **Working tree.** v0.3.2-unreleased (Wave 1 + Wave 2 + L3-FIX content staged; CHANGELOG `[Unreleased]` block populated; commit pending)
 **Targets.** arXiv (`q-fin.MF` primary), NeurIPS GenAI in Finance Workshop 2026, ICAIF 2026.
