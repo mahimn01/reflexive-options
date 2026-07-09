@@ -8,7 +8,7 @@
 
 **Reflexive options market simulator with dealer-gamma feedback, six bifurcation-theoretic results (four theorems, two propositions), RL-trained agents, and a pre-registered evaluation framework.**
 
-In-progress research codebase for the working paper *Reflexivity in Options Markets* (Patel, 2026). Current release: **v0.3.11** (master 40 pp + ICAIF + NeurIPS workshop variants).
+In-progress research codebase for the working paper *Reflexivity in Options Markets* (Patel, 2026). Current release: **v0.3.12** (master 40 pp + ICAIF + NeurIPS workshop variants).
 
 ## What's here
 
@@ -130,13 +130,13 @@ The arXiv submission metadata (subjects, MSC codes, license, comments) lives in 
 | κ-sensitivity transfer experiment (BC-trained MLP, ~15-20 min/run) | **implemented + tested** |
 | Marketron mechanism decomposition | **8/24 OOS shape-cell match (33.3%) at per-set tuned coupling; a priori long-horizon restricted subset 7/10 in-sample ($p = 0.172$)** |
 | Pre-registration document | **locked + OpenTimestamps Bitcoin-anchored proof (`paper/pre_registration.md.ots`). A1–A7 amendments closed at commit `63078f5`; no further amendments permitted post-data-load** |
-| Manuscript variants | **NeurIPS GenAI Finance Workshop + ICAIF 2026 double-blind ACM sigconf, both re-synced to v0.3.11 and compiled clean (7 pp each)** |
+| Manuscript variants | **NeurIPS GenAI Finance Workshop + ICAIF 2026 double-blind ACM sigconf, both re-synced to v0.3.12 and compiled clean (7 pp each)** |
 | Test suite | **579 passing, 89.47% branch coverage** [^cov] |
 | CI (GitHub Actions) | **green on Python 3.12 / 3.13 / 3.14** |
 
-[^cov]: Coverage measured by the most recent `bash scripts/verify.sh` run (89.47% as of v0.3.11); gated at ≥ 85% in CI via `[tool.coverage.report] fail_under = 85`.
+[^cov]: Coverage measured by the most recent `bash scripts/verify.sh` run (89.47% as of v0.3.12); gated at ≥ 85% in CI via `[tool.coverage.report] fail_under = 85`.
 
-**v0.3.11 shipped** (2026-07-03) — see [`CHANGELOG.md`](CHANGELOG.md) for the full release notes. Highlights:
+**v0.3.12 shipped** (2026-07-06) — see [`CHANGELOG.md`](CHANGELOG.md) for the full release notes. Highlights:
 - Four theorems (Hopf, No-Hopf-wedge, McKean-Vlasov, excess-entropy) + two propositions (BT-empty, Hawkes-SV), with closed-form proofs / proof sketches.
 - Closed-form symbolic $\ell_1$ as Appendix A (7.8 KB rational in 13 symbols, machine-verified).
 - Empirical $|\Lambda| \sim |\rho\xi|^B$ scaling fit ($\hat B = 0.082$, flat): Baxendale's large-shear $b^{2/3}$ regime is inactive at the trivial-$G$ equilibrium (outside its hypotheses).
@@ -156,7 +156,7 @@ If you use this software or paper, please cite:
                   A Stochastic-Volatility Model with Dealer-Gamma Feedback,
                   Hopf Bifurcation Calculus, and a Pre-Registered Evaluation Framework},
   year         = 2026,
-  version      = {v0.3.11},
+  version      = {v0.3.12},
   url          = {https://github.com/mahimn01/reflexive-options},
   note         = {Pre-registered at commit 268c061 via OpenTimestamps proof}
 }

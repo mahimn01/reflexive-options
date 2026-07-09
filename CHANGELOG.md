@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.12] - 2026-07-06
+
+### Fixed — arXiv pre-flight verification (pre-submission)
+
+A final multi-agent pre-flight on the actual submission tarball caught one
+referee-falsifiable blocker on the paper's core credibility claim, plus minor items:
+
+- **Pre-registration OTS anchor commit corrected (BLOCKER).** `main.tex` cited commit
+  `268c061` as carrying the OpenTimestamps proof at four sites. That commit's
+  `pre_registration.md` hashes to `79957f08…` and is stamped by no proof. The real anchor
+  is **`63078f5`** (`f968b22e…` = `pre_registration.md.v1.ots`, the original pre-data lock
+  where A1–A7 close); the amended document (`ccae3ba2…`) is stamped by
+  `pre_registration.md.ots` at `764c2d3`. A referee reconciling `git show … | shasum`
+  against `ots info` would have found `268c061` unproven — falsifying the pre-registration.
+  The three anchor sites now cite `63078f5`; the reproducibility line points to release tag
+  `v0.3.12`. Documented as pre-data amendment A12 (annotation-only); `pre_registration.md`
+  left unedited to preserve its timestamped hash.
+- **Appendix-A wide-equation overflow fixed.** The expanded $\mathcal{T}_1$ rational ran
+  ~27 in past the right margin (2003 pt overfull hbox); wrapped in `\resizebox` to text width.
+- **arXiv metadata abstract re-synced to the PDF abstract** (the empirical-scale caveat
+  sentence was missing from the listing-page abstract).
+- arXiv build bumped to v0.3.12; tarball rebuilt and re-verified.
+
 ## [0.3.11] - 2026-07-03
 
 ### Changed — referee-panel response (submission freeze candidate)
