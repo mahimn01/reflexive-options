@@ -1,4 +1,9 @@
-"""Hawkes branching ratio ↔ SV-Jacobian eigenvalue mapping.
+"""Archived Hawkes/SV rescaling and eigenvalue utilities.
+
+There is no Hawkes-equivalence theorem in the current paper. A branching
+ratio near one neither identifies these state variables nor implies a complex
+eigenvalue pair. The rescaling below is definitional and retained only for
+reproducibility.
 
 This module computes the leading-eigenvalue real part λ_max(κ) of the 3D
 reflexive skeleton's Jacobian and the *definitional* Hawkes-branching-ratio

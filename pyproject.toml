@@ -4,9 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "reflexive-options"
-version = "0.1.0"
-description = "Reflexive options market simulator with dealer-gamma feedback channel, RL-trained agents, and analytical bifurcation results."
-authors = [{name = "Mahimn Patel", email = "mahimn.patel.k@gmail.com"}]
+version = "0.4.0"
+description = "Fixed-equilibrium local dealer-gamma bifurcation model and pre-data OI proxy protocol."
+authors = [{name = "Mahimn Patel", email = "mahimn.patel@mail.utoronto.ca"}]
 readme = "README.md"
 requires-python = ">=3.12,<3.15"
 license = {text = "MIT"}
@@ -35,7 +35,7 @@ dependencies = [
 ]
 
 [project.scripts]
-hopf-phase-scan = "reflexive_options.experiments.hopf_phase_scan_4d:main"
+centered-hopf-validation = "reflexive_options.experiments.centered_hopf_validation:main"
 
 [project.optional-dependencies]
 # Legacy install path for `pip install -e ".[dev]"`. PEP 735 [dependency-groups]
@@ -112,6 +112,8 @@ omit = [
     "src/reflexive_options/experiments/info_theoretic_excess_entropy.py",
     "src/reflexive_options/experiments/mixture_oi_robustness.py",
     "src/reflexive_options/experiments/saddle_node_wedge.py",
+    "src/reflexive_options/experiments/centered_hopf_validation.py",
+    "src/reflexive_options/experiments/centered_model_robustness.py",
 ]
 
 [tool.coverage.report]

@@ -37,12 +37,14 @@ Reference: evaluation_framework_brief.md §3, paper/pre_registration_amendments.
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
+from sklearn.exceptions import ConvergenceWarning
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, WhiteKernel
 
@@ -207,7 +209,21 @@ def _fit_gp_and_derivative(
         n_restarts_optimizer=5,
         random_state=0,
     )
-    gp.fit(x_train_s.reshape(-1, 1), y_norm)
+    # On the deliberately tiny locked n=9 grid, a rough response can place
+    # the fitted RBF length scale exactly at its registered lower bound.  That
+    # is an admissible constrained optimum, not a failed fit.  Suppress only
+    # sklearn's exact boundary diagnostic; every other convergence warning
+    # remains visible.
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message=(
+                "The optimal value found for dimension 0 of parameter "
+                "k1__length_scale is close to the specified lower bound.*"
+            ),
+            category=ConvergenceWarning,
+        )
+        gp.fit(x_train_s.reshape(-1, 1), y_norm)
 
     # Pull fitted hyperparameters from the optimised kernel.
     fitted = gp.kernel_

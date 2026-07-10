@@ -2,7 +2,7 @@
 
 pdf: main.pdf
 
-main.pdf: main.tex references.bib neurips_2024.sty figures/hopf_phase_diagram.pdf figures/h4_detector_power_v2.pdf
+main.pdf: main.tex references.bib neurips_2024.sty figures/centered_hopf_validation.pdf
 	pdflatex -interaction=nonstopmode main.tex
 	bibtex main
 	pdflatex -interaction=nonstopmode main.tex

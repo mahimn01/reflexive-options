@@ -1,5 +1,8 @@
 # McKean–Vlasov mean-field limit: corrected Hopf threshold (v0.3.6)
 
+> **ARCHIVED v0.3 EXTENSION.** It uses the superseded model and does not prove
+> a threshold correction for the centered positive-variance model.
+
 > **Header note (honesty disclosure).** This document supersedes the Theorem 3
 > claim of v0.3.5 (`paper/mckean_vlasov_limit.md`). An external mathematical
 > audit demonstrated, numerically, that the v0.3.5 closed-form correction

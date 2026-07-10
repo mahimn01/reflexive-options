@@ -1,43 +1,9 @@
-"""Empirical power-law scan of Λ vs (ρ ξ) at the §4.2 canonical regime.
+"""ARCHIVED INVALID v0.3 scaling experiment; do not run or cite.
 
-The Engel–Lamb–Rasmussen (2024) shear-induced expansion predicts, for an
-additive-noise Hopf system perturbed by a small shear b, that the leading
-correction to the top Lyapunov exponent scales as |Λ| ~ b^(2/3). Adapted
-to the Heston multiplicative-noise setup of paper §1, the natural shear
-proxy is the product ρ · ξ (correlation × vol-of-vol).
-
-V1 audit (`~/Documents/reflexivity-research/verification_v1_math.md`)
-found the implemented Λ across 5 (ξ, ρ) probes does *not* satisfy
-Λ / (ρ ξ)^(2/3) = const — the ratio drifted ~2.6× across the probes. The
-v0.3.1 paper softened §5 to "we do not claim to have validated the
-asymptotic scaling." This script replaces that softness with an actual
-power-law fit and a quantitative comparison to the predicted exponent
-B = 2/3.
-
-Method:
-    1. Hold the §4.2 dimensionless skeleton fixed (memory channel:
-       α=0.5, β=1, γ=0.5, κ_v=2, θ_v=0.04). Vary (ξ, ρ) on a 6×6 grid.
-    2. At each cell, compute Λ via `compute_lambda_correction` (Khasminskii
-       sphere process / Benettin renormalisation of the linearised SDE)
-       at a high path budget for low MC noise.
-    3. Fit  log|Λ| = log|A| + B · log|ρ ξ|  via OLS on the union of
-       valid cells.
-    4. Bootstrap (B_bootstrap resamples, fixed seed) the (A, B) sample
-       distribution and report 95% CI.
-    5. Compare B vs predicted B = 2/3 (one-sample test against a fixed
-       value: |B - 2/3| / SE(B); flag stat-significance at p < 0.01).
-    6. Save (ξ, ρ, Λ) table as CSV; render log|Λ| vs log|ρ ξ| with fit
-       line and 95% CI band as `paper/figures/lambda_scaling_loglog.pdf`.
-
-Invocation::
-
-    python -m reflexive_options.experiments.lambda_scaling
-    python -m reflexive_options.experiments.lambda_scaling --quick
-
-Outputs:
-    runs/lambda_scaling/<timestamp>/{config.json, metrics.json,
-                                    lambda_grid.csv}
-    paper/figures/lambda_scaling_loglog.pdf
+The historical values came from renormalizing an additively forced state,
+not the derivative cocycle. For the affine additive linearization the
+correction is exactly zero and a log--log fit of its magnitude is undefined.
+The code remains only to inspect the immutable v0.3 receipt.
 """
 
 from __future__ import annotations
@@ -92,7 +58,7 @@ class LambdaScalingConfig:
     xi_grid: tuple[float, ...] = (0.1, 0.2, 0.3, 0.5, 0.7, 1.0)
     rho_grid: tuple[float, ...] = (-0.95, -0.7, -0.5, -0.3, 0.3, 0.7)
 
-    # Khasminskii estimator — high path budget for low MC noise
+    # Historical compatibility arguments; corrected API returns zero exactly.
     epsilon_low: float = 0.05
     epsilon_high: float = 0.20
     n_paths: int = 10_000

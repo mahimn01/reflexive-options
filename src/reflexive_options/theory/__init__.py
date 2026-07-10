@@ -1,18 +1,8 @@
-"""Analytical results — the novel data-free theoretical contributions of the paper.
+"""Analytical utilities.
 
-- `bifurcation`: Hopf bifurcation analysis of the reflexive SDE.
-- `hawkes_equivalence`: Theorem 2 — mapping the Hawkes branching ratio
-  n (Hardiman 2013) to the SV-Jacobian leading eigenvalue / Hopf
-  threshold κ★ via the Bacry-Delattre-Hoffmann-Muzy (2013) diffusive
-  limit.
-- `stationary`: Fokker-Planck stationary marginal density.
-- `sensitivity`: numerical ∂(metric)/∂κ pipeline.
-- `spectral`: H4 PSD-peak detector for the Hopf signature in |r_t|.
-- `inference`: shared statistical primitives — block bootstrap (V4-B3),
-  BH-FDR (V4-B4), TOST equivalence (V3-B2 / A7).
-- `info_theoretic`: Theorem 5 — closed-form excess entropy of the linearised
-  3D OU and IAAFT-calibrated empirical transfer entropy for the dealer-gamma
-  channel.
+The current paper's maintained result is in :mod:`centered_model`.  Several
+other modules are preserved for reproducibility of superseded v0.3
+experiments and must not be read as claims of the current manuscript.
 """
 
 from reflexive_options.theory.bifurcation import (
@@ -26,7 +16,6 @@ from reflexive_options.theory.bifurcation import (
     bautin_curve_scan,
     bogdanov_takens_residual_lognormal_oi,
     build_bilinear_trilinear_tensors,
-    compute_lambda_correction,
     compute_lyapunov_coefficient,
     find_bautin_anchors,
     hopf_scan,
@@ -36,8 +25,26 @@ from reflexive_options.theory.bifurcation import (
     kappa_star_mixture_lognormal_oi,
     lyapunov_coefficient_lognormal_oi,
     lyapunov_coefficient_mixture_lognormal_oi,
-    stochastic_hopf_shift_numeric,
-    top_lyapunov_exponent_linearised,
+)
+from reflexive_options.theory.centered_model import (
+    CenteredSVParams,
+    GaussianBookComponent,
+    GaussianBookParams,
+    HopfPoint,
+    canonical_centered_configuration,
+    centered_drift_gaussian_book,
+    centered_drift_gaussian_mixture,
+    centered_jacobian,
+    gaussian_book_hopf_point,
+    gaussian_book_hopf_points,
+    gaussian_mixture_hopf_point,
+    gaussian_mixture_hopf_points,
+    normalized_gaussian_book_feedback,
+    normalized_gaussian_book_partials,
+    normalized_gaussian_mixture_feedback,
+    normalized_gaussian_mixture_partials,
+    routh_hurwitz_coefficients,
+    static_feedback_hopf_polynomial,
 )
 from reflexive_options.theory.hawkes_equivalence import (
     HawkesEquivalenceResult,
@@ -113,6 +120,7 @@ __all__ = [
     "KAPPA_STAR_SINGLE_CANONICAL",
     "BautinScanResult",
     "BimodalityResult",
+    "CenteredSVParams",
     "ChaosErrorResult",
     "ChaosScalingResult",
     "CriticalExponentFit",
@@ -121,7 +129,10 @@ __all__ = [
     "G_lognormal_oi_partials",
     "G_mixture_lognormal_oi",
     "G_mixture_lognormal_oi_partials",
+    "GaussianBookComponent",
+    "GaussianBookParams",
     "HawkesEquivalenceResult",
+    "HopfPoint",
     "HopfScanResult",
     "KappaStarSensitivityResult",
     "MVHopfResult",
@@ -139,8 +150,11 @@ __all__ = [
     "bogdanov_takens_residual_lognormal_oi",
     "build_bilinear_trilinear_tensors",
     "calibration_tolerance",
+    "canonical_centered_configuration",
+    "centered_drift_gaussian_book",
+    "centered_drift_gaussian_mixture",
+    "centered_jacobian",
     "compare_to_heston",
-    "compute_lambda_correction",
     "compute_lyapunov_coefficient",
     "detect_bimodality",
     "detect_psd_peak",
@@ -149,6 +163,10 @@ __all__ = [
     "find_bautin_anchors",
     "fit_critical_exponent",
     "fit_lognormal_to_mixture_moments",
+    "gaussian_book_hopf_point",
+    "gaussian_book_hopf_points",
+    "gaussian_mixture_hopf_point",
+    "gaussian_mixture_hopf_points",
     "hawkes_branching_ratio_curve",
     "heston_log_return_cdf",
     "heston_log_return_quantiles",
@@ -173,15 +191,19 @@ __all__ = [
     "mean_field_limit_trajectory",
     "n_sv_at_kappa",
     "n_sv_from_eigenvalues",
+    "normalized_gaussian_book_feedback",
+    "normalized_gaussian_book_partials",
+    "normalized_gaussian_mixture_feedback",
+    "normalized_gaussian_mixture_partials",
     "propagation_of_chaos_constant",
     "propagation_of_chaos_error",
     "propagation_of_chaos_scaling",
+    "routh_hurwitz_coefficients",
     "simulate_n_dealer_system",
     "solve_stationary",
+    "static_feedback_hopf_polynomial",
     "stationary_block_bootstrap",
-    "stochastic_hopf_shift_numeric",
     "tail_index_vs_kappa_curve",
-    "top_lyapunov_exponent_linearised",
     "tost_equivalence",
     "transfer_entropy_iaaft_pvalue",
     "transfer_entropy_simulated",

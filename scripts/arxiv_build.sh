@@ -1,8 +1,8 @@
 #!/bin/sh
 # arxiv_build.sh — build a reproducible arXiv source tarball for the
-# "Reflexivity in Options Markets" paper (v0.3.11).
+# "Dealer-Gamma Feedback and Local Volatility Cycles" paper (v0.4.0).
 #
-# Output: dist/arxiv_v0.3.11.tar.gz
+# Output: dist/arxiv_v0.4.0.tar.gz
 # Log:    dist/arxiv_build.log
 #
 # Idempotent: same source -> bit-identical tarball
@@ -23,9 +23,9 @@ DIST_DIR="$REPO_ROOT/dist"
 BUILD_DIR="$DIST_DIR/arxiv_build"
 EXTRACT_TEST_DIR="$DIST_DIR/arxiv_extract_test"
 LOG="$DIST_DIR/arxiv_build.log"
-VERSION="v0.3.12"
+VERSION="v0.4.0"
 TARBALL="$DIST_DIR/arxiv_${VERSION}.tar.gz"
-EXPECTED_PAGES=40
+EXPECTED_PAGES=22
 MAX_TARBALL_BYTES=$((5 * 1024 * 1024))   # 5 MB hard ceiling
 PDF_TOLERANCE_BYTES=8192                  # 8 KB drift tolerance (build-timestamp)
 
@@ -266,7 +266,7 @@ gzip -dc "$TARBALL" | tar -tf - | LC_ALL=C sort | sed 's/^/    /' | tee -a "$LOG
 
 # ----------------------------------------------------------------------------
 # Step 8: simulated arXiv sanity-check — extract to a fresh tmpdir,
-# pdflatex the source, confirm 30-page output.
+# pdflatex the source, confirm the locked page count.
 # ----------------------------------------------------------------------------
 log "Step 8: simulated arXiv sanity-check (extract + pdflatex)"
 mkdir -p "$EXTRACT_TEST_DIR"

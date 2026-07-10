@@ -5,6 +5,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-07-10
+
+### Rebuilt — pre-publication model and identification audit
+
+- Replaced the moving-equilibrium family with a centered dealer-book functional, so
+  $(X,v,\chi)=(0,\theta_v,0)$ is fixed while $\kappa$ varies.
+- Replaced additive $\gamma\chi$ variance feedback with $\gamma v\chi$; the added drift now
+  points inward at the zero-variance boundary.
+- Stated the model under the physical measure and limited it to detrended local price
+  deviations. Removed the claim that GPP derives the spot drift and corrected the nested
+  Heston statement.
+- Re-derived the Jacobian, cubic coefficients, exact transversality derivative, and the
+  static-book quadratic. Every root now passes all Routh--Hurwitz side conditions.
+- Added an all-roots API and disclosed the canonical quadratic's remote second valid Hopf
+  point at $\kappa^{\star\star}=16860.8961$/yr; threshold analyses still use the first root.
+- Recomputed $\ell_1$ from analytic Gaussian-book derivatives, including the variance
+  tensor term $B_{v,v\chi}=B_{v,\chi v}=\gamma$.
+- Expanded the manuscript from a 10-page core note to a 22-page supported paper: formal OI
+  non-identification, literature positioning, hedge-demand interpretation limits,
+  normalization invariance, closed-loop necessity, baseline stability, the Gaussian
+  convolution derivation, all derivatives through third order, numerical algorithms, and
+  an empirical chain-of-custody appendix.
+- Added actual-nonlinearity amplitude/period convergence, tolerance and initial-condition
+  checks, one-at-a-time sensitivity, a 45-by-45 first-Lyapunov classification map, and
+  gross-normalized signed Gaussian mixtures. The audit shows that supercriticality is
+  book-dependent and prevents the canonical attracting cycle from being generalized.
+- Extended the local amplitude grid down to 0.0625% above threshold; six points through 2%
+  give exponent 0.5089 with $R^2=0.99992$.
+- Replaced the hand-selected cubic canonical example with the actual nonlinear centered
+  Gaussian book. New illustrative values: $\kappa^\star=31.4932976$/yr,
+  $\omega^\star=47.1185670$ rad/yr, $\ell_1=-6.2888041$; the orbit remains at positive
+  variance.
+- Corrected the affine-additive Lyapunov error: same-noise tangent flow is $e^{Jt}$, so the
+  former non-zero stochastic shift was a forced-state renormalization artifact. Legacy APIs
+  return the exact zero correction and the heuristic 4D scan is archived. This is explicitly
+  not a solution of the full state-dependent stochastic variational equation.
+- Withdrew Hawkes-equivalence, mean-field-threshold, information-theoretic, global-stability,
+  stationary-tail, and hysteresis claims not established for the centered model.
+- Added pre-extraction Amendments A13--A15. Public OI is treated as unsigned and dealer sign as
+  non-identified; the primary design now uses the registered 2017-01-03--2024-10-29 horizon and
+  four distinct observable book summaries with two-sided, multiple-test-controlled inference.
+- A15 prevents missing option dates from compressing CRSP return horizons, moves weekday
+  controls to the outcome session, and labels the historical plan retrospective rather than
+  prospectively blinded.
+- Rewrote the WRDS day-one plan to remove outcome-assuming sign/magnitude gates and to freeze
+  the full option extraction before outcomes.
+- Rebuilt and synchronized the master, ICAIF, and workshop manuscripts.
+
 ## [0.3.12] - 2026-07-06
 
 ### Fixed — arXiv pre-flight verification (pre-submission)

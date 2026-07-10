@@ -1,12 +1,12 @@
 {
-  "title": "Reflexivity in Options Markets: A Stochastic-Volatility Model with Dealer-Gamma Feedback, Hopf Bifurcation Calculus, and a Pre-Registered Evaluation Framework",
-  "description": "<p>A continuous-time Heston-like stochastic-volatility model in which the underlying spot price is coupled to its own option market through a dealer-gamma feedback channel, derived from the open-interest grid via a Garleanu-Pedersen-Poteshman (2009) demand-pressure mapping. The model state is three-dimensional: spot S_t, instantaneous variance v_t, and a low-pass-filtered log-spot memory variable z_t; it reduces to standard time-dependent Heston at zero coupling. The contribution is the synthesis of three previously separate ingredients into a single analytical and computational object: (i) a continuous-time SV backbone with explicit dealer-gamma drift, (ii) a formal Hopf bifurcation calculus on the deterministic skeleton with first Lyapunov coefficient ell_1 and Khasminskii-style stochastic shift Lambda, and (iii) a pre-registered evaluation protocol for RL-trained hedging agents trained inside the simulator. For a representative dimensionless calibration the critical coupling is kappa* approx 0.8964, angular frequency omega* approx 0.5724 rad/yr, and first Lyapunov coefficient ell_1 approx -0.025 < 0, so the bifurcation is supercritical: an attracting limit cycle in volatility is born for kappa > kappa*. The 2D reduction (without z_t) has an upper-triangular Jacobian and admits only a saddle-node onset, recovering the discrete-time recursion of Dai (2025); the 3D extension is what unlocks the Hopf. For the natural parametric specification with log-normal open-interest in moneyness, a closed-form Hopf threshold and a closed-form ell_1 are obtained, exposing a parametric phase boundary in (sigma_q, gamma) space. This Zenodo deposit archives the software, manuscript PDF, and pre-registration anchor that accompany the paper.</p>",
+  "title": "Dealer-Gamma Feedback and Local Volatility Cycles: A Fixed-Equilibrium Bifurcation Model and a Pre-Extraction Identification Protocol",
+  "description": "<p>Software, manuscript source, and reproducibility materials for a local physical-measure model of detrended log price, square-root variance, and filtered price memory. The centered dealer-book functional fixes the reference equilibrium while coupling varies, and variance feedback is proportional to variance so the added drift points inward at zero. The repository derives the complete cubic Routh--Hurwitz conditions, an exact eigenvalue-crossing derivative, and the first Lyapunov coefficient for a centered Gaussian signed-position book. A deliberately constructed, non-calibrated configuration has a first local Hopf point at kappa*=31.4932976/yr, omega*=47.1185670 rad/yr, and ell_1=-6.2888041; the quadratic also has a disclosed remote re-stabilizing root. The actual nonlinear drift produces a nearby positive-variance cycle, and six close amplitudes recover the Hopf square-root law. Gross-normalized signed mixtures show that the local root and supercriticality are book-dependent. These are local deterministic results, not an SPX calibration or stochastic-bifurcation result. Public open interest does not identify signed dealer inventory. Pre-extraction Amendments A13--A15 therefore register a registered-horizon, sign-agnostic proxy analysis whose conclusions are limited to predictive association. No registered market dataset is analysed in v0.4.0.</p>",
   "upload_type": "software",
   "creators": [
     {
       "name": "Patel, Mahimn",
-      "affiliation": "Department of Economics, University of Toronto",
-      "orcid": "0000-0000-0000-0000"
+      "affiliation": "Incoming graduate student, Department of Economics, University of Toronto",
+      "orcid": "0009-0002-2422-9005"
     }
   ],
   "keywords": [
@@ -14,31 +14,21 @@
     "options markets",
     "Hopf bifurcation",
     "dealer gamma",
-    "reflexivity",
-    "Hawkes processes",
-    "reinforcement learning",
-    "Heston model",
-    "limit cycles",
-    "pre-registration"
+    "open interest",
+    "dynamical systems",
+    "pre-registration",
+    "non-identification"
   ],
-  "license": "CC-BY-4.0",
+  "license": "MIT",
   "access_right": "open",
   "related_identifiers": [
-    {
-      "relation": "isSupplementTo",
-      "identifier": "arxiv:XXXX.XXXXX",
-      "scheme": "arxiv"
-    },
     {
       "relation": "isSupplementTo",
       "identifier": "https://github.com/mahimn01/reflexive-options",
       "scheme": "url"
     }
   ],
-  "communities": [
-    {"identifier": "zenodo"}
-  ],
-  "notes": "ORCID placeholder 0000-0000-0000-0000 — update post-registration via orcid.org/register (see paper/orcid_setup.md). arxiv identifier placeholder XXXX.XXXXX — update once arXiv submission completes.",
+  "notes": "Version 0.4.0 contains no registered market dataset. Add the real arXiv related identifier only after arXiv assigns it; do not publish a placeholder identifier.",
   "subjects": [
     {
       "term": "Mathematical Finance",
@@ -46,8 +36,8 @@
       "scheme": "arxiv"
     },
     {
-      "term": "Computational Finance",
-      "identifier": "q-fin.CP",
+      "term": "Trading and Market Microstructure",
+      "identifier": "q-fin.TR",
       "scheme": "arxiv"
     },
     {

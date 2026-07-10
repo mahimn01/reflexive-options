@@ -1,362 +1,170 @@
-% NeurIPS 2026 GenAI-in-Finance Workshop variant of
-%   Reflexivity in Options Markets: A Stochastic-Volatility Model with
-%   Dealer-Gamma Feedback, Hopf Bifurcation Calculus, and a Pre-Registered
-%   Evaluation Framework.
-% Compressed from paper/main.tex (23 pages, single-column article) to
-% the NeurIPS 4-page workshop format.
 \documentclass{article}
-
 \usepackage[final]{neurips_2024}
-
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-\usepackage{url}
-\usepackage{booktabs}
-\usepackage{amsfonts,amsmath,amssymb,amsthm,mathtools,bm}
-\usepackage{nicefrac}
-\usepackage{microtype}
-\usepackage{xcolor}
-\usepackage{graphicx}
-\usepackage[capitalize]{cleveref}
-
+\usepackage{url,booktabs,microtype,graphicx}
+\Urlmuskip=0mu plus 1mu\relax
+\usepackage{amsfonts,amsmath,amssymb,amsthm,mathtools}
 \newtheorem{theorem}{Theorem}
-\newtheorem{proposition}{Proposition}
 
-\title{Reflexivity in Options Markets: A 3D Stochastic-Volatility Model with
-Dealer-Gamma Feedback and a Pre-Registered Evaluation Framework}
-
-\author{%
-  Mahimn Patel\\
-  Independent Researcher\\
-  \texttt{mahimn.patel@mail.utoronto.ca}\\
-}
+\title{Dealer-Gamma Feedback and Local Volatility Cycles:\
+A Fixed-Equilibrium Bifurcation Model}
+\author{Mahimn Patel\\Incoming graduate student, Department of Economics, University of Toronto\\
+\texttt{mahimn.patel@mail.utoronto.ca}}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-We introduce a 3D reflexive stochastic-volatility SDE $(S_t, v_t, \chi_t)$
-coupling the spot to its own option market via a
-G\^arleanu--Pedersen--Poteshman dealer-gamma drift, prove a Hopf
-bifurcation theorem with closed-form first Lyapunov coefficient $\ell_1$
-and threshold $\kappa^\star$ for log-normal open-interest, and pre-register
-an evaluation framework whose primary test is a direct, model-free
-dealer-gamma (GEX) regression---with a sliced-$W_2$ surface metric and a
-critical-slowing-down detector---anchored to a git commit hash with an
-OpenTimestamps Bitcoin proof. We additionally give a Hawkes--SV
-criticality correspondence: \citet{hardiman2013}'s empirical $n\approx 1$
-sits at the real-eigenvalue (saddle-node) stratum, while the model's Hopf
-is the strictly stronger oscillatory cell beyond any scalar branching
-ratio.
+We construct a local physical-measure feedback model whose equilibrium remains
+fixed as coupling varies and whose variance drift points inward at zero. For a
+centered Gaussian density of signed dealer positions, the local Hopf equation is
+quadratic in coupling. An illustrative, non-calibrated configuration gives
+$\kappa^\star=31.4933$ yr$^{-1}$, $\omega^\star=47.1186$ rad yr$^{-1}$,
+and $\ell_1=-6.2888$; the actual nonlinear book produces a nearby attracting
+cycle with positive variance. Public open interest does not identify dealer
+sign, so the pre-extraction WRDS protocol is an unsigned registered-horizon
+proxy study, not a structural confirmation. No registered market dataset is analysed.
 \end{abstract}
 
-\section{Introduction and contributions}
-\label{sec:intro}
+\section{Model and measurement boundary}
 
-Real options markets exhibit endogenous volatility cycles that pure
-stochastic-volatility (SV) models cannot reproduce. The empirical anchor is
-\citet{hardiman2013}, whose Hawkes branching ratio for E-mini mid-price
-changes sits at $n \approx 1$ throughout 1998--2011---the critical edge of
-endogenous-event criticality. With generative-model and RL-based market
-emulators \citep{vuleticcont2025volgan,buehler2019deep,hesuttergonon2025}
-now standard infrastructure for derivatives pricing, hedging and risk,
-we address: (i) what continuous-time mechanism produces this critical
-reflexivity, and (ii) how should an evaluation pipeline for
-reflexivity-aware generative models be locked \emph{before} empirical
-contact, in a manner that addresses the documented computational-
-reproducibility crisis in finance \citep{perignon2024repro}?
-
-\paragraph{Contributions.}
-(C1) a 3D reflexive SV SDE with explicit dealer-gamma feedback from the OI
-grid via \citet{garleanu2009demand};
-(C2) a Hopf bifurcation theorem on the deterministic skeleton with
-\emph{closed-form} $\ell_1$ and $\kappa^\star$ for log-normal OI in
-moneyness;
-(C3) a numerical $(\xi,\rho,\sigma_v)$ phase diagram locating $\kappa^\star$
-in the $0.85$--$0.95$ band across the SPX-relevant corner (whether the
-market sits near $\kappa^\star$ is deferred to the empirical GEX test);
-(C4) a \emph{pre-registered} evaluation framework whose primary test is a
-direct dealer-gamma (GEX) regression, with a critical-slowing-down
-detector, block-bootstrap CIs, BH--FDR correction, and TOST equivalence; and
-(C5) synthetic-pipeline validation: the locked protocol returns the
-predicted SW2 ordering on data with known underlying physics.
-
-\paragraph{Why this matters for GenAI in finance.} As generative market
-models proliferate \citep{choudhary2024funvol,issa2023signature,
-jin2025diffusion,cohenreisingerwang}, evaluators that discriminate
-\emph{realism} from \emph{regime-shift sensitivity} on the \emph{same}
-agent across an environmental sweep---with pre-committed multiple-testing
-corrections---are scarce. The closed-form $\kappa^\star$ and $\ell_1$
-pin down where dealer-gamma feedback flips a stable Heston regime into
-an attracting limit cycle. \citet{halperin2025marketron} is the
-nearest such model but uses a latent stochastic memory and no bifurcation analysis;
-\citet{dai2025gamma} share the dealer-gamma axis but produce only a
-saddle-node onset; \citet{hesuttergonon2025} share the
-RL-with-environmental-sweep idea but train separate agents per grid
-point. Full preprint with proofs and appendix A on arXiv [anonymous].
-
-\section{The reflexive model}
-\label{sec:model}
-
-Let $S_t$ be the spot, $v_t$ the variance, and $\chi_t$ a memory variable. The
-reflexive system is
+Option hedging can create state-dependent underlying demand
+\citep{freystremme1997,sircarpapanicolaou1998}. Demand-based option pricing
+\citep{garleanu2009demand} does not itself derive a spot drift, so our feedback
+is a reduced-form physical-measure hypothesis. Let
+$X_t=\log(S_t/F_t)$ for a predictable reference and specify
 \begin{align}
-\frac{dS_t}{S_t} &= \bigl(\mu + \kappa\, G(S_t, \chi_t, v_t)\bigr)\, dt + \sigma(S_t, v_t)\, dW^S_t, \\
-dv_t &= \bigl(\kappa_v(\theta_v - v_t) + \gamma\, \chi_t\bigr)\, dt + \xi \sqrt{v_t}\, dW^v_t, \\
-d\chi_t &= \bigl(-\alpha\, \chi_t + \beta\, \log(S_t / S_0)\bigr)\, dt,
+dX_t&=[-\delta X_t-\tfrac12(v_t-\theta_v)+\kappa g(X_t,\chi_t,v_t)]dt
++\sqrt{v_t}\,dW_t^S,\label{eq:x}\\
+dv_t&=[\kappa_v(\theta_v-v_t)+\gamma v_t\chi_t]dt
++\xi\sqrt{v_t}\,dW_t^v,\label{eq:v}\\
+d\chi_t&=\alpha(\beta X_t-\chi_t)dt.\label{eq:chi}
 \end{align}
-with $d\langle W^S, W^v\rangle = \rho\, dt$, reflexive coupling
-$\kappa \geq 0$, leverage strength $\gamma \geq 0$, memory decay
-$\alpha > 0$, and $G$ the aggregate dealer gamma computed from the OI grid
-(coupling motivated by GPP demand pressure). At $\kappa = \gamma = 0$ the system
-collapses to time-dependent Heston \citep{heston1993} (verified in
-\texttt{tests/test\_simulator.py}).
+At $v=0$, drift is $\kappa_v\theta_v>0$ and diffusion is zero. Thus the added
+feedback is boundary-compatible, although we do not prove global non-explosion.
 
-\paragraph{Why three states.} A 2D reduction (drop $\chi_t$ and $\gamma \chi$)
-has Jacobian
-$J_{2D} = \bigl(\begin{smallmatrix} a(\kappa) & b(\kappa) \\ 0 & -\kappa_v\end{smallmatrix}\bigr)$,
-upper triangular with real eigenvalues $\{a(\kappa), -\kappa_v\}$: only
-saddle-node bifurcations are admissible. To Hopf, the feedback must flow
-in both directions, which the leverage channel $\gamma \chi$ together with
-the auxiliary memory equation supplies. This is the structural reason
-\citet{dai2025gamma} get a saddle-node onset where we get a Hopf.
+A Gaussian mass in fixed log moneyness integrates against Black--Scholes gamma
+as
+\begin{align}
+\mathcal G(X,v)&=\{2\pi\tau^2(v)\}^{-1/2}e^{-q_dT-X}
+\exp[-(X-m(v))^2/(2\tau^2(v))],\nonumber\\
+\tau^2(v)&=\sigma_q^2+vT,\qquad
+m(v)=\mu_q-(r-q_d+v/2)T.\label{eq:book}
+\end{align}
+We center and normalize it:
+\begin{equation}
+g(X,\chi,v)=s\frac{\mathcal G(X,v)-\mathcal G(0,\theta_v)}
+{\mathcal G(0,\theta_v)},\qquad s\in\{-1,+1\}.\label{eq:center}
+\end{equation}
+Then $(0,\theta_v,0)$ is an equilibrium for every $\kappa$. The orientation
+$s$ describes latent signed dealer positions. Public OI counts contracts but
+does not identify participant or side \citep{oicopeninterest}; proprietary
+participant-tagged data are used when actual market-maker positions are needed
+\citep{vasquez2025zerodte}.
 
-\section{Hopf threshold and closed-form first Lyapunov coefficient}
-\label{sec:hopf}
+\section{Local bifurcation}
 
-Linearise the deterministic skeleton at the equilibrium
-$(S^\star, \theta_v, \chi^\star)$, in deviation variables $(y, u, \chi)$. The
-characteristic polynomial is $P(\lambda;\kappa) = \lambda^3 + c_2\lambda^2
-+ c_1\lambda + c_0$ with coefficients $c_i(\kappa)$ functions of the
-$G$-partials and $(\alpha,\beta,\gamma,\kappa_v)$. Liu's criterion
-(equivalent to Routh--Hurwitz with one zero) gives the Hopf threshold
-$\kappa^\star = \{\kappa>0: H(\kappa) := c_1 c_2 - c_0 = 0,\
-H'(\kappa)\neq 0,\ c_2(\kappa)>0,\ c_0(\kappa)>0\}$, with imaginary pair
-$\lambda_\pm = \pm i\omega^\star$, $\omega^\star = \sqrt{c_1(\kappa^\star)}$.
+At the fixed equilibrium, put $G_X=g_X$, $G_v=g_v$, $G_\chi=g_\chi$. The
+Jacobian is
+\begin{equation}
+J=\begin{pmatrix}a&b&d\\0&-\kappa_v&c\\m&0&-\alpha\end{pmatrix},
+\quad
+\begin{matrix}a=-\delta+\kappa G_X,&b=-1/2+\kappa G_v,\\
+d=\kappa G_\chi,&c=\gamma\theta_v,&m=\alpha\beta.
+\end{matrix}\label{eq:J}
+\end{equation}
+For $\det(\lambda I-J)=\lambda^3+c_2\lambda^2+c_1\lambda+c_0$,
+\begin{align*}
+c_2&=\kappa_v+\alpha-a,\quad
+c_1=\kappa_v\alpha-a(\kappa_v+\alpha)-dm,\\
+c_0&=-a\kappa_v\alpha-bcm-dm\kappa_v.
+\end{align*}
 
-\begin{theorem}[Hopf bifurcation in the gamma-coupled SV skeleton]
-\label{thm:hopf}
-Under regularity (A1) $G,\sigma^2 \in C^3$ with $\sigma^2$ bounded below;
-(A2) locally unique equilibrium with non-degenerate linearisation;
-(A3)~$\kappa\mapsto(a,G_\chi,G_v)$ in $C^3$;
-(A4) $\kappa^\star\in(0,\kappa_{\max})$ satisfying the Liu criterion with
-$\omega^\star>0$; (A5) $\ell_1(\kappa^\star)\neq 0$:
-the equilibrium undergoes a Hopf bifurcation at $\kappa = \kappa^\star$.
-On a one-sided neighbourhood of $\kappa^\star$ there is a smooth family of
-periodic orbits $\Gamma_\kappa$ of period $T_\kappa = 2\pi/\omega^\star +
-O(\kappa - \kappa^\star)$ and amplitude
-$\propto \sqrt{|\kappa-\kappa^\star|}$; orbits are stable iff
-$\ell_1(\kappa^\star)<0$ (supercritical), supplying endogenous volatility
-cycles in $u_t = v_t-\theta_v$. Proof: implicit function theorem on $P$
-plus \citet{kuznetsov2004} normal-form reduction; full version on arXiv.
+\begin{theorem}
+If the drift is $C^3$ and, at $\kappa^\star>0$,
+$c_2,c_1,c_0>0$, $H:=c_1c_2-c_0=0$, $H'\ne0$, and
+$\ell_1\ne0$, then the fixed equilibrium undergoes a non-degenerate local
+Hopf bifurcation. Its eigenvalues are $\pm i\sqrt{c_1}$ and $-c_2$, with
+\[
+\left.\frac{d\operatorname{Re}\lambda_+}{d\kappa}\right|_{\kappa^\star}
+=-\frac{H'(\kappa^\star)}{2(c_1+c_2^2)}.
+\]
+In the \citet{kuznetsov2004} convention, $\ell_1<0$ gives stable small cycles
+on the side where the equilibrium pair is unstable.
 \end{theorem}
 
-\paragraph{Closed-form $\kappa^\star$ and $\ell_1$.} For the natural
-parametric specification---log-normal open-interest in log-strike with
-density $q(\log K)\propto\exp(-(\log K-\mu_q)^2/(2\sigma_q^2))$ at a
-representative maturity $T_{\mathrm{eff}}$---the Gaussian-product identity
-collapses the OI integral to
-$G(a,v) = \mathcal{C}(v)\,e^{-a}\,\exp(-(a-m(v))^2/(2\tau^2(v)))$
-with $\tau^2 = \sigma_q^2 + v\,T_{\mathrm{eff}}$. The Routh--Hurwitz
-polynomial becomes a quadratic in $\kappa$, giving
+For \eqref{eq:center}, $G_\chi=0$. With
+$A=\alpha+\kappa_v$, $M=\alpha\kappa_v$, and
+$L=(\gamma\theta_v)(\alpha\beta)$,
 \begin{equation}
-\boxed{\;\kappa^\star = \frac{G_y A^2 - G_v L \;-\; \sqrt{(G_v L - G_y A^2)^2 - 4G_y^2 A(MA - L/2)}}{2 G_y^2 A},\;}
-\label{eq:lognorm-kappastar}
+H(\kappa)=G_X^2A\kappa^2+\{G_vL-G_XA(A+2\delta)\}\kappa
++A(M+\delta A+\delta^2)-L/2.\label{eq:H}
 \end{equation}
-with $A=\alpha+\kappa_v$, $M=\alpha\kappa_v$, $L=\beta\gamma$, where the
-sub-radical is the first parametric phase-boundary discriminant: $D<0$
-$\Rightarrow$ no Hopf at any $\kappa$. Substituting the $G$-partials of
-the closed-form aggregator into the Kuznetsov bilinear/trilinear formula
-yields a $\sim\!30$-term closed-form rational $\ell_1(\kappa^\star)$ in
-$(G_y,G_v,G_{aa},G_{av},G_{vv},G_{aaa},G_{aav},G_{avv},G_{vvv},
-\kappa_v,\alpha,\beta,\gamma)$, evaluated in $\sim\!50\,\mu$s per parameter
-tuple and matching the FD-tensor pipeline to $<0.6\%$. At the canonical
-regime $(\sigma_q{=}0.10, T_{\mathrm{eff}}{=}0.25, \kappa_v{=}2,
-\alpha{=}0.05, \beta{=}1, \gamma{=}1, \mu_q{=}\log 100, v^\star{=}0.04)$:
-$\kappa^\star = 17.81$, $\omega^\star = 1.18$~rad/yr,
-$\ell_1 = -4.81\times 10^{-1}$ (supercritical).
+Every root still requires the three positivity conditions and transversality.
+Negative discriminant means only no local Hopf root. Analytic derivatives of
+\eqref{eq:book} through order three enter the standard first-Lyapunov formula;
+the variance tensor includes $B_{v,v\chi}=B_{v,\chi v}=\gamma$.
 
-\paragraph{Codim-2 and mean-field nods.} A $71\times 97$ grid scan in
-$(\sigma_q,\gamma)\in[0.05,0.40]\times[0.20,5.00]$ closes the codim-2
-structure: the Bautin curve $\ell_1=0$ partitions the region with
-sub-critical dominating $\sim\!5{:}1$, and saddle-node coupling
-$\kappa_{\mathrm{SN}}\leq -1.31$ at every cell, so the
-\emph{Bogdanov--Takens locus is empty in the canonical scan window}
-(Theorem~2, full version on arXiv). The McKean--Vlasov mean-field limit
-($n_{\mathrm{dealers}}\to\infty$, propagation of chaos
-\citep[Ch.~1]{sznitman1991}, validated empirically at the theoretical
-$n^{-1/2}$ Sznitman rate) extends the Jacobian to 4D; the
-\citet{liu1994} 4D Hopf condition gives a regime-dependent threshold
-ratio $\rho(\theta_G) := \kappa^\star_{\mathrm{MV}}/\kappa^\star_{\mathrm{single}}$
-with $\rho(\theta_G)<1$ strictly at the canonical short-gamma regime
-($G_y>0$, every finite $\theta_G>0$), recovering
-$\rho\to 1$ at instantaneous hedging. The single-dealer model therefore
-\emph{under-predicts} instability at the benchmark SPX setting ---
-reversing the v0.3.5 claim that mean-field always raises the threshold
-(Theorem~3, full statement and derivation on arXiv).
+\section{Actual-nonlinearity validation}
 
-\paragraph{Hawkes criticality and the SV bifurcation endpoint.} The
-reflexive feedback has a self-exciting (Hawkes) representation, and the
-onset of endogeneity is its approach to criticality. Criticality $n\to 1$
-is the loss of a stable direction of the SV drift---an eigenvalue of the
-drift-Jacobian $J(\kappa)$ reaching the imaginary axis---and the boundary
-carries two distinct strata: a non-oscillatory \emph{real-eigenvalue}
-(saddle-node) crossing, and a strictly stronger \emph{Hopf} crossing (a
-complex pair, $\operatorname{Re}\lambda=0$, $\operatorname{Im}\lambda\neq0$).
+For the illustrative, non-fitted configuration
+$(\delta,\kappa_v,\theta_v,\alpha,\beta,\gamma)
+=(0.5,40,0.0625,50,2,500)$ and
+$(\mu_q,\sigma_q,T,s)=(0.06,0.20,0.25,+1)$,
+$G_X=-0.0617978$ and $G_v=-2.0198878$. Enumerating both quadratic roots gives
+\[
+\kappa^\star=31.4932976,\qquad \omega^\star=47.1185670,\qquad
+\ell_1=-6.2888041,
+\]
+with crossing speed $0.2686294$. The period is 0.13335 years.
+The remote second valid root is $\kappa^{\star\star}=16860.8961$, where the
+pair crosses back into the stable half-plane; threshold plots use the first root.
 
-\begin{proposition}[Hawkes--SV criticality correspondence]
-\label{thm:hawkes-sv}
-Under the diffusive near-critical limit of
-\citet{bacrydelattrehoffmannmuzy2013,jaissonrosenbaum2015}, Hawkes
-branching-ratio criticality $n\to 1$ coincides with the real-eigenvalue
-(saddle-node) stratum of the SV drift boundary---the literal analogue of
-\citet{hardiman2013}. The Hopf stratum is a strictly stronger,
-oscillatory instability beyond any scalar branching ratio: it has no
-single-real-number representation and is the genuinely new
-``unoccupied cell'' of the endogeneity--bifurcation correspondence.
-\end{proposition}
-\noindent\emph{Position, not identity.} A scalar branching ratio can only
-encode a real crossing, so the oscillatory Hopf endpoint is invisible to
-it by construction; we therefore claim a structural position, not a
-verified numerical identity (an earlier draft's dimensionless ratio, true
-by definition, was a tautology and is removed---amendment~A10). In our
-dealer-gamma model the saddle-node locus is itself unphysical at the
-canonical specification ($\kappa_{\mathrm{SN}}\leq -1.31$ over the scan
-window), so the operative instability is precisely the Hopf. A falsifiable
-spectral discriminator (\texttt{classify\_stratum}) separates the Hopf
-side from the real/stable side with zero overlap on simulator ground
-truth; we claim no realised Hopf edge in any dataset, only the statistic
-that would detect one. Whether the market sits near $\kappa^\star$ is
-deferred to the empirical dealer-gamma test (amendment~A9).
-
-\section{Numerical phase diagram}
-\label{sec:phase}
-
-We sweep $\kappa\in[0,2]$ on a 401-point grid for each of
-$31\times 21\times 4 = 2{,}604$ cells in $(\xi,\rho,\sigma_v)$ at the
-representative regime $\{G_x,G_v,G_\chi\}=\{0.5,-0.5,-0.5\}$, $\alpha=0.5$,
-$\beta=1$, $\gamma=0.5$, $\kappa_v=2$ (constant-vol surrogate). The pair
-$(\xi,\rho)$ enters via the leading shear correction $a_{\mathrm{eff}}(\kappa)=
-a(\kappa)+\tfrac{1}{2}\xi^2\rho G_v$, an
-\citet{baxendale2025}-style projection of small-noise stochastic
-Hopf onto the eigenvalue envelope.
-
-\begin{figure}[h]
+\begin{figure}[t]
 \centering
-\includegraphics[width=\textwidth]{figures/hopf_phase_diagram.pdf}
-\caption{\textbf{Hopf threshold $\kappa^\star$ across $(\xi,\rho,\sigma_v)$.}
-\emph{Left:} heatmap at $\sigma_v=0.50$. White cells: no Hopf in
-$\kappa\in[0,2]$, concentrated in the high-$\xi$ / strongly-negative-$\rho$
-wedge where shear destabilises the eigenvalue envelope. \emph{Right:} four
-$\kappa^\star(\sigma_v)$ line cuts at SPX-like $(\xi,\rho)$ probes.}
-\label{fig:hopf-phase-diagram}
+\includegraphics[width=0.88\linewidth]{figures/centered_hopf_validation.pdf}
+\caption{Eigenvalue crossing, actual nonlinear orbit at
+$1.02\kappa^\star$, and local-Hopf map. Blank cells do not imply stability.}
+\label{fig:validation}
 \end{figure}
 
-The SPX-relevant $(\xi,\rho)\approx(0.30,-0.70)$ corner has
-$\kappa^\star$ in the $0.85$--$0.95$ band. Whether the empirical market
-sits near this Hopf boundary is deferred to the empirical dealer-gamma
-test; \cref{thm:hawkes-sv} places \citet{hardiman2013}'s $n\approx 1$ at
-the distinct real-eigenvalue (saddle-node) edge, in the
-endogenous-feedback tradition of
-\citet{brockhommes1998,filimonov2012,bouchaud2011endo}. Khasminskii-style
-sphere-process estimates of the stochastic-Hopf shift give $|\Lambda|\in
-[5\times 10^{-2}, 9\times 10^{-2}]$ on a $6\times 6$ $(\xi,\rho)$ grid;
-$|\Lambda|\cdot\varepsilon^2\ll 1$ at calibration-noise scale, so the
-deterministic $\kappa^\star$ is the operative threshold.
+Direct integration of \eqref{eq:x}--\eqref{eq:chi} with the actual Gaussian
+book gives $X\in[-0.02814,0.02358]$ and
+$v\in[0.04453,0.08187]$ after transient discard. The displayed cycle therefore
+stays in the local, positive-variance region. This validates an internally
+consistent possibility, not SPX calibration or global stability.
+Gross-normalized signed mixtures in the full paper show that supercriticality
+is book-dependent; dispersed or offsetting books can instead be subcritical.
 
-\section{Pre-registered evaluation framework}
-\label{sec:eval}
+\section{Pre-extraction protocol and limitations}
 
-The pipeline is committed at git commit \texttt{63078f5} with an
-OpenTimestamps Bitcoin-anchored proof of the document hash, prior to any
-contact with empirical SPX data, adapting the \citet{camerer2018}
-template to RL-for-derivatives. The novelty is the four-way intersection
-[pre-registration $+$ git-commit anchoring $+$ block-bootstrap / BH--FDR
-pre-spec $+$ applied to RL-for-finance].
+Before expected September 2026 WRDS access, Amendments A13--A15 fix the
+registered historical horizon from 2017-01-03 through 2024-10-29. Four observable
+OI-gamma summaries---log unsigned mass, call--put composition, mean log
+moneyness, and log dispersion---separately predict
+$\log(r_{t+1}^2+10^{-8})$ with leads and HAR-style lags constructed on the
+complete CRSP market calendar, official Cboe VIX, outcome-session weekday
+indicators, and one regressor-session monthly-expiration control. Contracts are
+unadjusted standard-settlement SPX/SPXW with 1--365 calendar-day maturities,
+fixed quote/IV/moneyness filters, and parity forwards split by AM/PM settlement.
+HAC lag 5 and a 10-day moving-block bootstrap are separately BH-adjusted over
+four tests. Robust association requires rejection by both adjusted families
+and a 95\% bootstrap interval excluding zero; one-family rejection is
+method-sensitive. Convention-signed GEX and stress interactions are secondary.
+This is a retrospective pre-analysis plan over historically public outcomes,
+not a blinded prospective experiment.
 
-\paragraph{Primitives \& hypotheses.}
-(i) Sliced-$W_2$ \citep{bonneel2015sliced} over arbitrage-free 21-day
-surface windows---the realism metric. (ii) $\kappa$-sensitivity slope at
-calibrated $\kappa_0$---the reflexivity-importance scalar. The closed-form
-$\kappa^\star$ elasticity $\eta_{\mu_q}=+703$ makes calibration of the OI
-mean to within $\sim 5$~bp of ATM in log-strike the binding observational
-requirement for $\pm 5\%$ tolerance on $\kappa^\star$.
-\textbf{H1$'$} (primary, direct dealer-gamma regression, amendment~A9): a
-model-free regression of next-day realised vol-of-vol on standardised
-signed dealer GEX from the OI grid (no RL, no simulator), pooled over the
-three event windows with a quiet-regime control; the mechanism predicts a
-negative coefficient, required at $p<0.05$ under both a moving-block
-bootstrap and Newey--West HAC (synthetic pooled power $0.86$, sign $0.98$,
-FPR $0.02$). \textbf{H1} (secondary realism, superseded as primary): a
-model-free RL agent $\pi_{\kappa_0}$ trained inside the reflexive simulator
-beats four non-reflexive baselines on sliced-$W_2$ over rolling 21-day
-windows at Volmageddon, COVID, and the 2024 yen-carry unwind. Decision rule: 12 pairwise dominance checks with
-non-overlapping 95\% block-bootstrap CIs \citep{politisromano1994};
-arbitrage filter follows \citet{roper2010,gatheraljacquier2014,lee2004};
-sample-complexity follows \citet{manole2022sw}.
-\textbf{H2}: $\kappa$-sensitivity TOST equivalence on the dimensionless
-elasticity with GP-posterior slope CI under the pre-registered RBF +
-WhiteKernel kernel (A6) and elliptic uncertainty sets \citep{ma2025robust}.
-\textbf{H4} (critical slowing down, amendment~A8): the Hopf limit-cycle
-period ($5.3$--$11$\,yr) lies below any usable window's resolution, so the
-spectral peak is replaced by the rolling lag-1 autocorrelation of $|r_t|$
-with a Kendall-$\tau$ trend vs an AR(1)/phase-randomised surrogate null
-\citep{scheffer2009ews,dakos2012methods}; FPR $\leq 0.083$ and
-$0.82$--$0.85$ power on a $252$-day record, exploratory within the bare
-event window.
-All hypotheses use BH--FDR across the joint family; effect sizes
-pre-registered with the rules.
+The theorem is local and deterministic. Brownian paths are not periodic
+orbits. The model has no proved global attractor, stationary tail result,
+stochastic threshold shift, Hawkes equivalence, or causal identification. For
+an affine additive linearization, the tangent cocycle is $e^{Jt}$ and is
+noise-independent; the earlier nonzero shift claim was withdrawn. The full
+square-root model has state-dependent diffusion and is not analysed as a
+stochastic bifurcation here. Any WRDS
+association concerns public book summaries. Confirming signed dealer feedback
+requires participant-tagged positions and an identification strategy.
 
-\paragraph{Synthetic-pipeline validation.} Before empirical contact, we
-exercise the locked pipeline on three synthetic sources:
-(a) $\kappa_0$-trained agent re-deployed at $\kappa_0$ (reference);
-(b) same agent at $4\kappa_0$ (mild reflexive shift);
-(c) Heston (different mechanism). On the production budget (BC: 30
-episodes; per source: 30 rollouts $\times$ 100 days; 200 stationary
-block-bootstrap resamples), the locked rule returns the expected
-ordering with non-overlapping CIs:
-$\mathrm{SW2}_a = 0.00498$ (CI $[0.00431, 0.0164]$),
-$\mathrm{SW2}_b = 0.0337$ (CI $[0.0300, 0.0402]$),
-$\mathrm{SW2}_c = 0.0541$ (CI $[0.0434, 0.0611]$).
-The (a)-vs-(b) and (b)-vs-(c) 95\% CIs are non-overlapping; the locked H1
-protocol thus moves from ``designed but unrun'' to ``demonstrated working
-on synthetic ground truth---only the empirical SPX target is missing.''
-
-\section{Mechanism decomposition and conclusions}
-\label{sec:mechanism}
-
-\citet{halperin2025marketron} is a different mechanism: their memory
-carrier $y$ enters both drifts non-linearly through a potential $V_M(x)$,
-while our $\chi$ enters only the variance drift via $\gamma \chi$, and our
-$\kappa=\gamma=0$ collapse is standard Heston while Marketron's is not.
-A 5D $(\kappa,\gamma,T_{\mathrm{eff}},\mu_q,\sigma_q)$ mechanism
-decomposition gives an all-cell, out-of-sample shape-feature sign-agreement
-rate of $7/28$ (worse than chance --- we do not claim otherwise; the
-all-cell aggregate is the wrong aggregator). The a priori restricted
-subset (long-horizon $T\geq 0.5$~yr, shape-only, within-envelope,
-dead-zone-symmetric) gives $4/8$ OOS ($p\approx 0.637$, chance-level)
-and $6/8$ in-sample. The predictable long-horizon-skew sign disagreement
-under risk-neutral drift (Bessembinder compounding absent) is the
-falsifiable Phase~4 prediction. This supersedes the earlier inflated
-one-third headline.
-
-We have introduced a 3D reflexive SV simulator, proved a Hopf bifurcation
-theorem with closed-form $\ell_1$ for log-normal OI, closed the codim-2
-Bautin/BT structure (BT-empty in the canonical window) and the corrected
-McKean--Vlasov threshold (destabilising at the canonical short-gamma
-regime, stabilising at long-gamma log-normal-OI),
-and placed the empirical \citet{hardiman2013} branching ratio at the
-real-eigenvalue (saddle-node) stratum, with the model's Hopf the strictly
-stronger oscillatory cell (\cref{thm:hawkes-sv}). The evaluation
-pipeline---a direct dealer-gamma regression as primary test, with
-sliced-$W_2$ and a critical-slowing-down detector---is pre-registered with
-an OpenTimestamps proof; synthetic-ground-truth validation of the locked
-surface-distance (secondary) protocol returns the predicted ordering. Phase-4 SPX results pre-committed
-to publication regardless of direction. Proofs, closed-form $\ell_1$, and
-code at [anonymous repository link].
-
-\newpage
 \bibliographystyle{plainnat}
 \bibliography{references}
-
 \end{document}

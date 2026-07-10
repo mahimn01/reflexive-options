@@ -53,8 +53,24 @@ def classify_regime(
 
     abs_log_returns = np.abs(np.diff(np.log(spots), axis=1))
     if abs_log_returns.shape[1] >= 2:
-        flat = abs_log_returns.reshape(-1)
-        ac1 = float(np.corrcoef(flat[:-1], flat[1:])[0, 1]) if len(flat) > 200 else 0.0
+        # Form only genuine within-path lag pairs.  Flattening first would add
+        # artificial links from the last return of one path to the first
+        # return of the next path.  Compute the correlation explicitly so a
+        # constant-return batch has the well-defined classifier value ac1=0
+        # rather than emitting a divide-by-zero warning from np.corrcoef.
+        lagged = abs_log_returns[:, :-1].reshape(-1)
+        current = abs_log_returns[:, 1:].reshape(-1)
+        if lagged.size > 200:
+            lagged_centred = lagged - lagged.mean()
+            current_centred = current - current.mean()
+            denominator = float(np.linalg.norm(lagged_centred) * np.linalg.norm(current_centred))
+            ac1 = (
+                float(np.dot(lagged_centred, current_centred) / denominator)
+                if denominator > 0.0
+                else 0.0
+            )
+        else:
+            ac1 = 0.0
     else:
         ac1 = 0.0
 

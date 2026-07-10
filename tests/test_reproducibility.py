@@ -686,6 +686,13 @@ def test_build_receipt_includes_schema_and_tooling() -> None:
 #
 # Same env-var escape hatches as the v0.1.0 leg (CI_FAST=1 / SKIP_REPRO=1).
 
+# v0.4 correction: this experiment renormalized an additively forced state,
+# not the derivative cocycle. Its historical receipt remains immutable for the
+# audit trail, but rerunning it through the corrected zero-shift API is
+# mathematically undefined (log|Lambda| = log 0). Do not manufacture legacy
+# values merely to keep an invalid result green.
+_WITHDRAWN_V033_RERUNS = {"lambda_scaling"}
+
 
 def _load_v033_payload() -> dict[str, Any]:
     if not V033_RECEIPT_PATH.exists():
@@ -697,7 +704,7 @@ def _v033_experiment_names() -> list[str]:
     payload = _load_v033_payload()
     if not payload:
         return []
-    return list(payload.get("experiments", {}).keys())
+    return [name for name in payload.get("experiments", {}) if name not in _WITHDRAWN_V033_RERUNS]
 
 
 def _assert_v033_metric_matches(measured: Any, baseline: dict[str, Any], path: str) -> str | None:

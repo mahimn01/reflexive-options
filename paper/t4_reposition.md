@@ -1,5 +1,8 @@
 # Theorem 4 Repositioning: Hawkes–SV Criticality Correspondence
 
+> **ARCHIVED / WITHDRAWN.** There is no Hawkes--SV equivalence theorem in the
+> current centered-model paper.
+
 **Status:** PRE-DATA pre-registration amendment. Replaces the §3.11 block in `paper/main.tex`
 and the §6 block in `paper/theory.md`. Implements the locked decision (a)–(d):
 

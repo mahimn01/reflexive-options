@@ -35,8 +35,8 @@ parallel artefact with a *per-metric* tolerance schema:
 Tolerances follow the CLAUDE.md "Reproducibility receipt" policy:
   * Closed-form deterministic computations (Routh–Hurwitz, Brent root,
     closed-form ℓ_1, OLS, ODE integration) lock at **1e-10 absolute**.
-  * Stochastic simulations (Khasminskii MC, particle SDE, BC-trained MLP,
-    Heston Euler) lock at **5% relative**.
+  * Historical stochastic simulations (the Lambda receipt is withdrawn in
+    v0.4), particle SDE, BC-trained MLP, and Heston Euler lock at **5% relative**.
 
 Headline-config locking
 -----------------------
@@ -374,7 +374,7 @@ def _all_specs() -> list[WaveExperimentSpec]:
             config_dict=_config_lambda_scaling(),
             tolerance_class="deterministic_exact",
             seed=20260514,
-            notes="Khasminskii Λ scan with locked per-cell seed offset; OLS+bootstrap fit.",
+            notes="WITHDRAWN v0.4: forced-state, not tangent-flow, Lambda scan.",
             metrics=(
                 MetricSpec("n_cells_total", lambda m: int(m["n_cells_total"])),
                 MetricSpec("n_cells_fit", lambda m: int(m["n_cells_fit"])),

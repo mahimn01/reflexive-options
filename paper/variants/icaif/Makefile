@@ -2,7 +2,7 @@
 
 pdf: main.pdf
 
-main.pdf: main.tex references.bib figures/hopf_phase_diagram.pdf
+main.pdf: main.tex references.bib figures/centered_hopf_validation.pdf
 	pdflatex -interaction=nonstopmode main.tex
 	bibtex main
 	pdflatex -interaction=nonstopmode main.tex

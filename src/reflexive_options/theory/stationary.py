@@ -1,4 +1,8 @@
-"""Fokker-Planck stationary marginal density of the reflexive simulator.
+"""Exploratory stationary-density utilities for the legacy simulator.
+
+No stationary-density, tail, skew, or bimodality claim from this module is a
+result of the current paper. Monte Carlo KDE output is descriptive and does
+not prove a stationary law, mixing, or a global consequence of local Hopf.
 
 The 3D Fokker-Planck PDE for π(S, v, z, t) admits no general closed-form
 stationary solution. We compute π*(S) numerically via Monte-Carlo: simulate

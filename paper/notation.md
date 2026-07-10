@@ -1,80 +1,62 @@
-# Notation — canonical symbol table
+# Notation for the v0.4 centered model
 
-This is the single source of truth for symbols used across the codebase, theory writeup, and paper. Any module or proof that uses a symbol must conform to this table or extend it via PR.
+This table follows `paper/main.tex`. Legacy simulator and pre-registration
+symbols may differ and are not silently mapped into the current theorem.
 
-## State variables
+## State and measure
 
-The reflexive simulator is **3-dimensional**: $(S_t, v_t, z_t)$. The memory variable $z_t$ is required for the Hopf bifurcation theorem (the 2D skeleton has an upper-triangular Jacobian and cannot Hopf — see `paper/theory.md` §1.1).
+| Symbol | Meaning | Units/domain |
+|---|---|---|
+| $\mathbb P$ | physical measure | -- |
+| $F_t$ | predictable local reference level | price |
+| $X_t=\log(S_t/F_t)$ | detrended log-price deviation | dimensionless, local |
+| $v_t$ | instantaneous annualized variance | $\mathbb R_{\ge0}$ |
+| $\chi_t$ | filtered price-memory signal | dimensionless |
 
-| Symbol | Meaning | Range / units |
-|--------|---------|---------------|
-| $S_t$ | Underlying spot price at time $t$ | $\mathbb{R}_{>0}$, USD |
-| $v_t$ | Instantaneous variance | $\mathbb{R}_{\geq 0}$, (decimal/yr)² |
-| $\sigma_t = \sqrt{v_t}$ | Instantaneous volatility | $\mathbb{R}_{\geq 0}$, decimal/yr |
-| $z_t$ | Memory variable: low-pass-filtered log-price | $\mathbb{R}$, dimensionless |
-| $G(S, z, v)$ | Aggregate dealer-gamma exposure | scalar, USD per unit return |
-| $t$ | Time | $[0, T]$, years |
-| $T$ | Time horizon (terminal) | years |
+## Structural parameters
 
-## Heston parameters (per regime in time-dep variant)
+| Symbol | Meaning | Units |
+|---|---|---|
+| $\delta$ | local reference pull | yr$^{-1}$ |
+| $\kappa$ | coupling to normalized book pressure | yr$^{-1}$ |
+| $\kappa_v$ | variance mean-reversion speed | yr$^{-1}$ |
+| $\theta_v$ | long-run variance | annualized variance |
+| $\alpha$ | memory adjustment speed | yr$^{-1}$ |
+| $\beta$ | memory target loading | dimensionless |
+| $\gamma$ | strength of $v\chi$ variance feedback | yr$^{-1}$ |
+| $\xi$ | square-root variance diffusion scale | yr$^{-1}$ when $v$ is yr$^{-1}$ |
+| $\rho$ | Brownian correlation | $[-1,1]$ |
 
-| Symbol | Meaning |
-|--------|---------|
-| $\kappa$ (Heston) | Mean-reversion speed of variance |
-| $\theta$ (Heston) | Long-run variance |
-| $\xi$ | Vol-of-vol |
-| $\rho$ | Correlation between $dW_S$ and $dW_v$ |
-| $v_0$ | Initial variance |
+The current dynamics are
 
-> **Naming clash warning.** Heston's mean-reversion parameter is conventionally $\kappa$. The reflexive coupling parameter is also conventionally $\kappa$. Throughout the code and paper we use **`kappa`** (Heston) and **`coupling`** (reflexive) to disambiguate. In LaTeX, plain $\kappa$ refers to the **reflexive coupling** (the central object of the paper) and $\kappa_v$ (with subscript $v$) refers to **Heston's variance mean-reversion**; this matches `paper/main.tex` and `paper/theory.md` and avoids the bold-symbol overhead in expressions like $H(\kappa)$. The legacy $\boldsymbol{\kappa}$ notation appears only in `paper/pre_registration.md` and is preserved there for chain-of-custody reasons.
+$$dX=[-\delta X-\tfrac12(v-\theta_v)+\kappa g(X,\chi,v)]dt+\sqrt v\,dW^S,$$
+$$dv=[\kappa_v(\theta_v-v)+\gamma v\chi]dt+\xi\sqrt v\,dW^v,$$
+$$d\chi=\alpha(\beta X-\chi)dt.$$
 
-## Reflexive simulator parameters
-
-| Symbol | Meaning | Literature prior |
-|--------|---------|------------------|
-| $\boldsymbol{\kappa}$ | Reflexive coupling strength | $\sim 5 \times 10^{-12}$ per USD-of-dollar-gamma per year (triangulated from GPP 2009 + Barbon–Buraschi + SqueezeMetrics; see `dealer_gamma_brief.md`) |
-| $\mu$ | Drift (often risk-neutral or fitted) | scalar, $\mathbb{R}$ |
-| $\alpha$ | Memory-variable decay rate | $\sim 252$/yr ⇒ ~1-day half-life |
-| $\beta$ | Memory-variable intake from log-price | dimensionless, $O(1)$ |
-| $\gamma$ | Leverage feedback: memory $z$ → variance drift | $\geq 0$, units 1/yr |
-| $\boldsymbol{\kappa}^*$ | Hopf bifurcation threshold (Theorem 1, paper/theory.md) | solves $H(\kappa)=c_1 c_2 - c_0 = 0$ |
-| $\omega^* = \sqrt{c_1(\kappa^*)}$ | Hopf angular frequency at bifurcation | rad/yr |
-| $\ell_1$ | First Lyapunov coefficient (sub vs super-critical) | sign determines bifurcation type |
-
-## Surface grid
+## Dealer book
 
 | Symbol | Meaning |
-|--------|---------|
-| $K$ | Strike price |
-| $k = \log(K / S_t)$ | Log-moneyness, centered at 0 = ATM |
-| $T$ (in surface context) | Maturity |
-| $\sigma(K, T)$ or $\sigma(k, T)$ | Implied vol surface |
-| $w(k, T) = \sigma^2(k, T) \cdot T$ | Total implied variance |
+|---|---|
+| $q(k)$ | latent **signed dealer-position** density in fixed log moneyness |
+| $\mathcal G(X,v)$ | positive Gaussian book mass integrated against BS gamma |
+| $s\in\{-1,+1\}$ | latent dealer orientation; not observed from public OI |
+| $g$ | centered, normalized book pressure with $g(0,0,\theta_v)=0$ |
+| $(\mu_q,\sigma_q,T)$ | Gaussian mean, dispersion, effective maturity |
 
-## Open-interest grid
+Public OI is a count of outstanding contracts. A convention-signed OI-gamma
+series is a proxy and must not be denoted as observed dealer inventory.
 
-| Symbol | Meaning |
-|--------|---------|
-| $q_{K, T}$ | Open interest in contracts at strike $K$, maturity $T$ |
-| $\Gamma_{K, T}(S, t)$ | Per-contract Black-Scholes gamma |
-| $\text{sign}(K, T)$ | Dealer position sign convention |
-
-The aggregator: $G(S, t) = \sum_{K, T} q_{K, T} \cdot \Gamma_{K, T}(S, t) \cdot \text{sign}(K, T)$.
-
-## RL agent
+## Linearization and Hopf quantities
 
 | Symbol | Meaning |
-|--------|---------|
-| $\pi$ | Policy |
-| $\pi_{\boldsymbol{\kappa}_0}$ | Policy trained at coupling $\boldsymbol{\kappa}_0$ |
-| $a_t$ | Action — vector of option position deltas on the strike-expiry grid |
-| $r_t$ | Reward — P&L − transaction cost − position-size penalty |
-| $s_t$ | State — $(S_t, \text{IV-surface tensor}, v_t, G_t, \text{position}, \text{time-to-expiry})$ |
+|---|---|
+| $z_\star=(0,\theta_v,0)$ | fixed equilibrium for every $\kappa$ |
+| $J(\kappa)$ | Jacobian at $z_\star$ |
+| $c_2,c_1,c_0$ | coefficients of $\det(\lambda I-J)$ |
+| $H=c_1c_2-c_0$ | cubic Routh--Hurwitz determinant |
+| $\kappa^\star$ | positive root satisfying all side conditions |
+| $\omega^\star=\sqrt{c_1(\kappa^\star)}$ | Hopf angular frequency |
+| $\ell_1$ | first Lyapunov coefficient in Kuznetsov convention |
 
-## Evaluation metrics
-
-| Symbol | Meaning |
-|--------|---------|
-| $W_2$ | Wasserstein-2 distance between surface distributions |
-| $\text{slope}_{\boldsymbol{\kappa}_0}$ | $\partial(\text{metric}) / \partial \boldsymbol{\kappa}$ at the training point — the κ-sensitivity scalar |
-| $\text{IS}, \text{OOS}$ | In-sample, out-of-sample (per Bailey/Lopez de Prado deflated Sharpe convention) |
+Absence of a valid root means only absence of this local Hopf mechanism. It
+does not mean global stability.

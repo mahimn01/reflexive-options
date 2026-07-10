@@ -1,5 +1,9 @@
 # Manuscript Skeleton — *Reflexivity in Options Markets*
 
+> **ARCHIVED / WITHDRAWN.** This predates the v0.4 centered-model
+> reconstruction. Its model, anchors, stochastic shift, and empirical
+> hierarchy are not current. Use `paper/main.tex` and Amendments A13--A15.
+
 > **⚠ Superseded planning artifact (pre-v0.3.9).** This skeleton predates the v0.3.9 empirical-leg redesign. Wherever it describes **H1** as a "primary realism" RL-agent / sliced-W2 test or **H4** as a "Hopf-frequency spectral peak via Welch's method", those are retracted: the primary empirical test is now a direct, model-free **dealer-gamma (GEX) regression (H1′)** and H4 is a **critical-slowing-down** early-warning test. The Hawkes–SV theorem was repositioned (no `n_SV` numerology) and theorem numbering shifted (Hawkes–SV is now Theorem 5). The authoritative state is `paper/main.tex` + amendments **A8–A11** in `paper/pre_registration_amendments.md`. Kept as the historical authoring blueprint, not a current spec.
 
 **Target.** 8-page workshop format (NeurIPS GenAI in Finance Workshop 2026, expected double-blind). The same skeleton scales to 24 pages for a journal version (e.g., *Quantitative Finance*) by expanding the proofs, the empirical roadmap, and the threats-to-validity section.
@@ -352,7 +356,7 @@ Don't write top-to-bottom. The recommended order maximizes the % of fragment-lif
 4. **Day 4: §1 (intro) + §7 (conclusions)** — pure new prose, but informed by what you've already written.
 5. **Day 5: references.bib** — mechanical, paste-and-edit.
 6. **Day 6: full latexmk build + first proofread.**
-7. **Day 7: buffer / co-author response window / abstract trim.**
+7. **Day 7: buffer / external-feedback response window / abstract trim.**
 
 ---
 

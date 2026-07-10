@@ -1,16 +1,19 @@
-"""Numerical Hopf bifurcation analysis of the reflexive 3D SDE.
+"""Legacy and low-level Hopf utilities for the reflexive 3D SDE.
+
+Correction (v0.4): the former additive-noise ``Lambda`` estimator was invalid.
+For the frozen affine additive surrogate, same-noise trajectory differences have
+derivative cocycle ``exp(Jt)``, independent of noise. The compatibility
+functions below now return the spectral abscissa and a zero correction.
 
 The deterministic skeleton (paper/theory.md §2) has Jacobian (3) with
 characteristic polynomial $P(\\lambda; \\kappa) = \\lambda^3 + c_2 \\lambda^2 + c_1 \\lambda + c_0$.
 A Hopf bifurcation occurs when $H(\\kappa) := c_1 c_2 - c_0 = 0$ with
 $c_2, c_0 > 0$ and $H'(\\kappa) \\neq 0$ (Liu's criterion / Routh-Hurwitz).
 
-This module performs the numerical scan, computes the first Lyapunov coefficient
-$\\ell_1$ that fixes super- vs sub-criticality (Kuznetsov 2004 eq. 3.20), and the
-stochastic-Hopf shift $\\Lambda(\\kappa)$ (Engel-Lamb-Rasmussen 2024) via a
-Khasminskii sphere process for the top Lyapunov exponent of the linearised SDE.
-
-The analytical results live in paper/theory.md.
+This module performs legacy numerical scans and supplies the low-level first
+Lyapunov calculation. The current analytical results live in ``paper/main.tex``
+and ``theory.centered_model``; ``paper/theory.md`` is an archived v0.3 audit
+trail.
 """
 
 from __future__ import annotations
@@ -244,8 +247,9 @@ def compute_lyapunov_coefficient(
 
     where J q = iω q, J^T p = -iω p, ⟨p, q⟩ = 1.
 
-    Sign convention: ℓ_1 < 0 → supercritical (stable limit cycle for κ > κ*),
-    ℓ_1 > 0 → subcritical (unstable cycle, hysteresis).
+    Sign convention: ℓ_1 < 0 gives stable small cycles on the side where the
+    equilibrium pair has positive real part; ℓ_1 > 0 gives unstable small
+    cycles on the opposite side. Hysteresis is a separate global question.
 
     Args:
         jacobian: 3x3 Jacobian at the Hopf point.
@@ -415,19 +419,11 @@ def build_bilinear_trilinear_tensors(
 
 
 # ---------------------------------------------------------------------------
-# Stochastic Hopf shift Λ(κ) via Khasminskii's sphere process and Benettin
-# renormalisation for the top Lyapunov exponent of the linearised SDE.
+# Historical stochastic-shift API, corrected to the exact additive-noise result.
+# The forced-state renormalization formerly used here was not a tangent flow.
 #
-# Implementation notes:
-#   - We linearise the SDE in deviation variables ξ = x - x* around the
-#     equilibrium: dξ = J ξ dt + Σ(x*) dW, with Σ multiplied by ε.
-#   - Rather than sphere-projecting the whole flow (which adds projection
-#     drift terms), we run the linearised flow ξ_t directly and renormalise
-#     its norm every Δt steps (Benettin et al. 1980). This yields the same
-#     top Lyapunov exponent in the additive-noise limit and is robust enough
-#     for the small multiplicative-noise regime needed here.
-#   - Cost: O(n_paths · n_steps) per ε. Defaults are conservative; a serious
-#     run wants n_paths ≥ 10^4 and n_steps · dt ≥ 10/|λ|.
+# The compatibility signatures retain old simulation arguments, but the
+# corrected implementation evaluates no forced-state Monte Carlo path.
 # ---------------------------------------------------------------------------
 
 
@@ -442,18 +438,12 @@ def top_lyapunov_exponent_linearised(
     renorm_every: int = 50,
     seed: int | None = None,
 ) -> float:
-    """Top Lyapunov exponent λ_1 of the linearised SDE dξ = J ξ dt + ε Σ dW.
+    """Exact top tangent exponent of ``dX=JX dt+epsilon Sigma dW``.
 
-    Uses Benettin renormalisation: integrate Euler-Maruyama, renormalise
-    ξ → ξ / ‖ξ‖ every `renorm_every` steps, accumulate log-stretches.
-
-    The linear SDE is degenerate at ξ=0 in the multiplicative sense; we treat
-    the noise as additive ε Σ(x*) dW (the linearisation is around the fixed
-    equilibrium so the diffusion is evaluated at the equilibrium and is
-    constant in ξ — this is the standard assumption for the small-noise
-    expansion λ_1 = α + ε^2 Λ + O(ε^4)).
-
-    Returns the time-average of (1/T) Σ log‖ξ(t_i + Δt)‖/‖ξ(t_i)‖ over paths.
+    Solutions driven by the same Brownian path satisfy
+    ``X_t(x)-X_t(y)=exp(Jt)(x-y)``.  The derivative cocycle is therefore
+    independent of additive noise and the exponent is the spectral abscissa
+    of ``J``.  Simulation arguments remain only for v0.3 API compatibility.
     """
     if jacobian.shape != (3, 3):
         raise ValueError(f"jacobian must be 3x3, got {jacobian.shape}")
@@ -461,34 +451,12 @@ def top_lyapunov_exponent_linearised(
         raise ValueError(f"diffusion_matrix must be 3x3, got {diffusion_matrix.shape}")
     if n_steps % renorm_every != 0:
         raise ValueError(f"n_steps ({n_steps}) must be a multiple of renorm_every ({renorm_every})")
-
-    rng = np.random.default_rng(seed)
-    sqrt_dt = float(np.sqrt(dt))
-    eps_sigma = epsilon * diffusion_matrix
-    J = jacobian
-    # Random initial directions on the unit sphere
-    xi = rng.standard_normal((n_paths, 3))
-    xi = xi / np.linalg.norm(xi, axis=1, keepdims=True)
-
-    log_stretches = np.zeros(n_paths, dtype=np.float64)
-
-    for step in range(1, n_steps + 1):
-        dW = rng.standard_normal((n_paths, 3)) * sqrt_dt
-        # ξ_{t+dt} = ξ_t + J ξ_t dt + ε Σ dW
-        drift = xi @ J.T  # (n_paths, 3)
-        noise = dW @ eps_sigma.T
-        xi = xi + drift * dt + noise
-
-        if step % renorm_every == 0:
-            norms = np.linalg.norm(xi, axis=1)
-            # Guard against zero norms (extremely rare); replace with previous direction.
-            norms = np.where(norms < 1e-300, 1.0, norms)
-            log_stretches += np.log(norms)
-            xi = xi / norms[:, None]
-
-    T = n_steps * dt
-    lam_per_path = log_stretches / T
-    return float(np.mean(lam_per_path))
+    if epsilon < 0.0:
+        raise ValueError("epsilon must be non-negative")
+    if n_paths <= 0 or n_steps <= 0 or dt <= 0.0 or renorm_every <= 0:
+        raise ValueError("simulation compatibility arguments must be positive")
+    del diffusion_matrix, epsilon, n_paths, n_steps, dt, renorm_every, seed
+    return float(np.max(np.linalg.eigvals(jacobian).real))
 
 
 def stochastic_hopf_shift_numeric(
@@ -503,20 +471,14 @@ def stochastic_hopf_shift_numeric(
     renorm_every: int = 50,
     seed: int | None = None,
 ) -> tuple[float, float, float]:
-    """Estimate Λ in λ_1(ε) = α + ε² Λ + O(ε⁴) by two-point finite differences.
+    """Return the exact zero additive-noise tangent correction.
 
-    Returns (Lambda, lambda_low, lambda_high) so the caller can sanity-check
-    α ≈ lambda_low - ε_low² · Λ ≈ lambda_high - ε_high² · Λ.
-
-    Compute cost: ~O(n_paths · n_steps) per ε — defaults give ~2×10^6 RHS
-    evaluations total, runs in a few seconds. For a publication-grade Λ,
-    use n_paths ≥ 10^4 and n_steps ≥ 10^4 (~10^8 evals, several minutes).
+    Both returned exponents equal the spectral abscissa. A non-zero stochastic
+    correction requires a state-dependent derivative diffusion and a genuine
+    random-dynamical-system calculation.
     """
     if not (epsilon_low > 0 and epsilon_high > epsilon_low):
         raise ValueError("require 0 < epsilon_low < epsilon_high")
-
-    seed_low = seed
-    seed_high = None if seed is None else seed + 1
 
     lam_low = top_lyapunov_exponent_linearised(
         jacobian,
@@ -526,7 +488,7 @@ def stochastic_hopf_shift_numeric(
         n_steps=n_steps,
         dt=dt,
         renorm_every=renorm_every,
-        seed=seed_low,
+        seed=seed,
     )
     lam_high = top_lyapunov_exponent_linearised(
         jacobian,
@@ -536,10 +498,9 @@ def stochastic_hopf_shift_numeric(
         n_steps=n_steps,
         dt=dt,
         renorm_every=renorm_every,
-        seed=seed_high,
+        seed=seed,
     )
-    Lambda = (lam_high - lam_low) / (epsilon_high**2 - epsilon_low**2)
-    return float(Lambda), float(lam_low), float(lam_high)
+    return 0.0, float(lam_low), float(lam_high)
 
 
 def compute_lambda_correction(
@@ -555,18 +516,16 @@ def compute_lambda_correction(
     renorm_every: int = 50,
     seed: int | None = None,
 ) -> float:
-    """High-level wrapper: extract J and Σ from a `ReflexiveSimulator` at the
-    equilibrium and run the two-point Λ estimator.
+    """Legacy wrapper returning the zero additive-noise tangent correction.
 
     The simulator is duck-typed (we only need `.drift`, `.params`, and
     `.gamma_aggregator`) so this function does not couple bifurcation theory
     to the simulator class hierarchy.
 
-    For the noise structure: the variance equation has multiplicative noise
-    ξ √v dW, but at the equilibrium v* = θ_v this is constant ξ √θ_v, so the
-    additive-noise treatment of `top_lyapunov_exponent_linearised` is the
-    correct leading-order linearisation. Cross-correlation ρ between dW^S and
-    dW^v is folded into the diffusion matrix via Cholesky.
+    Freezing diffusion at the equilibrium defines an additive surrogate. Its
+    tangent correction is exactly zero. This wrapper is retained so old
+    reproduction scripts fail safe rather than recreate the forced-state
+    renormalization artifact.
 
     Args:
         simulator: a ReflexiveSimulator-like object with `.drift(s, v, z)`,
@@ -640,8 +599,8 @@ def compute_lambda_correction(
 
 
 # ---------------------------------------------------------------------------
-# Closed-form Lyapunov coefficient for log-normal OI in moneyness
-# (paper/theory.md §4.3). The aggregator G(a, v) — with a = log S — admits
+# Closed-form derivatives for a positive Gaussian option-book kernel.
+# The aggregator G(a, v) — with a = log(S/F_star) and F_star normalized to one — admits
 # the closed form (Briggs 2003 Erf-Gaussian identity)
 #
 #   G(a, v) = (κ_u e^{-q T} / sqrt(2π τ²)) · e^{-a} · exp(-(a - m)² / (2 τ²))
@@ -656,15 +615,10 @@ def compute_lambda_correction(
 # replace the finite-difference tensor builder for the parametric case and
 # eliminate the ℓ_1 numerical-noise issue.
 #
-# G has no z-dependence, so G_z = 0 and Jacobian (3) loses one entry. With
-# σ² = v in the Heston backbone (∂_y σ² = 0, ∂_v σ² = 1), the characteristic
-# polynomial reduces to a quadratic in κ:
-#
-#   H(κ) := c_1 c_2 − c_0 = G_y² (α + κ_v) κ²
-#                          + (G_v β γ − G_y (α + κ_v)²) κ
-#                          + (α κ_v (α + κ_v) − β γ / 2) = 0,
-#
-# whose positive root is the closed-form Hopf threshold κ*.
+# The current centered model normalizes this positive kernel at its equilibrium,
+# subtracts its equilibrium level, and applies a latent dealer orientation.
+# Its Hopf determinant is constructed and fully side-condition checked in
+# ``centered_model.py``.  A positive algebraic root alone is not a Hopf point.
 # ---------------------------------------------------------------------------
 
 
@@ -683,12 +637,14 @@ def G_lognormal_oi(
     rate: float = 0.0,
     dividend: float = 0.0,
 ) -> float:
-    """Closed-form aggregate dealer-gamma G(a, v) for log-normal OI in moneyness.
+    """Closed-form positive gamma kernel for a Gaussian book in moneyness.
 
-    Integrates the log-normal OI density q(log K) = N(μ_q, σ_q²) against the
-    Black-Scholes gamma at maturity T_eff, vol σ = √v, sign convention s ≡ +1
-    (SqueezeMetrics SPX default). The product of two Gaussians in log K
-    integrates analytically to a Gaussian in a := log S, modulated by 1/S = e^{-a}.
+    Integrates a Gaussian mass q(log K) = N(μ_q, σ_q²) against Black--Scholes
+    gamma at maturity T_eff and volatility σ = √v. The product of two
+    Gaussians in log K integrates analytically to a Gaussian in
+    a := log(S/F_star), with F_star normalized to one, modulated by e^{-a}.
+    This positive kernel contains no public-OI dealer-sign convention; the
+    centered model applies its latent orientation separately.
 
     Args:
         log_spot: a = log S.
@@ -701,7 +657,7 @@ def G_lognormal_oi(
         dividend: dividend yield q (note: collides with OI density q; we use 'dividend').
 
     Returns:
-        G(log_spot, variance) as a float in USD-per-unit-return.
+        Positive kernel value in the units selected by ``coupling_units``.
     """
     if sigma_q <= 0.0:
         raise ValueError(f"sigma_q must be > 0, got {sigma_q}")

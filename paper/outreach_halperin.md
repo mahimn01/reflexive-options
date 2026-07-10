@@ -1,9 +1,12 @@
 # Outreach email to Igor Halperin — *Reflexivity in Options Markets* v0.3.2
 
+> **DO NOT SEND.** This draft contains withdrawn Hawkes-equivalence and v0.3
+> numerical claims and is retained only as correspondence history.
+
 **To:** ighalp@gmail.com
 **CC:** aitkin@nyu.edu *(Itkin co-author on Marketron, prior contact)*
 **From:** Mahimn Patel `<mahimn.patel.k@gmail.com>`
-**Subject:** Reflexive-options paper v0.3.2 — Marketron mechanism decomposition + Hawkes-SV equivalence; feedback or co-authorship?
+**Subject:** Reflexive-options paper v0.3.2 — request for technical feedback
 
 ---
 
@@ -15,17 +18,14 @@ The paper, *Reflexivity in Options Markets: A Stochastic-Volatility Model with D
 
 The other v0.3.2 contribution that touches your work directly: Theorem 2 establishes a Hawkes-SV equivalence at the Hopf boundary. The dealer-gamma critical coupling $\kappa^\star \approx 0.8964$ in our 3D model maps exactly to Hardiman--Bercot--Bouchaud's $n \approx 1$ via the BDHM 2013 diffusive limit and the Bacry--Mastromatteo--Muzy 2015 kernel-universal stability boundary. This closes a long-standing identification gap between the discrete-time Hawkes branching ratio and a continuous-time SV bifurcation parameter — and it complements the Marketron quasi-particle interpretation by giving an independent route to the same critical-reflexivity regime.
 
-The specific ask, in order of decreasing imposition:
-
-(a) **Co-authorship** on §6 (mechanism decomposition) and the Marketron-relevant Phase-4 falsifiable predictions. Your expertise on the inelastic-markets quasi-particle dynamics would meaningfully sharpen the disagreement-as-information framing.
-
-(b) **Feedback** on the manuscript before submission — one to two hours of reading the v0.3.2 PDF would be very useful; I'd be glad to incorporate critique into the camera-ready.
-
-(c) **Kept in the loop** on Phase-4 empirical results when the SPX calibration lands, with no obligation in the meantime.
+The specific ask is technical feedback on the manuscript before submission. One to two
+hours of reading the v0.3.2 PDF would be very useful; I would be glad to incorporate clearly
+attributed critique while retaining sole authorship. I would also be happy to keep you informed
+of later empirical results, with no obligation in the meantime.
 
 Happy to share the full PDF and repo on response: 30-page master `paper/main.pdf`, 5-page double-blind ACM `sigconf` variant for ICAIF, 4-page NeurIPS workshop variant, plus the GitHub source at https://github.com/mahimn01/reflexive-options. The pre-registration is anchored at commit `268c061` with an OpenTimestamps Bitcoin proof at `paper/pre_registration.md.ots`.
 
-Deadlines for context: ICAIF 2026 closes **August 2, 2026**; the NeurIPS GenAI in Finance Workshop CFP is expected late July 2026 once accepted-workshop list is published. There is room in either timeline to incorporate your feedback or formalise co-authorship; arXiv is venue-independent and can land sooner.
+Deadlines for context: ICAIF 2026 closes **August 2, 2026**; the NeurIPS GenAI in Finance Workshop CFP is expected late July 2026 once accepted-workshop list is published. There is room in either timeline to incorporate your feedback; arXiv is venue-independent and can land sooner.
 
 Thank you for your time. The paper is young research, not a finished result, and I would rather hear hard criticism now than after submission.
 

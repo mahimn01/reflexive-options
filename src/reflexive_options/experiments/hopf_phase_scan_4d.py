@@ -1,31 +1,12 @@
-"""4D Hopf phase diagram — sweep κ* across (ξ, ρ, σ_v) at the canonical
-Hopf-exhibiting parameter regime of paper/theory.md §4.2.
+"""ARCHIVED INVALID HEURISTIC — do not interpret or cite its output.
 
-This is the headline §4 figure of the paper. Where `bifurcation_scan.py`
-produces a 2D (κ, σ_v) slice at fixed (ξ, ρ), this experiment varies all four
-axes of the parameter space and renders κ*(ξ, ρ) heatmaps at multiple σ_v
-slices.
+The inserted ``a_eff`` correction below has no stochastic-bifurcation
+derivation. Correlation and vol-of-vol do not enter the deterministic
+Jacobian, and the affine additive linearization has a noise-independent
+tangent exponent. This module remains only to reproduce v0.3 artifacts.
 
-Structural model. The deterministic Jacobian (paper/theory.md eq. 3) does not
-depend on (ξ, ρ) directly — these enter only via the stochastic-Hopf shift Λ
-(paper/theory.md §5). To make a usable phase diagram with the noise axes, we
-incorporate the leading shear-induced correction (Engel-Lamb-Rasmussen 2024,
-``|Λ| ∼ (ρ ξ)^{2/3}``) as a deterministic shift of the eigenvalue envelope:
-
-    a_eff(κ; ξ, ρ) = a(κ) + 0.5 · ξ² · ρ · G_v
-    b(κ; σ_v)     = κ G_v − 0.5 · σ_v          (matches bifurcation_scan.py
-                                                 ∂_v σ² = σ_v convention)
-
-The shear-correction sign is chosen so positive (ρ, ξ) shifts κ* upward (noise
-*stabilises*) and negative (ρ, ξ) shifts κ* downward (noise destabilises) —
-the same sign structure documented in theory.md §4.2 for SPX-like ρ < 0.
-
-This is the deterministic projection of the small-noise stochastic Hopf onto
-the Jacobian; the full Khasminskii Λ(κ; ξ, ρ) computation lives in
-`compute_lambda_correction` and is too expensive (~3 M Euler steps per cell)
-for the 2,604-cell grid this experiment scans.
-
-Run: ``python -m reflexive_options.experiments.hopf_phase_scan_4d``
+The functions are preserved solely so the historical receipt remains
+inspectable. The package no longer installs a command for this module.
 """
 
 from __future__ import annotations

@@ -1,25 +1,8 @@
-"""Λ stochastic-Hopf shift at the §4.2 canonical regime — reproducibility runner.
+"""ARCHIVED v0.3 runner for a withdrawn stochastic-shift claim.
 
-Constructs a `ReflexiveSimulator` at the §4.2 dimensionless regime (memory
-parameters only; the OI grid is held trivial so the price-channel feedback
-vanishes from the Jacobian and we measure the bare Heston-with-memory
-linearisation), plus an SPX-representative (ξ, ρ) variant, runs the
-Khasminskii sphere-process Λ estimator (`compute_lambda_correction`), and
-persists the result alongside config + metrics.
-
-The output magnitude is $|\\Lambda| \\sim 10^{-3}$ at the locked seed and
-path budget; signs are configuration-dependent and the paper text reports
-only the magnitude. The earlier published value (+1.85×10⁻², appearing in
-v0.2.x and earlier README / theory.md / abstract drafts) was a stale legacy
-estimate from a different OI configuration; the v0.3.1 paper text is
-amended to use the magnitude bound from this script.
-
-Run:
-    python -m reflexive_options.experiments.lambda_correction_canonical
-    python -m reflexive_options.experiments.lambda_correction_canonical --quick   # CI
-
-Outputs:
-    runs/lambda_correction_canonical/<timestamp>/{config,metrics}.json
+The old forced-state renormalization was not a tangent-flow estimator. The
+compatibility API returns the exact zero correction for an affine additive
+linearization. Historical output is retained only for the audit trail.
 """
 
 from __future__ import annotations
@@ -64,7 +47,7 @@ class LambdaCanonicalConfig:
     gamma: float = 0.5  # leverage
     coupling_at_kappa_star: float = 0.8964  # the §4.2 Hopf threshold
 
-    # Khasminskii sphere-process estimator parameters
+    # Historical compatibility arguments; corrected API returns zero exactly.
     epsilon_low: float = 0.05
     epsilon_high: float = 0.20
     n_paths: int = 2_000  # mid-fidelity (paper §4.2 used 200; we widen for stability)

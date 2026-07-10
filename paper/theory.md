@@ -1,3 +1,11 @@
+# ARCHIVED v0.3 THEORY — WITHDRAWN CLAIMS BELOW
+
+> **Do not cite or use this file as the current model.** It is retained as an
+> audit trail for v0.3. Its moving equilibrium, additive variance feedback,
+> stochastic shift, no-Hopf/global, Hawkes, mean-field, information, and
+> stationary-density claims are not results of v0.4. The authoritative theory
+> is `paper/main.tex` and `src/reflexive_options/theory/centered_model.py`.
+
 # Theory — Hopf bifurcation and stationary density of the reflexive SDE
 
 This document is the canonical writeup of the analytical contributions of the paper. The implementation in `src/reflexive_options/theory/` operationalizes these results numerically. Derivation details and a literature scan live in `~/Documents/reflexivity-research/hopf_bifurcation_brief.md`.

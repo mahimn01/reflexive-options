@@ -1,5 +1,8 @@
 # Information-Theoretic Reflexivity (LaTeX-ready section)
 
+> **WITHDRAWN.** The rank-one proof does not establish the claim for a complex
+> Hopf eigenspace. This section is not part of the current paper.
+
 This file is a self-contained, LaTeX-friendly writeup of the critical-excess-entropy contribution, **now integrated into `paper/main.tex` as §3.12 (Theorem 6), immediately after the Hawkes–SV correspondence §3.11**. All math uses `$...$` / `$$...$$`; citations use `\citep{...}` against the keys added to `paper/references.bib`; cross-references use `\cref{...}` against the existing label scheme.
 
 > **v0.3.9 note.** References below to the Hawkes–SV theorem's `$n_{\mathrm{SV}}(\kappa^\star)=1$` framing are superseded: that dimensionless rescaling was a definitional tautology and was removed in pre-data amendment A10. The Hopf threshold is characterised purely spectrally by `$\mathrm{Re}\,\lambda_{\max}(J(\kappa^\star))=0$`; see §3.11 / amendment A10 for the repositioned correspondence. The excess-entropy result itself is unaffected.

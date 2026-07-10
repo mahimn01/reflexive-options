@@ -1,3 +1,10 @@
+# ARCHIVED v0.3 RELATED-WORK MATRIX
+
+> This file contains historical comparison language and withdrawn claims. The
+> current positioning is in `paper/main.tex`: a reduced-form local possibility
+> result, with no GPP-derived spot drift, no Hawkes equivalence, and public OI
+> explicitly separated from signed dealer inventory.
+
 # Related Work
 
 This section documents, for each of the four contributions of *Reflexivity in

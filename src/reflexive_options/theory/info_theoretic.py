@@ -1,4 +1,9 @@
-"""Information-theoretic reflexivity — Theorem 5 (excess entropy at the Hopf boundary).
+"""Archived exploratory information statistics; not a theorem of the paper.
+
+The v0.3 ``Theorem 5`` proof was withdrawn: its rank-one slow-mode argument
+does not cover a complex Hopf eigenspace and does not establish the claimed
+monotonicity. Functions remain for reproducibility and exploratory analysis
+only; their output cannot identify dealer-gamma feedback.
 
 This module operationalises **Theorem 5** from paper §3.10: the linearised
 3D reflexive SDE is a multivariate Ornstein-Uhlenbeck process, and the

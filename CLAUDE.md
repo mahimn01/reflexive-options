@@ -1,6 +1,10 @@
 # reflexive-options — agent context
 
-This is Mahimn's research codebase for the in-progress paper *Reflexivity in Options Markets* (target: NeurIPS GenAI in Finance Workshop 2026, ICAIF 2026 stretch).
+This is Mahimn's research codebase for the in-progress paper *Dealer-Gamma
+Feedback and Local Volatility Cycles* (v0.4 centered-model reconstruction).
+`paper/main.tex`, `src/reflexive_options/theory/centered_model.py`, and
+Amendments A13--A15 are authoritative. v0.3 theory/experiment files are historical
+unless explicitly imported by the current paper.
 
 ## Sibling repos
 
@@ -53,14 +57,34 @@ first error.
 
 ## Mathematical conventions
 
-- **State**: $(S_t, v_t, G_t)$ — underlying spot, instantaneous variance, aggregate dealer gamma.
-- **Coupling**: $\kappa$ is the feedback strength. $\kappa = 0$ ⇒ standard time-dep Heston. Literature priors: $\kappa \in [10^{-4}, 10^{-2}]$ per \$bn dealer gamma (GPP 2009).
-- **Surface**: $\sigma(K, T)$ on a 7 maturities × 11 strikes grid around ATM. Strikes in log-moneyness, maturities in years.
-- **Time**: 1-minute step in the simulator; surfaces sampled end-of-day.
+- **Current state**: $(X_t,v_t,\chi_t)$, where $X_t=\log(S_t/F_t)$ is a local
+  detrended deviation.
+- **Measure**: physical measure $\mathbb P$.
+- **Coupling**: $\kappa$ has yr$^{-1}$ units because the current book
+  functional is centered and dimensionless. Never compare it directly with a
+  per-dollar empirical GEX coefficient.
+- **Variance drift**: $\kappa_v(\theta_v-v)+\gamma v\chi$; do not restore the
+  superseded additive $\gamma\chi$ term.
+- **Book**: theory uses a latent signed dealer-position density. Public OI is
+  unsigned and cannot identify dealer sign.
+- **Equilibrium**: $(0,\theta_v,0)$ for every $\kappa$.
+- **Scope**: local deterministic Hopf only. No global stability, stochastic
+  shift, Hawkes equivalence, mean-field threshold, or stationary-tail claim.
 
 ## Pre-registration
 
-`paper/pre_registration.md` is committed *before* empirical evaluation against real SPX data. Once data is acquired (Phase 0 of `~/Documents/reflexivity-research/TODO.md`), the analysis pipeline is run exactly as specified. Any deviation must be flagged in the paper.
+`paper/pre_registration.md` is the preserved historical registration.
+`paper/pre_registration_amendments.md` Amendments A13--A14, supplemented by
+`paper/pre_registration_amendment_a15.md`, form the operative primary protocol and
+supersede A9/A11 where inconsistent. They were added before WRDS access. Do not
+rewrite a historical file; new changes require a disclosed pre-extraction amendment
+and their own proof.
+
+The A13-only bytes and receipt are preserved as
+`paper/pre_registration_amendments.md.a13{,.ots}`. The preserved A13--A14 file is
+paired with `paper/pre_registration_amendments.md.ots`; A15 is paired with
+`paper/pre_registration_amendment_a15.md.ots`. Treat all registration documents
+and receipts as immutable provenance artifacts.
 
 The pre-reg's chain-of-custody anchor is `paper/pre_registration.md.ots` — an OpenTimestamps proof binding the file's SHA256 into the Bitcoin blockchain. Verify with:
 
@@ -68,17 +92,16 @@ The pre-reg's chain-of-custody anchor is `paper/pre_registration.md.ots` — an 
 uv run ots verify paper/pre_registration.md.ots
 ```
 
-After any amendment to the locked pre-reg text, regenerate the proof (`uv run ots stamp paper/pre_registration.md`) and document the change in `paper/pre_registration_amendments.md`.
+Do not overwrite either existing proof. Stamp the amended record as a separate
+artifact and document its exact hash.
 
 ## Running things
 
 ```bash
 pytest                                                          # full test suite
 pytest tests/test_simulator.py                                  # one module
-python -m reflexive_options.experiments.synthetic_replication  # reproduce Marketron figures
-python -m reflexive_options.experiments.bifurcation_scan       # numerical Hopf
-python -m reflexive_options.experiments.phase_diagram          # (κ, σ_v) phase scan
-python -m reflexive_options.experiments.reflexive_transfer     # κ-sensitivity
+python -m reflexive_options.experiments.centered_hopf_validation
+pytest tests/test_centered_model.py tests/test_oi_proxy_protocol.py
 ```
 
 ## Reproducibility receipt

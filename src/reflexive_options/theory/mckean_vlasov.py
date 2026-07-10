@@ -1,4 +1,9 @@
-r"""McKean-Vlasov mean-field limit of the dealer-gamma channel.
+r"""Archived exploratory mean-field extension; not a result of the paper.
+
+The v0.3 claims used the superseded moving-equilibrium/additive-variance
+model and did not establish an empirical dealer population. The numerical
+particle routines remain reproducibility utilities, not a proof that the
+centered model has this mean-field limit or threshold correction.
 
 The single-representative-dealer SDE in the §2 model implicitly assumes
 either (a) perfect coordination across dealers, or (b) the law-of-large-

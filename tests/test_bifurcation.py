@@ -6,7 +6,7 @@ Covers:
     - compute_lyapunov_coefficient matches the analytical sign on the Hopf normal form.
     - build_bilinear_trilinear_tensors matches symbolic Taylor coefficients on a
       polynomial RHS.
-    - stochastic_hopf_shift recovers Λ ε² → 0 as ε → 0 in expectation.
+    - affine additive-noise tangent exponent equals the spectral abscissa.
 """
 
 from __future__ import annotations
@@ -259,18 +259,12 @@ def test_b_c_tensor_construction_finite_differences_consistency() -> None:
 
 
 # ---------------------------------------------------------------------------
-# 5. Stochastic Hopf shift — Λ ε² → 0 as ε → 0
+# 5. Corrected tangent exponent for affine additive noise
 # ---------------------------------------------------------------------------
 
 
-def test_stochastic_hopf_shift_recovers_zero_in_zero_noise_limit() -> None:
-    """As ε → 0 the noise-induced shift Λ ε² vanishes; the top Lyapunov
-    exponent of the linear system collapses to the deterministic largest real
-    part of the Jacobian.
-
-    Use a stable Jacobian (all real parts negative) so α(κ) is well below
-    zero and Λ ε² is a small perturbation. Verify lambda_1(ε) → α as ε → 0.
-    """
+def test_additive_noise_tangent_exponent_equals_spectral_abscissa() -> None:
+    """Same-noise trajectory differences solve the deterministic tangent ODE."""
     # 3D Jacobian with eigenvalues {-0.5, -1, -2}, far from any bifurcation.
     J = np.array(
         [
@@ -282,7 +276,7 @@ def test_stochastic_hopf_shift_recovers_zero_in_zero_noise_limit() -> None:
     Sigma = np.eye(3) * 0.5  # mild diffusion in all directions
     alpha_det = float(np.linalg.eigvals(J).real.max())  # = -0.5
 
-    # Compute λ_1 at decreasing ε; expect convergence to α_det.
+    # Compute λ_1 at decreasing ε; every value must equal α_det.
     eps_values = [0.30, 0.10, 0.03]
     lams = [
         top_lyapunov_exponent_linearised(
@@ -297,17 +291,12 @@ def test_stochastic_hopf_shift_recovers_zero_in_zero_noise_limit() -> None:
         )
         for i, e in enumerate(eps_values)
     ]
-    # Each λ should be within ~0.15 of α_det at these noise levels (small-noise
-    # regime; tighter bounds need n_paths >> 10^4).
     for e, lam in zip(eps_values, lams, strict=True):
-        assert abs(lam - alpha_det) < 0.25, f"ε={e}: λ_1 ≈ {lam:.4f}, α_det = {alpha_det:.4f}"
-    # Monotone convergence: |λ(ε_small) - α| < |λ(ε_large) - α| (in expectation)
-    # — assert at least the smallest-ε value is closer than the largest.
-    assert abs(lams[-1] - alpha_det) <= abs(lams[0] - alpha_det) + 0.05
+        assert lam == pytest.approx(alpha_det), f"ε={e}: λ_1={lam:.4f}, α_det={alpha_det:.4f}"
 
 
 def test_stochastic_hopf_shift_two_point_extrapolation_is_finite() -> None:
-    """The two-point Λ estimator should produce a finite, well-conditioned answer."""
+    """Additive noise leaves the tangent exponent and correction unchanged."""
     J = np.array(
         [
             [-0.5, 1.0, 0.0],
@@ -330,6 +319,9 @@ def test_stochastic_hopf_shift_two_point_extrapolation_is_finite() -> None:
     assert np.isfinite(Lambda)
     assert np.isfinite(lam_low)
     assert np.isfinite(lam_high)
+    assert Lambda == 0.0
+    assert lam_low == pytest.approx(-0.5)
+    assert lam_high == pytest.approx(-0.5)
     # Both Lyapunov estimates should be near α_det = -0.5 for this small ε regime.
     assert abs(lam_low - (-0.5)) < 0.3
     assert abs(lam_high - (-0.5)) < 0.4
@@ -394,18 +386,8 @@ def test_simulator_drift_gives_consistent_finite_difference_jacobian() -> None:
     np.testing.assert_allclose(J_fd, expected, atol=1e-5)
 
 
-def test_compute_lambda_correction_in_canonical_section_4_2_regime() -> None:
-    """Λ at the §4.2 canonical regime is on the order of 10⁻³ in absolute value.
-
-    This test pins the v0.3.1-amended paper claim: the Khasminskii sphere-process
-    estimator at the §4.2 dimensionless regime — bare Heston-with-memory
-    linearisation at the trivial G ≡ 0 equilibrium — produces |Λ(κ*)| ∈ [1e-4, 1.0].
-    Both the value and the test are deliberately loose because Λ's sign and exact
-    magnitude depend sensitively on the OI configuration; the test enforces
-    only the order-of-magnitude bound that the published claim relies on.
-
-    See `experiments/lambda_correction_canonical.py` for the full reproducer.
-    """
+def test_compute_lambda_correction_is_zero_for_additive_linearisation() -> None:
+    """The corrected compatibility wrapper must not recreate the v0.3 artifact."""
     sim = _make_simulator(coupling=0.0)
     Lambda = compute_lambda_correction(
         sim,
@@ -418,11 +400,7 @@ def test_compute_lambda_correction_in_canonical_section_4_2_regime() -> None:
         renorm_every=50,
         seed=11,
     )
-    assert np.isfinite(Lambda), f"Λ must be finite, got {Lambda}"
-    # Order-of-magnitude bound: Λ at this regime is on the order of |10^-3|, well
-    # within [-1, +1]. A larger magnitude would indicate a numerical instability
-    # in the estimator rather than a genuine physical effect.
-    assert -1.0 <= Lambda <= 1.0, f"Λ = {Lambda} out of expected [-1, +1] range at §4.2 regime"
+    assert Lambda == 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -456,7 +434,7 @@ def test_build_tensors_from_simulator_shapes_and_symmetry() -> None:
 
 @pytest.mark.parametrize("seed", [1, 2, 3])
 def test_top_lyapunov_exponent_seed_stability(seed: int) -> None:
-    """Same J, Σ, ε at different seeds give close (but non-identical) estimates."""
+    """Seed cannot affect the exact additive-noise tangent exponent."""
     J = -0.7 * np.eye(3)
     Sigma = 0.3 * np.eye(3)
     lam = top_lyapunov_exponent_linearised(
@@ -469,8 +447,7 @@ def test_top_lyapunov_exponent_seed_stability(seed: int) -> None:
         renorm_every=50,
         seed=seed,
     )
-    # Should be within ~0.2 of -0.7 (the deterministic stable rate)
-    assert abs(lam - (-0.7)) < 0.25
+    assert lam == pytest.approx(-0.7)
 
 
 # ---------------------------------------------------------------------------
@@ -579,11 +556,7 @@ def test_compute_lambda_correction_with_explicit_equilibrium() -> None:
         renorm_every=50,
         seed=13,
     )
-    assert np.isfinite(Lambda)
-    # Loose bound: short-budget two-point Λ estimator is noisy. The point of
-    # this test is the explicit-equilibrium *branch*, not the numerical accuracy
-    # of Λ (which has its own dedicated tests).
-    assert -100.0 <= Lambda <= 100.0
+    assert Lambda == 0.0
 
 
 def test_compute_lyapunov_coefficient_raises_when_omega_far_from_eigenvalues() -> None:

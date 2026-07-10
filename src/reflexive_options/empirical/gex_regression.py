@@ -1,17 +1,20 @@
-"""Primary redesigned empirical test H1': dealer-gamma (GEX) regression.
+"""Legacy A9 convention-based GEX regression utilities.
 
-This module implements, with NO reinforcement-learning agent and NO
-simulator-fit IV surface in the inference loop:
+Public open interest does not identify dealer positions.  Consequently the
+``estimate_gex`` output is a convention-based OI-gamma proxy, not observed
+dealer gamma, and the directional H1' decision helpers in this module are
+retained only to reproduce the superseded A9 protocol.  The confirmatory
+pre-data design is Amendment A13, implemented in ``oi_proxy_protocol``.
 
-1. A Black-Scholes gamma kernel and a GEX estimator that aggregates an
-   end-of-day option open-interest (OI) grid into a single signed dealer
-   gamma exposure number per day, using a dealer-sign convention.
+The module still provides:
+
+1. A Black--Scholes gamma kernel and convention-based OI-gamma aggregates.
 2. Realized vol-of-vol and a short-window critical-slowing-down (CSD) proxy
    (rolling lag-1 autocorrelation of |r_t|) computed directly from returns.
 3. An ordinary-least-squares estimator with Newey-West (HAC) standard errors
    and a moving-block-bootstrap alternative, plus the H1' decision rule.
 
-The core falsifiable prediction (theory.md, predictions 3-4): when dealers are
+The superseded A9 prediction was: when dealers are
 net SHORT gamma (G_t < 0), hedging is destabilizing -> next-period realized
 vol-of-vol and the CSD signal are ELEVATED; when net LONG gamma, hedging damps
 them. In the standardized regression
@@ -24,6 +27,8 @@ negative GEX -> higher vol-of-vol). The decision rule is: reject H0 in favour
 of H1' iff b1 < 0 with HAC AND block-bootstrap one-sided p < alpha after
 Benjamini-Hochberg control across the small pre-registered family of outcome
 variables, AND the effect is weaker/absent in a quiet-regime control window.
+That directional decision is not valid for public OI and must not be used as
+the current confirmatory test.
 
 All functions are pure numpy/scipy. No statsmodels dependency.
 """
@@ -45,8 +50,8 @@ def bs_gamma(
     strike: np.ndarray,
     tau: np.ndarray,
     sigma: np.ndarray,
-    r: float = 0.0,
-    q: float = 0.0,
+    r: float | np.ndarray = 0.0,
+    q: float | np.ndarray = 0.0,
 ) -> np.ndarray:
     """Black-Scholes spot gamma d2V/dS2 per unit of underlying.
 
@@ -95,19 +100,17 @@ def estimate_gex(
     convention: str = "squeeze_metrics",
     scale: float = 1e-9,
 ) -> float:
-    """Aggregate dealer gamma exposure (GEX) from an OI grid.
+    """Aggregate a convention-based OI-gamma proxy from an OI grid.
 
     GEX(t) = sum_k OI_k * gamma_k * sign_k * spot^2 * 0.01 * multiplier * scale
 
-    Dealer-sign conventions:
-    - "squeeze_metrics" : dealers long calls (+), short puts (-) (SqueezeMetrics
-      / SpotGamma SPX default). Net positive GEX => dealers long gamma.
-    - "all_long"        : sign_k = +1 for every contract (diagnostic).
+    Arithmetic conventions (none identifies a dealer position):
+    - "squeeze_metrics" : calls positive, puts negative (historical label).
+    - "all_long"        : every contract positive; this is unsigned gamma mass.
     - "naive_put_call"  : signed but WITHOUT the spot^2 dollar-gamma scaling.
 
-    The spot^2 * 0.01 factor converts BS gamma (per $1) into dollar-gamma (the $
-    change in delta per 1% move). Only the SIGN and the standardized value enter
-    the regression, so the absolute scale is immaterial.
+    The spot^2 * 0.01 factor converts BS gamma (per $1) into dollar-gamma for a
+    one-percent move.  Sign is imposed by ``convention`` and is not observed.
     """
     g = grid
     gamma = bs_gamma(g.spot, g.strike, g.tau, g.sigma)
@@ -307,19 +310,38 @@ def block_bootstrap_pvalue(
     n_boot: int = 2000,
     seed: int = 42,
     alternative: str = "less",
+    confidence: float = 0.90,
+    monte_carlo_correction: bool = False,
 ) -> dict[str, float]:
-    """Moving-block-bootstrap one-sided p-value for a single coefficient.
+    """Moving-pairs block-bootstrap uncertainty for a single coefficient.
 
     Resamples overlapping blocks of (y, X) rows to preserve serial dependence,
     refits OLS each draw, and builds the bootstrap distribution of the target
-    coefficient. For alternative="less" (b1 < 0) the one-sided p-value is the
-    fraction of bootstrap coefficients that are non-negative.
+    coefficient. For alternative="less" (b1 < 0) the one-sided sign p-value is
+    the fraction of bootstrap coefficients that are non-negative.  The
+    optional Monte Carlo correction adds one to the numerator and denominator;
+    A14 enables it so a finite simulation cannot report a zero p-value.
 
-    Returns the point estimate, bootstrap SE, a 90% CI, and the p-value.
+    Returns the point estimate, bootstrap SE, a percentile interval at the
+    requested confidence level, and the sign-tail p-value.
     """
+    if not 0.0 < confidence < 1.0:
+        raise ValueError("confidence must lie strictly between 0 and 1")
+    if alternative not in {"less", "greater", "two-sided"}:
+        raise ValueError("alternative must be 'less', 'greater', or 'two-sided'")
+    if block_len < 1:
+        raise ValueError("block_len must be positive")
+    if n_boot < 2:
+        raise ValueError("n_boot must be at least two")
     rng = np.random.default_rng(seed)
     y = np.asarray(y, dtype=float)
     X = np.asarray(X, dtype=float)
+    if y.ndim != 1 or X.ndim != 2 or X.shape[0] != y.size or y.size == 0:
+        raise ValueError("y and X must be non-empty, aligned one- and two-dimensional arrays")
+    if np.any(~np.isfinite(y)) or np.any(~np.isfinite(X)):
+        raise ValueError("y and X must be finite")
+    if not 0 <= coef_index < X.shape[1]:
+        raise ValueError("coef_index is outside the design matrix")
     n = len(y)
     # Clamp block length so a block always fits inside a (possibly short) series.
     block_len = max(1, min(block_len, n))
@@ -342,14 +364,19 @@ def block_bootstrap_pvalue(
 
     boots = boots[np.isfinite(boots)]
     boot_se = float(np.std(boots, ddof=1))
-    ci_lo, ci_hi = (float(x) for x in np.percentile(boots, [5.0, 95.0]))
+    tail = 50.0 * (1.0 - confidence)
+    ci_lo, ci_hi = (float(x) for x in np.percentile(boots, [tail, 100.0 - tail]))
 
+    denominator = len(boots) + int(monte_carlo_correction)
+    offset = int(monte_carlo_correction)
+    upper_tail = (float(np.sum(boots >= 0.0)) + offset) / denominator
+    lower_tail = (float(np.sum(boots <= 0.0)) + offset) / denominator
     if alternative == "less":
-        pvalue = float(np.mean(boots >= 0.0))
+        pvalue = upper_tail
     elif alternative == "greater":
-        pvalue = float(np.mean(boots <= 0.0))
-    else:  # two-sided
-        pvalue = 2.0 * min(float(np.mean(boots >= 0.0)), float(np.mean(boots <= 0.0)))
+        pvalue = lower_tail
+    else:
+        pvalue = 2.0 * min(upper_tail, lower_tail)
         pvalue = min(pvalue, 1.0)
 
     return {
@@ -359,6 +386,9 @@ def block_bootstrap_pvalue(
         "ci_hi": ci_hi,
         "pvalue": pvalue,
         "n_boot": len(boots),
+        "confidence": confidence,
+        "monte_carlo_correction": float(monte_carlo_correction),
+        "seed": float(seed),
     }
 
 

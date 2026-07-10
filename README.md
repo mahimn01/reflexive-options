@@ -1,256 +1,198 @@
 # reflexive-options
 
-[![release](https://img.shields.io/github/v/tag/mahimn01/reflexive-options?sort=semver&label=release)](https://github.com/mahimn01/reflexive-options/releases)
-[![tests](https://img.shields.io/badge/tests-579%20passing-brightgreen)](#quality)
-[![coverage](https://img.shields.io/badge/coverage-89.47%25-brightgreen)](#quality)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![paper](https://img.shields.io/badge/paper-PDF%20(40%20pp)-blue)](paper/main.pdf)
+[![paper](https://img.shields.io/badge/paper-PDF-blue)](paper/main.pdf)
 
-**Reflexive options market simulator with dealer-gamma feedback, six bifurcation-theoretic results (four theorems, two propositions), RL-trained agents, and a pre-registered evaluation framework.**
+Research code for *Dealer-Gamma Feedback and Local Volatility Cycles: A
+Fixed-Equilibrium Bifurcation Model and a Pre-Extraction Identification Protocol*
+(Patel, 2026).
 
-In-progress research codebase for the working paper *Reflexivity in Options Markets* (Patel, 2026). Current release: **v0.3.12** (master 40 pp + ICAIF + NeurIPS workshop variants).
+## Current claim
 
-## What's here
+The paper gives a local physical-measure model for detrended log price $X$,
+instantaneous variance $v$, and filtered price memory $\chi$:
 
-A full implementation of:
+$$
+\begin{aligned}
+dX_t&=[-\delta X_t-\tfrac12(v_t-\theta_v)+\kappa g(X_t,\chi_t,v_t)]dt
+      +\sqrt{v_t}\,dW_t^S,\\
+dv_t&=[\kappa_v(\theta_v-v_t)+\gamma v_t\chi_t]dt
+      +\xi\sqrt{v_t}\,dW_t^v,\\
+d\chi_t&=\alpha(\beta X_t-\chi_t)dt.
+\end{aligned}
+$$
 
-1. A **reflexive SDE simulator** for an underlying coupled to its own option market via a dealer-gamma feedback channel:
-   $$\frac{dS}{S} = (\mu + \kappa \cdot G(S, t, v))\, dt + \sigma(S, t, v)\, dW_S$$
-   where $G(S, t, v)$ aggregates net market-maker gamma exposure from the open-interest grid (Garleanu-Pedersen-Poteshman 2009 demand-pressure mapping) and $\kappa$ is the feedback coupling strength. When $\kappa = 0$, the system reduces to standard time-dependent Heston.
+The dealer-book functional is centered so $(0,\theta_v,0)$ is an equilibrium
+for every coupling $\kappa$. The $v\chi$ variance feedback leaves the boundary
+drift equal to $\kappa_v\theta_v>0$ at $v=0$.
 
-2. **Four non-reflexive baselines** for clean comparison:
-   - Time-dependent Heston (5–10 piecewise-constant regimes)
-   - Local-stochastic vol (LSV)
-   - 3/2 stochastic vol (smile-shape robustness)
-   - **Gamma-aware non-reflexive** baseline: state-symmetric to the reflexive simulator (agent observes $G_t$) but $G_t$ does not feed back into dynamics. Isolates state-richness from the feedback contribution.
+For a Gaussian density of **signed dealer positions** in fixed log moneyness,
+the Routh--Hurwitz Hopf determinant is quadratic in $\kappa$. The transparent,
+non-calibrated example reproduces
 
-3. **Hard arbitrage-free filter** on every simulated surface: convexity-in-strike, monotonicity-in-maturity, calendar-spread positivity, Lee's moment bounds.
+- $\kappa^\star=31.4932976\,\mathrm{yr}^{-1}$,
+- $\omega^\star=47.1185670\,\mathrm{rad}\,\mathrm{yr}^{-1}$,
+- $\ell_1=-6.2888041$,
+- a nonlinear attracting cycle at $1.02\kappa^\star$ with
+  $v\in[0.04453,0.08187]$.
 
-4. **An RL training infrastructure** (Mamba state-space + cross-attention transformer, PPO + behavioral cloning + EWC + curriculum learning) vendored from the [`mahimn01/trading-algo`](https://github.com/mahimn01/trading-algo) ATLAS module.
+The same quadratic also has a remote second valid point at
+$\kappa^{\star\star}=16860.8961\,\mathrm{yr}^{-1}$, where the pair crosses back
+into the stable half-plane. The API returns both roots; plots and phase maps
+labelled “threshold” use the first.
 
-5. **Six bifurcation-theoretic results (four theorems, two propositions)** (synthesis of established machinery in a configuration not previously published in this combination — see `paper/related_work.md` §1 for the precedent comparison against Halperin–Itkin Marketron, Dai 2025, Brock–Hommes–Wagener, and He–Li–Zheng 2009):
-   - **Theorem 1 (Hopf):** critical coupling $\kappa^\star$ at which endogenous limit cycles in volatility appear, with closed-form first Lyapunov coefficient $\ell_1$ for log-normal open-interest.
-   - **Proposition 1 (BT-empty):** the Bogdanov-Takens locus is empty on the canonical scan window; the model is structurally Hopf-only there and cannot generate excitable spike-and-recovery dynamics from its autonomous skeleton alone.
-   - **Theorem 2 (No-Hopf-wedge global stability):** in the no-Hopf wedge the autonomous skeleton is asymptotically stable on the entire physical $\kappa$-half-line $[0, \infty)$ — no codim-1 bifurcation occurs outside the Hopf region (parameter-global in $\kappa$, not state-space-global).
-   - **Theorem 3 (McKean-Vlasov correction):** with $n_{\mathrm{dealers}} \to \infty$, a rational closed form for the Hopf-threshold ratio $\kappa^\star_{\mathrm{MV}}/\kappa^\star_{\mathrm{single}}$ (recovers the single-dealer threshold as $\theta_G \to \infty$; frozen-dealer limit $8/21$). The sign of the finite-$\theta_G$ correction is **regime-dependent**: $<1$ at $G_y>0$ (canonical short-gamma; single-dealer *under*-states the propensity to bifurcate) and $>1$ at $G_y<0$ (the log-normal-OI calibration; single-dealer *over*-states it).
-   - **Proposition 2 (Hawkes–SV criticality correspondence):** via the Bacry-Delattre-Hoffmann-Muzy + Jaisson-Rosenbaum diffusive near-critical limit, Hardiman 2013's critical branching ratio $n \approx 1$ is the literal analogue of the *real-eigenvalue (saddle-node)* stratum of the SV drift boundary; the model's *Hopf* threshold $\kappa^\star$ is a strictly stronger, oscillatory instability beyond any scalar branching ratio — the genuinely novel "unoccupied cell." A falsifiable spectral discriminator separates the two strata on synthetic ground truth (the earlier tautological $n_{\mathrm{SV}}$ "verification" was removed in pre-data amendment A10).
-   - **Theorem 4 (critical excess entropy):** the dealer-gamma channel's excess entropy $E_\tau(\kappa)$ saturates to a finite, strictly-positive limit at $\kappa^\star$ (linear, exponent-1 approach) and vanishes at $\kappa=0$ (Markov closure).
-   - The reflexive simulator's stationary marginal density, contrasted analytically with Heston's known stationary distribution.
+On the closest numerical grid, the actual nonlinear cycle amplitude scales as
+$\{(\kappa-\kappa^\star)/\kappa^\star\}^{0.509}$, close to the local Hopf
+exponent $1/2$. A gross-normalized mixture audit is deliberately less tidy:
+nearby same-sign mixtures remain supercritical, but dispersed and
+offsetting-sign books can be subcritical, and reversing the canonical sign
+orientation removes the valid positive root. The existence and type of the
+local bifurcation are therefore book-dependent.
 
-6. **An evaluation framework** (each ingredient borrowed; combination not previously published — see `paper/related_work.md` §§2–3 for the comparison against He–Li–Zheng 2025 NeurIPS, Ning et al. 2021/2024, VolGAN, FuNVol, Subbaswamy–Saria 2022, Packer 2018):
-   - Sliced Wasserstein-2 distance over arbitrage-free IV surface distributions.
-   - $\kappa$-sensitivity curves: train an agent at $\kappa = \kappa_0$, deploy across $\kappa \in [0, 2\kappa_0]$, slope-of-degradation as a quantitative measure of reflexivity-importance.
+This is a **local deterministic possibility result**. It is not an SPX
+calibration, a global-stability result, or evidence that markets are near a
+Hopf threshold.
 
-7. **Pre-registered hypotheses** (commit-anchored) in `paper/pre_registration.md`.
+## Measurement boundary
 
-## Quick start
+Public option open interest counts outstanding contracts. It does not identify
+which side is held by a dealer. The theory's signed position density is
+therefore latent; an OI-weighted signed GEX series is a convention-dependent
+proxy, not observed dealer inventory.
+
+Amendments A13--A15 replace the former event-selected directional GEX test with
+a pre-extraction registered-horizon protocol. On eligible OptionMetrics dates from
+2017-01-03 through 2024-10-29 it will study four observable summaries:
+
+1. unsigned OI-gamma mass;
+2. call--put composition;
+3. gamma-weighted mean log moneyness;
+4. gamma-weighted log-moneyness dispersion.
+
+The contract universe, parity/carry forward rule, rate/dividend tuple, spot and
+return sources, OI timing, and duplicate/attrition policy are fixed before
+access. Leads and lags remain on the complete CRSP trading-session calendar, so
+a missing option date cannot compress the next-session outcome. These summaries
+predict next-session log squared CRSP returns with fixed lags, official Cboe VIX,
+outcome-session weekday indicators, and one regressor-session monthly-expiration
+control. HAC and moving-block-bootstrap p-values are BH-adjusted as separate
+families. “Robustly associated” requires both adjusted p-values below 0.05 and
+a 95% bootstrap interval excluding zero; a one-family rejection is explicitly
+method-sensitive. Convention-signed GEX and stress-window interactions are
+secondary. Even a robust association is not causal or dealer-sign
+identification.
+
+No registered WRDS, OptionMetrics, CRSP, or VIX dataset has been extracted or
+analysed in the project. The 2017--2024 market path and named stress episodes
+were historically public when the plan was written; this is a retrospective
+pre-analysis plan, not a blinded prospective experiment. Access is expected in
+September 2026.
+
+## Reproduce the current result
 
 ```bash
-# Reproducible install (recommended): uv resolves from uv.lock for bit-identical environments
 uv sync --locked --all-extras --group dev
 
-# Or, plain pip (no lockfile): editable install with dev extras
-pip install -e ".[dev,calibration]"
+# Core analytic and empirical-protocol checks
+uv run pytest -q tests/test_centered_model.py tests/test_oi_proxy_protocol.py
 
-# Run the test suite
-pytest
+# Rebuild the actual-nonlinearity validation figure
+uv run python -m reflexive_options.experiments.centered_hopf_validation
 
-# Reproduce Marketron paper figures from published parameters
-python -m reflexive_options.experiments.synthetic_replication
+# Rebuild amplitude, sensitivity, mixture, and derivative robustness checks
+uv run python -m reflexive_options.experiments.centered_model_robustness
 
-# Generate the (κ, σ_v) phase diagram (data-free)
-python -m reflexive_options.experiments.phase_diagram
+# Rebuild the paper
+cd paper && make pdf
 
-# Run the κ-sensitivity transfer experiment (data-free)
-python -m reflexive_options.experiments.reflexive_transfer
-
-# Numerical Hopf bifurcation scan (data-free)
-python -m reflexive_options.experiments.bifurcation_scan
+# Full repository verification
+cd .. && bash scripts/verify.sh
 ```
 
-## Project structure
+The principal implementation is in:
 
-```
-src/reflexive_options/
-├── simulator/         # The contribution: reflexive SDE, dealer-gamma aggregator, integrators, stability
-├── baselines/         # Time-dep Heston, LSV, 3/2 SV, gamma-aware non-reflexive
-├── surface/           # IV surface generator + arbitrage-free filter + parquet I/O
-├── rl/                # Gymnasium env + state/action/reward + curriculum
-├── theory/            # Hopf bifurcation, Fokker-Planck stationary density, sensitivity
-├── experiments/       # Reproducible experiment scripts (one per paper figure)
-└── third_party/       # Vendored ATLAS (Mamba+PPO+BC+EWC) and RAT (reflexivity meter, topology) from trading-algo
+- `src/reflexive_options/theory/centered_model.py`
+- `src/reflexive_options/experiments/centered_hopf_validation.py`
+- `src/reflexive_options/experiments/centered_model_robustness.py`
+- `src/reflexive_options/empirical/oi_proxy_protocol.py`
+- `paper/main.tex`
+- `paper/pre_registration_amendments.md` (preserved A13--A14 record)
+- `paper/pre_registration_amendment_a15.md` (calendar and disclosure correction)
+- `docs/wrds_day_one_validation_plan.md`
 
-paper/
-├── theory.md             # Analytical results writeup
-├── pre_registration.md   # Commit-anchored hypothesis pre-registration
-├── notation.md           # Canonical symbol table
-└── figures/
+## What was withdrawn from v0.3
 
-tests/                    # pytest suite
-notebooks/                # Tutorial walkthroughs
-```
+The repository retains older modules and artifacts for reproducibility, but the
+current paper does **not** claim:
 
-## Manuscript
+- a non-zero stochastic threshold correction from the affine additive
+  surrogate; its tangent cocycle is $e^{Jt}$ and the correction is zero. The
+  full state-dependent stochastic variational equation remains unanalysed;
+- a Hawkes--SV equivalence theorem;
+- global stability from absence of a Hopf root;
+- a McKean--Vlasov threshold theorem for the centered model;
+- an information-theoretic critical-edge theorem;
+- stationary-tail or bimodality consequences of the local Hopf result;
+- that synthetic RL, CSD, or event-window exercises validate the market
+  mechanism.
 
-The full LaTeX paper lives in `paper/main.tex` with bibliography at `paper/references.bib`. To rebuild the PDF:
+Affected modules are marked archived/exploratory. The obsolete 4D noise scan
+is no longer an installed command.
 
-```bash
-cd paper
-make pdf
-```
-
-The Makefile runs `pdflatex` → `bibtex` → `pdflatex` → `pdflatex` (the standard four-pass cycle for cleveref + natbib cross-references). Output: `paper/main.pdf`. Other targets: `make clean`, `make watch` (latexmk live preview).
-
-The arXiv submission metadata (subjects, MSC codes, license, comments) lives in `paper/arxiv_metadata.txt`.
-
-## Status
-
-| Component | Status |
-|-----------|--------|
-| Reflexive 3D simulator (S, v, z) + dealer-gamma aggregator | **implemented + tested** |
-| Time-dep Heston baseline (QuantLib analytic IV) | **implemented + tested** |
-| LSV polynomial baseline | **implemented + tested** |
-| 3/2 SV baseline | **implemented + tested** |
-| Gamma-aware non-reflexive (clean ablation) | **implemented + tested** |
-| Surface generator + arbitrage filter (~85k surfaces/sec) | **implemented + tested** |
-| ATLAS vendored (Mamba + BC + EWC + RAT) | **vendored (~3,700 LOC, 8 smoke tests pass)** |
-| Gymnasium RL env + state/action/reward + curriculum | **implemented + tested** |
-| Theorem 1 (Hopf) + closed-form $\ell_1$ + symbolic ℓ_1 (Appendix A) | **derived + computed (closed-form-OI regime, §3.5): $\kappa^\star = 17.81$, $\omega^\star = 1.18$, $\ell_1 = -0.48$ (supercritical). Symbolic 7.8 KB rational verified against numerical to ~$10^{-13}$. Limit cycle past $\kappa^\star$ validated: $T = 10.561$ yr vs theory 10.977 yr (3.79%)** |
-| Proposition 1 (BT-empty, §3.8) + Bautin curve with 6 anchors | **proved (closed-form $G_v < 0$ dominance argument); 71×97 scan confirms $\kappa_{\mathrm{SN}} \leq -1.31$ everywhere** |
-| Theorem 2 (No-Hopf-wedge global stability, §3.9) | **proved: asymptotically stable on the entire physical $\kappa$-half-line $[0,\infty)$ in the no-Hopf wedge; no codim-1 bifurcation outside the Hopf region (parameter-global in $\kappa$)** |
-| Theorem 3 (McKean-Vlasov correction, §3.10) | **derived + validated: rational closed form for $\kappa^\star_{\mathrm{MV}}(\theta_G)$; ratio regime-dependent ($<1$ at $G_y>0$: 0.987 at $\theta_G=50$/yr; $>1$ at $G_y<0$); propagation-of-chaos slope -0.48 (theory -0.5)** |
-| Proposition 2 (Hawkes–SV criticality correspondence, §3.11) | **repositioned (amendment A10): Hardiman $n\approx1$ = real-eigenvalue/saddle-node stratum; the model's Hopf is the strictly-stronger oscillatory "unoccupied cell". Falsifiable spectral discriminator (`hawkes_sv_bifurcation.py`) separates the strata with zero overlap on synthetic data. Tautological $n_{\mathrm{SV}}$ "1e-15 verification" removed** |
-| Theorem 4 (critical excess entropy, §3.12) | **derived: the dealer-gamma channel's excess entropy $E_\tau(\kappa)$ saturates to a finite, strictly-positive limit at $\kappa^\star$ with a linear (exponent-1) approach; vanishes at $\kappa=0$ (Markov closure)** |
-| Empirical $\|\Lambda\| \sim \|\rho\xi\|^B$ fit | **measured: $\hat B = 0.082$, 95% CI $[-0.010, 0.168]$ (flat). Baxendale's large-shear $b^{2/3}$ asymptotic is not activated at the trivial $G\equiv0$ equilibrium (shear term zero) — outside its hypotheses, not a test of it** |
-| Fokker-Planck stationary density vs Heston (analytical + MC) | **derived: H_tail confirmed, H_skew confirmed; H_bimod refuted on 1D marginal, *supported* on 2D PCA-projection at $\kappa = 1.05 \kappa^\star_{\mathrm{env}}$ ($p = 0.033$)** |
-| $\kappa^\star$ robustness to OI misspecification (§3.6) | **elasticities $\eta_{\sigma_q} = -1.58$, $\eta_{\mu_q} = +703$; calibration tolerance for Phase 4: $\mu_q$ to $\pm 5$bp is binding** |
-| H1 synthetic-pipeline validation (§5.4) | **demonstrated working: SW2(κ_0) < SW2(2κ_0) < SW2(Heston) with disjoint bootstrap CIs** |
-| H4 detector power on Stuart-Landau positive control | **$\geq 80\%$ peak power at $T = 512$ for 8/9 $(\mu, \sigma)$ configurations; non-monotone in $T$** |
-| Sliced-W2 sample-complexity | **$n_{\min} \approx 4{,}000$ windows for $\pm 10\%$ bootstrap CI half-width** |
-| κ-sensitivity transfer experiment (BC-trained MLP, ~15-20 min/run) | **implemented + tested** |
-| Marketron mechanism decomposition | **8/24 OOS shape-cell match (33.3%) at per-set tuned coupling; a priori long-horizon restricted subset 7/10 in-sample ($p = 0.172$)** |
-| Pre-registration document | **locked + OpenTimestamps Bitcoin-anchored proof (`paper/pre_registration.md.ots`). A1–A7 amendments closed at commit `63078f5`; no further amendments permitted post-data-load** |
-| Manuscript variants | **NeurIPS GenAI Finance Workshop + ICAIF 2026 double-blind ACM sigconf, both re-synced to v0.3.12 and compiled clean (7 pp each)** |
-| Test suite | **579 passing, 89.47% branch coverage** [^cov] |
-| CI (GitHub Actions) | **green on Python 3.12 / 3.13 / 3.14** |
-
-[^cov]: Coverage measured by the most recent `bash scripts/verify.sh` run (89.47% as of v0.3.12); gated at ≥ 85% in CI via `[tool.coverage.report] fail_under = 85`.
-
-**v0.3.12 shipped** (2026-07-06) — see [`CHANGELOG.md`](CHANGELOG.md) for the full release notes. Highlights:
-- Four theorems (Hopf, No-Hopf-wedge, McKean-Vlasov, excess-entropy) + two propositions (BT-empty, Hawkes-SV), with closed-form proofs / proof sketches.
-- Closed-form symbolic $\ell_1$ as Appendix A (7.8 KB rational in 13 symbols, machine-verified).
-- Empirical $|\Lambda| \sim |\rho\xi|^B$ scaling fit ($\hat B = 0.082$, flat): Baxendale's large-shear $b^{2/3}$ regime is inactive at the trivial-$G$ equilibrium (outside its hypotheses).
-- Limit cycle past $\kappa^\star$ numerically validated to 3.79%.
-- H1 synthetic pipeline demonstrated end-to-end before empirical SPX target.
-- 2D bimodality flip on $(\log S, v)$ joint PCA-projection.
-- NeurIPS workshop + ICAIF manuscript variants ready.
-
-## How to cite
-
-If you use this software or paper, please cite:
-
-```bibtex
-@software{patel2026reflexive,
-  author       = {Patel, Mahimn},
-  title        = {Reflexivity in Options Markets:
-                  A Stochastic-Volatility Model with Dealer-Gamma Feedback,
-                  Hopf Bifurcation Calculus, and a Pre-Registered Evaluation Framework},
-  year         = 2026,
-  version      = {v0.3.12},
-  url          = {https://github.com/mahimn01/reflexive-options},
-  note         = {Pre-registered at commit 268c061 via OpenTimestamps proof}
-}
-```
-
-A machine-readable [`CITATION.cff`](CITATION.cff) is committed at the repo root and is recognised by GitHub's "Cite this repository" button.
-
-**Known open items** (post-v1):
-- Joint VIX/SPX simulation (Marketron explicitly fails this; we don't address it in v1).
-- Vectorized BS-gamma over paths in `simulator.reflexive._g_vectorized` (~10× speedup possible).
-- `train_ppo` from ATLAS not vendored — used `train_bc` for the smoketest experiments. Production PPO loop is the natural Phase 4 follow-up.
-- Empirical calibration to real SPX surfaces (gated on WRDS / ALLSPX data acquisition — Phase 4 of the master TODO).
-
-Phase 0 of [TODO.md](https://github.com/mahimn01/reflexivity-research/blob/main/TODO.md) (data acquisition) is the *only* part that requires real SPX data. Everything in this repo is data-free and reproducible from synthetic priors and published parameter sets.
-
-## Quality
-
-The repo's CI gauntlet (mirrored locally by `bash scripts/verify.sh`):
+## Repository map
 
 ```text
-ruff check src tests           # lint + flake8-bandit (S) security rules
-ruff format --check src tests  # formatter conformance
-mypy src                       # project-tuned strict mode (see pyproject.toml)
-pytest --cov-fail-under=85     # branch coverage hard gate
+src/reflexive_options/
+├── theory/          # centered current model plus archived legacy utilities
+├── empirical/       # A13--A15 OI proxy protocol and legacy A9 reproducer
+├── experiments/     # current validation plus archived experiments
+├── simulator/       # legacy/full simulator infrastructure
+├── baselines/       # comparison simulators
+├── surface/         # IV-surface and arbitrage-filter utilities
+├── rl/              # exploratory agent infrastructure
+└── third_party/     # vendored ATLAS/RAT code
+
+paper/
+├── main.tex
+├── main.pdf
+├── references.bib
+├── pre_registration.md
+├── pre_registration_amendments.md
+└── variants/
 ```
 
-- **Reproducibility receipt**: `tests/test_reproducibility.py` re-runs every experiment and asserts the v0.1.0 numbers reproduce within tolerance. Refresh with `bash scripts/generate_repro_baseline.sh`.
+## Pre-registration provenance
 
-Pinned tooling versions live in `pyproject.toml`'s `[dependency-groups].dev`
-(PEP 735) and the bit-identical resolution is captured in `uv.lock`.
-`uv sync --locked` reproduces the exact environment a paper reviewer would see.
-
-Pre-commit (`.pre-commit-config.yaml`) runs ruff + format + the standard
-hygiene hooks; mypy runs in CI only — see `docs/quality_research_brief.md`
-§5 for the rationale.
-
-mypy is set to `strict = true` with a small set of project-level relaxations
-(`disallow_any_unimported = false`, `warn_unused_ignores = false`, plus
-per-module overrides for QuantLib / diptest / ripser / mystic / scipy and
-the vendored `third_party.*` tree). The full justification — including the
-PyTorch and scientific-Python precedents — is in
-`docs/quality_research_brief.md` §3 and §7.
-
-## Continuous Integration
-
-CI (`.github/workflows/ci.yml`) runs on every push and pull request to
-`main` against an Ubuntu x [3.12, 3.13, 3.14] matrix. Each job installs
-the locked environment with `uv sync --locked --all-extras --group dev`,
-then executes ruff check, ruff format --check, mypy, and pytest with
-branch coverage. The pipeline blocks merge unless every job is green and
-total coverage stays at or above 85% (`[tool.coverage.report] fail_under
-= 85`). Coverage is uploaded to Codecov via the OIDC-based v5 action.
-
-## Releases
-
-Versioned change history lives in [CHANGELOG.md](CHANGELOG.md), formatted
-per [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and tagged
-under [SemVer](https://semver.org/spec/v2.0.0.html). The current release
-is `0.3.0`.
-
-## Reproducibility
-
-Every figure in the paper is produced by a script in `src/reflexive_options/experiments/` with deterministic seeds. The pre-registration in `paper/pre_registration.md` is committed before empirical evaluation; subsequent results either confirm or refute the pre-registered hypotheses.
-
-### Pre-registration timestamping (OpenTimestamps)
-
-`paper/pre_registration.md.ots` is the OpenTimestamps proof binding the SHA256 of `paper/pre_registration.md` into the Bitcoin blockchain. To verify the timestamp on a fresh clone:
-
-```bash
-uv run ots verify paper/pre_registration.md.ots
-```
-
-To regenerate the proof after a substantive pre-reg amendment (each amendment must be flagged in `paper/pre_registration_amendments.md` first):
-
-```bash
-uv run ots stamp paper/pre_registration.md
-```
-
-If `opentimestamps-client` cannot be installed in a reviewer's environment, the chain-of-custody anchor falls back to the git tag `prereg-anchor-vX` whose commit hash is the immutable reference.
+The original document and earlier amendments retain their historical
+OpenTimestamps proofs. A13--A15 are disclosed pre-extraction amendments made
+before anticipated WRDS access. The preserved A13--A14 amendment-file SHA-256 is
+`603e89366c0dbe49718e8c31f805d6f85d3c508e2e0ed4276a6310c80f5f9cd7`, with
+receipt `paper/pre_registration_amendments.md.ots` pending Bitcoin
+consolidation. The A13-only snapshot `paper/pre_registration_amendments.md.a13`
+remains independently verifiable at hash
+`83950ede7049cec9842246cb291307a144bd620923898e9793c2f1197f558e17` with
+receipt `paper/pre_registration_amendments.md.a13.ots`. Do not rewrite either
+historical state to imply that a later clarification existed earlier.
+The separate A15 correction has SHA-256
+`a5f694f99953d57563d4f17dc5646ef0b87452c45119ccbdc12fc90efd034a52`
+and receipt `paper/pre_registration_amendment_a15.md.ots`, pending Bitcoin
+consolidation at creation.
 
 ## Citation
 
 ```bibtex
-@unpublished{patel2026reflexivity,
+@unpublished{patel2026dealergamma,
   author = {Patel, Mahimn},
-  title  = {Reflexivity in Options Markets: Dealer-Gamma Feedback and Reinforcement-Learned Hedging Policies},
+  title  = {Dealer-Gamma Feedback and Local Volatility Cycles:
+            A Fixed-Equilibrium Bifurcation Model and a Pre-Extraction
+            Identification Protocol},
   year   = {2026},
-  note   = {Working paper, in preparation},
+  note   = {Working paper, v0.4.0},
   url    = {https://github.com/mahimn01/reflexive-options}
 }
 ```
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
-
-Vendored ATLAS / RAT modules under `src/reflexive_options/third_party/` derive from [`mahimn01/trading-algo`](https://github.com/mahimn01/trading-algo) (also MIT). See [NOTICE](NOTICE) for attribution.
+MIT. Vendored ATLAS/RAT modules derive from `mahimn01/trading-algo`; see
+[NOTICE](NOTICE).
