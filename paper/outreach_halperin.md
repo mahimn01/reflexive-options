@@ -12,7 +12,7 @@
 
 Dear Dr. Halperin,
 
-I'm Mahimn Patel, an economics undergraduate at the University of Toronto. I wrote to you and Dr. Itkin in April 2025 about a planned reflexive-options simulator built around a dealer-gamma feedback channel; the paper that grew out of that summer is now at v0.3.2 and I'd value your input before submission.
+I'm Mahimn Patel, an incoming University of Toronto undergraduate. I wrote to you and Dr. Itkin in April 2025 about a planned reflexive-options simulator built around a dealer-gamma feedback channel; the paper that grew out of that summer is now at v0.3.2 and I'd value your input before submission.
 
 The paper, *Reflexivity in Options Markets: A Stochastic-Volatility Model with Dealer-Gamma Feedback, Hopf Bifurcation Calculus, and a Pre-Registered Evaluation Framework*, is a 30-page master with two venue variants. Section 6 is an explicit mechanism decomposition against your 2025 *Marketron* paper. Rather than attempt to replicate Tables 7 and 8 — the two SDEs are mechanically distinct, so a one-to-one match is mathematically off the table — we tune our $(\kappa, \gamma, T_\text{eff}, \mu_q, \sigma_q)$ grid to maximise sign-feature agreement on the published shape moments, and report 8/24 cells matching at 10k-path validation (33.3%, $p \approx 0.27$ under the binomial null). Restricted a priori to long-horizon mechanism-relevant cells, the in-sample rate is 7/10. The most informative result is the *predictable disagreement*: under risk-neutral drift our model produces negative long-horizon skew where Marketron has positive long-horizon skew via Bessembinder compounding. That disagreement is now a falsifiable Phase-4 prediction — once empirical drift is matched, we expect the long-horizon skew cells to flip positive.
 
@@ -31,7 +31,7 @@ Thank you for your time. The paper is young research, not a finished result, and
 
 Best regards,
 Mahimn Patel
-University of Toronto, Department of Economics
+Incoming undergraduate student, University of Toronto
 mahimn.patel.k@gmail.com
 +1 437 438 7554
 

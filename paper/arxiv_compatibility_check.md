@@ -36,7 +36,7 @@ external package or asset.
 - unresolved references/citations: 0;
 - overfull boxes: 0;
 - arXiv source-tar SHA-256:
-  `459b0b7e6da7df0e1293271629f133597f504eede93f3cf3b984fcbed5313f1e`.
+  `fb3b753d49c8a371e2180a13b871206fabe724eab9db90d5ee64a9e2014b6127`.
 
 The operative upload procedure is `paper/arxiv_submission_checklist.md`. If any shipped
 source changes, rerun `scripts/arxiv_build.sh`; this checksum and compatibility result then

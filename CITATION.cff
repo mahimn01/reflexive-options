@@ -9,7 +9,6 @@ abstract: >-
 authors:
   - family-names: "Patel"
     given-names: "Mahimn"
-    affiliation: "Incoming graduate student, Department of Economics, University of Toronto"
     email: "mahimn.patel@mail.utoronto.ca"
     orcid: "https://orcid.org/0009-0002-2422-9005"
 version: "0.4.0"
@@ -31,7 +30,6 @@ preferred-citation:
   authors:
     - family-names: "Patel"
       given-names: "Mahimn"
-      affiliation: "Incoming graduate student, Department of Economics, University of Toronto"
       email: "mahimn.patel@mail.utoronto.ca"
       orcid: "https://orcid.org/0009-0002-2422-9005"
   year: 2026

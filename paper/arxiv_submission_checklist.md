@@ -7,7 +7,7 @@ This is the operating procedure for the centered-model paper. The upload file is
 
 - [x] `bash scripts/arxiv_build.sh` exits with `arxiv_build.sh DONE`.
 - [x] Tarball SHA-256 is
-  `459b0b7e6da7df0e1293271629f133597f504eede93f3cf3b984fcbed5313f1e`.
+  `fb3b753d49c8a371e2180a13b871206fabe724eab9db90d5ee64a9e2014b6127`.
 - [x] Simulated clean extraction compiles to 22 pages, within 13 bytes of the master PDF.
 - [x] Tar members are exactly:
   - `main.tex`
@@ -17,9 +17,10 @@ This is the operating procedure for the centered-model paper. The upload file is
   - `figures/centered_hopf_robustness.pdf`
 - [x] Master PDF has 22 pages, one theorem, two figures, six tables, and no unresolved
   citation/reference, underfull box, overfull box, or final-pass LaTeX warning.
-- [x] Full verification passes: 607 tests, 88.47% coverage, strict mypy, and ruff; the 80
+- [x] Full verification passes: 607 tests, 88.48% coverage, strict mypy, and ruff; the 80
   tests touching the final warning fixes pass with warnings treated as errors.
-- [ ] Confirm the author affiliation is accurate on the actual upload date.
+- [ ] Confirm that the author field contains only `Mahimn Patel`; no institutional
+  affiliation is asserted.
 - [ ] Re-run the build immediately before upload and compare the reported checksum. If any
   source changed, use the new checksum rather than the value above.
 
@@ -46,7 +47,7 @@ Compare the rendered file with `paper/main.pdf`:
 - [ ] exactly 22 pages;
 - [ ] title is *Dealer-Gamma Feedback and Local Volatility Cycles: A Fixed-Equilibrium
   Bifurcation Model and a Pre-Extraction Identification Protocol*;
-- [ ] author, current affiliation, email, and ORCID are correct;
+- [ ] author name, email, and ORCID are correct, and no institutional affiliation appears;
 - [ ] Figures 1--2 appear once each, with all panels and legends legible;
 - [ ] equations (1)--(27), theorem, six tables, and appendices A--D are present;
 - [ ] no `??`, missing-asset box, blank page, clipped equation, or overfull line;

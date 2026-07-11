@@ -4,7 +4,7 @@ Public open interest does not identify dealer positions.  Consequently the
 ``estimate_gex`` output is a convention-based OI-gamma proxy, not observed
 dealer gamma, and the directional H1' decision helpers in this module are
 retained only to reproduce the superseded A9 protocol.  The confirmatory
-pre-data design is Amendment A13, implemented in ``oi_proxy_protocol``.
+pre-extraction design is Amendment A13, implemented in ``oi_proxy_protocol``.
 
 The module still provides:
 

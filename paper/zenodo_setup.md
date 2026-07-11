@@ -24,7 +24,8 @@ repository's MIT software license.
 - [ ] Re-run `scripts/arxiv_build.sh` and preserve the source-tar checksum.
 - [ ] Confirm `paper/main.pdf` is 22 pages and matches the tagged source.
 - [ ] Validate `.zenodo.json` as JSON and `CITATION.cff` with a current CFF validator.
-- [ ] Confirm the author affiliation is accurate on the release date.
+- [ ] Confirm the sole creator is Mahimn Patel, the ORCID is correct, and no
+  institutional affiliation is asserted.
 - [ ] Do not add an arXiv placeholder; add the real identifier only after assignment.
 
 ## First DOI-bearing release

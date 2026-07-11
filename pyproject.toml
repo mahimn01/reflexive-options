@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "reflexive-options"
 version = "0.4.0"
-description = "Fixed-equilibrium local dealer-gamma bifurcation model and pre-data OI proxy protocol."
+description = "Fixed-equilibrium local dealer-gamma bifurcation model and pre-extraction OI proxy protocol."
 authors = [{name = "Mahimn Patel", email = "mahimn.patel@mail.utoronto.ca"}]
 readme = "README.md"
 requires-python = ">=3.12,<3.15"

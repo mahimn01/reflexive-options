@@ -1,4 +1,4 @@
-"""Pre-data empirical protocols and legacy reproducibility utilities.
+"""Pre-extraction empirical protocols and legacy reproducibility utilities.
 
 Amendments A13--A15 use sign-agnostic open-interest book summaries. Public OI
 does not identify dealer positions. The older signed-GEX H1' code is retained

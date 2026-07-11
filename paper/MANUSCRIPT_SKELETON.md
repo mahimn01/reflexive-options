@@ -364,6 +364,8 @@ Don't write top-to-bottom. The recommended order maximizes the % of fragment-lif
 
 - **Equations should be numbered consistently** with `theory.md` so reviewers can cross-check against the public Markdown source. Use the same `(1a)`, `(1b)`, `(2)`, `(3)`, etc. labels.
 - **Figure captions should be self-contained** — a reviewer skimming should be able to read just the caption and grasp the result. The existing `figures/hopf_phase_diagram.tex` caption is the model.
-- **Anonymize for workshop submission.** Strip: GitHub URL, commit hash, ORCID, OpenTimestamps proof reference, "Mahimn Patel" name, "Independent Researcher" / UofT affiliation. Add back at camera-ready.
+- **Anonymize for workshop submission.** Strip: GitHub URL, commit hash, ORCID,
+  OpenTimestamps proof reference, and the author name. Add back only accurate
+  author metadata at camera-ready; do not introduce an institutional affiliation.
 - **Acknowledgments only at camera-ready** for the workshop; can include from arXiv submission.
 - **Ditch every footnote** in the 4-page workshop version. They burn vertical space and disrupt the reader's flow at this density.

@@ -54,13 +54,15 @@ been established before submission.
 - [x] Master and both variants compile.
 - [x] Master references only the current validation and robustness figures.
 - [x] Metadata, README, citation, version, and changelog updated.
+- [x] Sole-author metadata consistently identifies Mahimn Patel and asserts no
+  institutional affiliation.
 - [x] Legacy invalid modules/documents are marked archived or withdrawn.
-- [x] Full verification passes: 607 tests, 88.47% coverage; strict mypy and ruff clean.
+- [x] Full verification passes: 607 tests, 88.48% coverage; strict mypy and ruff clean.
   The 80 tests touching the final warning fixes also pass with warnings promoted to errors.
 - [x] Render and inspect all 22 master pages; final LaTeX log has no warning, undefined
   reference, underfull box, or overfull box.
 - [x] arXiv tarball extraction/build test passes at 22 pages; SHA-256
-  `459b0b7e6da7df0e1293271629f133597f504eede93f3cf3b984fcbed5313f1e`.
+  `fb3b753d49c8a371e2180a13b871206fabe724eab9db90d5ee64a9e2014b6127`.
 - [x] Tar members are exactly `main.tex`, `main.bbl`, `references.bib`,
   `figures/centered_hopf_validation.pdf`, and
   `figures/centered_hopf_robustness.pdf`.

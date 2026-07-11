@@ -1,6 +1,7 @@
 # WRDS access request — UofT librarian outreach
 
-**Status**: drop-in-and-send. Mahimn copies into Gmail, fills the recipient line and any name details he learns at orientation, sends.
+**Status**: draft only. Verify the current recipient, subscription, and eligibility rules
+before sending; do not imply current enrolment, departmental membership, or faculty sponsorship.
 
 ---
 
@@ -22,46 +23,38 @@ unsure which office handles WRDS — please forward as appropriate."
 
 ## Subject line
 
-> WRDS / OptionMetrics access request — incoming Economics student, pre-registered options-market research
+> WRDS / OptionMetrics access question — incoming UofT undergraduate researcher
 
 ## Email body
 
 > Dear Map & Data Library team / Business Information Centre,
 >
-> I'm Mahimn Patel, an incoming first-year undergraduate accepting my UofT
-> Economics offer for September 2026. I'm writing to ask about the workflow
+> I'm Mahimn Patel, an incoming University of Toronto undergraduate for
+> September 2026. I'm writing to ask about the workflow
 > for requesting access to **WRDS (Wharton Research Data Services)**,
 > specifically the **OptionMetrics IvyDB US** product, ahead of orientation.
 >
-> **Project context.** Over the past several months I've built an open
-> research codebase, *Reflexivity in Options Markets* (GitHub:
+> **Project context.** I have built an open research codebase (GitHub:
 > <https://github.com/mahimn01/reflexive-options>), studying how dealer-gamma
-> feedback in the options market can drive endogenous volatility cycles
-> in the underlying. The current v0.3.3 release contains a 30-page
-> manuscript with four theorems — including a Hopf bifurcation calculus
-> with closed-form first Lyapunov coefficient and a formal Hawkes-SV
-> equivalence at the criticality boundary — together with a
-> **pre-registered evaluation framework** that is anchored to a specific
-> git commit hash via an OpenTimestamps Bitcoin-anchored proof. The paper
-> is targeted at the NeurIPS 2026 GenAI Finance Workshop and ICAIF 2026
-> conference. I would be happy to share the manuscript PDF and the
-> pre-registration document for context.
+> feedback could generate local volatility cycles in a reduced-form model.
+> The current sole-authored manuscript presents a local mathematical
+> possibility result, not an SPX calibration or a claim that public open
+> interest reveals dealer positions. The repository also contains a
+> timestamped, pre-extraction protocol for a separate sign-agnostic proxy
+> analysis. No registered market dataset has yet been analysed. I would be
+> happy to share the manuscript and protocol for context.
 >
-> **Why I need WRDS.** The pre-registered Phase-4 empirical evaluation
-> requires SPX index-options surface data over three pre-specified event
-> windows: Volmageddon (around 5 February 2018), the COVID volatility
-> shock (around 12 March 2020), and the Yen carry-trade unwind (around
-> 5 August 2024). For each event I need ±60 trading days of:
+> **Why I need WRDS.** The registered-horizon proxy analysis requires
+> historical SPX option records from OptionMetrics, including:
 >
-> - implied-volatility surface across the locked 11 strikes × 7
->   maturities pre-registered grid;
-> - per-strike-and-maturity open interest and trade volume;
-> - end-of-day mid-quote prices.
+> - option identifiers and contract terms;
+> - end-of-day bids, asks, implied volatility, volume, and open interest;
+> - the accompanying index, rate, and distribution inputs needed to apply
+>   the protocol's filters and construct its book summaries.
 >
-> The total volume is roughly 360 trading days × 3 events × ~77 contracts
-> per surface, well within the per-user OptionMetrics quota at typical
-> WRDS subscriptions. I have read the data-use citation requirement and
-> will cite OptionMetrics + WRDS in the published paper as required.
+> I will comply with the applicable licence, access, storage, citation, and
+> non-redistribution requirements. Proprietary observations will not be
+> committed to the public repository.
 >
 > **My ask.**
 >
@@ -85,13 +78,13 @@ unsure which office handles WRDS — please forward as appropriate."
 >
 > Best regards,
 > Mahimn Patel
-> Incoming, Department of Economics, University of Toronto
+> Incoming undergraduate student, University of Toronto
 > mahimn.patel.k@gmail.com
 > +1 [phone, optional]
 
 ## Attachments to mention (don't pre-attach — share on response)
 
-- `paper/main.pdf` (30-page manuscript at v0.3.3)
+- `paper/main.pdf` (current 22-page v0.4.0 manuscript)
 - `paper/pre_registration.md` and `paper/pre_registration.md.ots` (the
   pre-registration document and its OpenTimestamps proof)
 - GitHub repository: <https://github.com/mahimn01/reflexive-options>
@@ -107,15 +100,11 @@ unsure which office handles WRDS — please forward as appropriate."
   subject lines on mobile composers).
 - [ ] Spell-checked the body, especially the institution / personal-name
   fields if a specific librarian name is added.
-- [ ] Verified all three event-date wordings against `paper/event_windows.txt`
-  (Volmageddon `2018-02-05`, COVID `2020-03-12`, Yen carry `2024-08-05`).
-- [ ] Verified `paper/main.pdf` is the latest v0.3.3 build (not a stale
+- [ ] Verified `paper/main.pdf` is the latest v0.4.0 build (not a stale
   copy) before offering to share it on a follow-up reply.
 - [ ] Decided whether to include a phone number in the signature.
-- [ ] CC: optional — your future academic advisor or the Economics
-  Department's undergraduate office, if you have a contact there. A CC
-  to a faculty member often unlocks WRDS faster, especially for new
-  undergrads who don't yet have a formal "research project" supervisor.
+- [ ] Do not CC or name a faculty member unless that person has agreed to
+  sponsor or advise the project.
 - [ ] Consider scheduling the send for a weekday morning (UofT librarians
   triage email more responsively at the start of the workday).
 - [ ] Save a copy of the sent email to `~/Documents/reflexivity-research/`
@@ -126,9 +115,7 @@ unsure which office handles WRDS — please forward as appropriate."
 ## After access is granted
 
 - Pull the OptionMetrics IvyDB US data into `data/optionmetrics/` (gitignored).
-- Run the locked Phase-4 evaluation pipeline; the analysis code is already
-  written and the pre-registration document at `paper/pre_registration.md`
-  is anchored to commit `268c061` via OpenTimestamps.
-- Any deviation from the locked spec must be disclosed in the paper as an
-  exploratory analysis under the §9 deviations clause; the amendments file
-  is closed at commit `63078f5`.
+- Freeze and hash the complete option extraction before constructing outcomes,
+  as required by the current protocol and Amendments A13--A15.
+- Record any deviation from the registered specification before inspecting
+  affected results, and label non-registered analyses exploratory.

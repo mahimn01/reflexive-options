@@ -52,6 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rewrote the WRDS day-one plan to remove outcome-assuming sign/magnitude gates and to freeze
   the full option extraction before outcomes.
 - Rebuilt and synchronized the master, ICAIF, and workshop manuscripts.
+- Corrected publication metadata to identify Mahimn Patel as the sole author without
+  claiming a University of Toronto or departmental affiliation.
 
 ## [0.3.12] - 2026-07-06
 

@@ -39,7 +39,7 @@ After verification, edit each of the following:
 
 2. **`paper/arxiv_metadata.txt` line 4** — replace `<FILL_IN_AT_SUBMISSION via orcid.org/register, see paper/orcid_setup.md>` with the bare iD `0000-XXXX-XXXX-XXXX`.
 
-3. **`paper/variants/icaif/main.tex`** — ICAIF is double-blind on initial submission, so do **not** add the ORCID until camera-ready. At camera-ready, add it via `\orcidlink{}` in the author block alongside the de-anonymised name and affiliation.
+3. **`paper/variants/icaif/main.tex`** — ICAIF is double-blind on initial submission, so do **not** add the ORCID until camera-ready. At camera-ready, add it via `\orcidlink{}` alongside the de-anonymised name. Add an affiliation only if it is accurate at that time.
 
 4. **`paper/variants/neurips_workshop/main.tex`** — same anonymisation rule as ICAIF. Add ORCID at camera-ready only, after flipping `\usepackage{neurips_2024}` to `\usepackage[final]{neurips_2024}`.
 
@@ -47,7 +47,10 @@ After verification, edit each of the following:
 
 After registration, on https://orcid.org logged-in dashboard:
 
-- **Affiliation → Add Education:** University of Toronto, Department of Economics, start date 2025-09 (current undergraduate). Visibility: *Everyone*.
+- **Education:** do not list University of Toronto as a current affiliation before
+  matriculation. After enrolment begins, add University of Toronto as undergraduate
+  education with the actual start month and year. Do not name a department unless the
+  university has formally placed you in that department or program.
 - **Works:** add this paper as a manual "Work" entry once it has a DOI (post-arXiv submission yields a DOI of the form `10.48550/arXiv.XXXX.XXXXX`). For ICAIF / NeurIPS, the venue's publisher (ACM / OpenReview) auto-pushes accepted works once the iD is included in the submission metadata.
 - **Visibility defaults:** set the *Biography*, *Country*, and *Keywords* fields to *Everyone*; keep DOB and email *Trusted parties* or *Only me*.
 - **Trusted organisations:** authorise arXiv when prompted at first submission; this enables auto-population of the works list on future submissions.

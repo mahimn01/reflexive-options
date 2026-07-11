@@ -1,6 +1,6 @@
 Title: Dealer-Gamma Feedback and Local Volatility Cycles: A Fixed-Equilibrium Bifurcation Model and a Pre-Extraction Identification Protocol
 
-Authors: Mahimn Patel (incoming graduate student, Department of Economics, University of Toronto; mahimn.patel@mail.utoronto.ca)
+Authors: Mahimn Patel
 ORCID: 0009-0002-2422-9005
 
 Subjects:
