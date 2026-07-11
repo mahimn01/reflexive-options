@@ -35,7 +35,7 @@ Option hedging can create state-dependent underlying demand
 is a reduced-form physical-measure hypothesis. Let
 $X_t=\log(S_t/F_t)$ for a predictable reference and specify
 \begin{align}
-dX_t&=[-\delta X_t-\tfrac12(v_t-\theta_v)+\kappa g(X_t,\chi_t,v_t)]dt
+dX_t&=[-\delta X_t-\tfrac12(v_t-\theta_v)+\kappa g(X_t,v_t,\chi_t)]dt
 +\sqrt{v_t}\,dW_t^S,\label{eq:x}\\
 dv_t&=[\kappa_v(\theta_v-v_t)+\gamma v_t\chi_t]dt
 +\xi\sqrt{v_t}\,dW_t^v,\label{eq:v}\\
@@ -54,7 +54,7 @@ m(v)=\mu_q-(r-q_d+v/2)T.\label{eq:book}
 \end{align}
 We center and normalize it:
 \begin{equation}
-g(X,\chi,v)=s\frac{\mathcal G(X,v)-\mathcal G(0,\theta_v)}
+g(X,v,\chi)=s\frac{\mathcal G(X,v)-\mathcal G(0,\theta_v)}
 {\mathcal G(0,\theta_v)},\qquad s\in\{-1,+1\}.\label{eq:center}
 \end{equation}
 Then $(0,\theta_v,0)$ is an equilibrium for every $\kappa$. The orientation

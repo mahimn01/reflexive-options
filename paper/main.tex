@@ -5,6 +5,7 @@
 \usepackage{array}
 \usepackage{graphicx}
 \usepackage{microtype}
+\usepackage{placeins}
 \usepackage[hidelinks]{hyperref}
 \usepackage[nameinlink]{cleveref}
 \usepackage[round]{natbib}
@@ -37,35 +38,37 @@ A Fixed-Equilibrium Bifurcation Model and a Pre-Extraction Identification Protoc
 \maketitle
 
 \begin{abstract}
-We study a physical-measure local model in which detrended log price, square-root variance,
-and an exponentially filtered price signal form a closed feedback loop.  The model fixes
-the reference equilibrium while the coupling varies and makes the variance drift point
-inward at zero.  For a general three-times differentiable book functional, we state all
-Routh--Hurwitz side conditions for a local Hopf bifurcation, derive the exact eigenvalue
-crossing speed, and evaluate the first Lyapunov coefficient.  For a centered Gaussian
-density of latent signed dealer positions in log moneyness, the Hopf determinant is
-quadratic in the coupling.  The first positive local Hopf point of a deliberately
-constructed, non-calibrated configuration has
+We ask whether dealer-gamma feedback can generate a local volatility cycle without moving
+the reference equilibrium as feedback strength varies or violating the zero-variance
+boundary.  The physical-measure model has three states: detrended log price, instantaneous
+variance with square-root diffusion, and an exponentially filtered price signal.  Centering
+the dealer-book pressure fixes the equilibrium, while making variance feedback proportional
+to variance leaves the boundary drift pointing inward.  For a general three-times
+differentiable book functional, we give all Routh--Hurwitz conditions for a local Hopf
+bifurcation, derive the exact eigenvalue crossing speed, and evaluate the first Lyapunov
+coefficient that classifies the nearby cycles.  For a centered Gaussian density of latent
+signed dealer positions in log moneyness, the Hopf equation is quadratic in the coupling.
+The first positive local Hopf point of a deliberately constructed, non-calibrated
+configuration has
 $\kappa^\star=31.4933\,\mathrm{yr}^{-1}$,
 $\omega^\star=47.1186\,\mathrm{rad}\,\mathrm{yr}^{-1}$, and
 $\ell_1=-6.2888$.  Integration of the actual nonlinear book gives an attracting cycle,
 and its local amplitude scales approximately as
-$\{(\kappa-\kappa^\star)/\kappa^\star\}^{0.509}$ over the closest numerical grid.  A
-gross-normalized mixture audit shows a more qualified conclusion: nearby mixtures preserve
-the supercritical Hopf, but dispersed or offsetting books can make it subcritical, and
-reversing the canonical signed orientation removes every positive local Hopf root.  Thus the
-paper proves a mechanism possibility, not robustness of one market regime or evidence that
-SPX is near the threshold.  Public open interest identifies neither participant nor side,
-so open-interest-weighted signed gamma is a convention, not observed dealer inventory.  We
-therefore pre-specify a registered-horizon, sign-agnostic predictive protocol and its
-measurement, timing, attrition, multiplicity, and interpretation rules before proprietary
-data access.  No registered market dataset is analysed in this paper.
+$\{(\kappa-\kappa^\star)/\kappa^\star\}^{0.509}$ near the threshold.  Robustness checks over
+signed Gaussian mixtures show that both existence and cycle stability depend on the latent
+book: dispersed or offsetting books can make the Hopf subcritical, and reversing the
+canonical orientation removes every positive local Hopf root.  The result is therefore a
+mechanism possibility, not an S\&P 500 calibration.  Because public open interest identifies
+neither participant nor side, we also fix a sign-agnostic predictive protocol for a historical
+horizon before proprietary-data extraction.  Its target is predictive association, not
+dealer inventory or causality.  No registered market dataset is analysed in this paper.
 \end{abstract}
 
 \section{Introduction}
 \label{sec:introduction}
 
-Delta hedging turns an option position into state-dependent demand for its underlying.
+Option gamma measures how an option's delta changes with the underlying price.  Delta
+hedging therefore turns an option position into state-dependent demand for its underlying.
 When the intermediary sector is net long gamma, rebalancing is locally contrarian; when it
 is net short gamma, it is locally trend-following.  This observation motivates a possible
 feedback channel from option inventories to returns and volatility
@@ -88,34 +91,21 @@ limit cycle.
 The paper makes four contributions.
 \begin{enumerate}
 \item We state a physical-measure model for detrended log-price deviations.  Centering the
-dealer-book functional pins $(X,v,\chi)=(0,\theta_v,0)$ for every coupling $\kappa$.
-Multiplying the memory feedback in the variance drift by $v$ leaves the boundary drift
-equal to $\kappa_v\theta_v>0$.
+dealer-book functional keeps the reference equilibrium fixed for every coupling value.
+Making memory feedback proportional to variance leaves the variance drift positive at zero.
 \item We derive the complete cubic Routh--Hurwitz test, including all positivity side
-conditions and an exact expression for transversality.  The result is local: absence of a
-Hopf root is not a global-stability theorem, and a subcritical Hopf alone does not prove
-hysteresis.
+conditions and an exact expression for transversality.  We also evaluate the first Lyapunov
+coefficient, which determines whether the nearby small cycles are attracting or repelling.
 \item We specialize the dealer book to a centered Gaussian signed-position density.  The
 Hopf equation becomes a quadratic in $\kappa$, while the first Lyapunov coefficient is
 evaluated from analytic second and third derivatives.  The numerical example integrates
 this actual nonlinearity rather than a separately chosen cubic normal form.  We then audit
 normal-form scaling, numerical tolerances, initial conditions, one-at-a-time parameter
 changes, the book-shape plane, and signed Gaussian mixtures.
-\item We state what can and cannot be learned from the future WRDS exercise.  Because public
-open interest does not identify dealer sign, the revised protocol is a registered-horizon proxy
-study, not a causal or model-confirming dealer-inventory test.
+\item We state what can and cannot be learned from a future proprietary-data exercise.
+Because public open interest does not identify dealer sign, the revised protocol is a
+fixed-horizon proxy study, not a causal or model-confirming dealer-inventory test.
 \end{enumerate}
-
-Several claims in earlier working drafts are deliberately absent.  An earlier draft replaced the
-state-dependent diffusion by the affine additive surrogate
-$\dd Z=JZ\dd t+\varepsilon\Sigma\dd W$ and then estimated a non-zero stochastic shift from
-forced trajectories.  In that surrogate the same-noise derivative cocycle is exactly
-$e^{Jt}$, so its correction is zero.  This does not solve the stochastic variational
-equation of \eqref{eq:x-sde}--\eqref{eq:v-sde}, whose diffusion derivatives are non-zero;
-no stochastic threshold claim is made here.  A Hawkes branching ratio near one is not a
-theorem that this three-dimensional system is near an oscillatory bifurcation.  Neither a
-mean-field analogy nor an information statistic identifies the dealer-gamma mechanism.
-These observations mark the boundary between what is proved and what remains conjectural.
 
 The rest of the paper is organized as follows.  \Cref{sec:related} positions the result
 relative to hedging-feedback, option-demand, endogenous-cycle, and empirical gamma work.
@@ -167,7 +157,7 @@ uses participant-tagged information to estimate market-maker positions.  The con
 central to our design: a convention applied to public open interest is not observationally
 equivalent to participant-tagged inventory.  Evidence from FX trade-repository data
 \citep{anderegg2022impact} is informative about the hedging channel but does not solve the
-measurement problem for SPX public open interest.
+measurement problem for public open interest in S\&P 500 Index (SPX) options.
 
 \paragraph{Scope of the contribution.}
 Relative to these four strands, we do not claim gamma feedback per se, financial Hopf
@@ -187,10 +177,13 @@ detrended deviation
 X_t=\log(S_t/F_t).
 \]
 The analysis concerns a neighbourhood of $X=0$ over a horizon on which the option book is
-frozen.  It is not a global model for the price level.  The proposed dynamics are
+frozen.  It is not a global model for the price level.  The state $v_t$ is annualized
+instantaneous variance, $\chi_t$ is an exponentially weighted filter of $X_t$, and
+$g(X_t,v_t,\chi_t)$ is a dimensionless dealer-book pressure functional specified below.
+The proposed dynamics are
 \begin{align}
 \dd X_t &={\left[-\delta X_t-\tfrac12(v_t-\theta_v)
-                 +\kappa g(X_t,\chi_t,v_t)\right]}\dd t
+                 +\kappa g(X_t,v_t,\chi_t)\right]}\dd t
           +\sqrt{v_t}\dd W_t^S, \label{eq:x-sde}\\
 \dd v_t &={\left[\kappa_v(\theta_v-v_t)+\gamma v_t\chi_t\right]}\dd t
           +\xi\sqrt{v_t}\dd W_t^v, \label{eq:v-sde}\\
@@ -199,15 +192,16 @@ frozen.  It is not a global model for the price level.  The proposed dynamics ar
 \end{align}
 We take $\delta,\kappa_v,\theta_v,\alpha,\beta>0$,
 $\gamma,\kappa,\xi\geq0$, and $\rho\in[-1,1]$.
-Here $\delta,\kappa_v,\alpha,\gamma,$ and $\kappa$ have units
+Here $\delta,\kappa_v,\alpha,\gamma$, and $\kappa$ have units
 $\mathrm{yr}^{-1}$; $X,\chi,\beta$, and $g$ are dimensionless; and $v$ and
 $\theta_v$ are annualized instantaneous variances under the convention that a year is the
 time unit.  The volatility-of-variance coefficient $\xi$ has units
 $\mathrm{yr}^{-1/2}$ and $\rho$ is dimensionless.  The term
 $-\tfrac12(v-\theta_v)$ is the It\^o correction relative to the reference
 variance.  In the nested limit $\delta=\gamma=\kappa=0$, after restoring the
-predictable reference drift, $(X,v)$ has Heston-type log-return and CIR-variance
-dynamics \citep{heston1993}.  Setting $\kappa=0$ alone does \emph{not} remove the
+predictable reference drift, $(X,v)$ has Heston-type log-return and
+Cox--Ingersoll--Ross (CIR) variance dynamics \citep{heston1993}.  Setting $\kappa=0$ alone
+does \emph{not} remove the
 $X\to\chi\to v$ channel, so we do not call that restriction Heston.
 
 The variance feedback is proportional to $v$.  At the boundary,
@@ -227,7 +221,7 @@ than silently evaluating $\sqrt v$ at a negative Euler iterate
 \label{ass:local}
 Over the theoretical horizon, $F_t$ is predictable, the position density and effective
 maturity are frozen, and $g$ is $C^3$ on an open neighbourhood of
-$(0,0,\theta_v)$.  Parameters other than $\kappa$ are held fixed when the bifurcation
+$(0,\theta_v,0)$.  Parameters other than $\kappa$ are held fixed when the bifurcation
 parameter varies.  The deterministic orbit considered below remains inside that
 neighbourhood and satisfies $v>0$.
 \end{assumption}
@@ -239,8 +233,10 @@ bifurcation type.
 
 \subsection{From hedge demand to a reduced-form state feedback}
 
-For intuition, suppose an intermediary holds a signed option density $q(k)$ and offsets its
-option delta with underlying position
+For intuition, fix a reference forward $F_\star$, set
+$k=\log(K/F_\star)$ and $K(k)=F_\star e^k$, and suppose an intermediary holds a signed
+density $q(k)$ of options with common effective maturity $T$.  It offsets the option delta
+with underlying position
 \[
 h(S,v)=-\int q(k)\Delta^{BS}(S,K(k),v,T)\dd k.
 \]
@@ -296,13 +292,16 @@ by contract proves that the observation map is not injective.
 This is a data-content result, not a small-sample problem: more dates of the same public OI
 field do not identify dealer sign without additional information or restrictions.
 
-For theory we first define a positive unit-mass Gaussian shape over fixed log moneyness,
+For theory, let $\mu_q$ and $\sigma_q>0$ denote the mean and dispersion of a positive
+unit-mass Gaussian shape over fixed log moneyness,
 \[
 \varphi_q(k)=\frac{1}{\sqrt{2\pi\sigma_q^2}}
 \exp\left\{-\frac{(k-\mu_q)^2}{2\sigma_q^2}\right\},
 \]
-and integrate Black--Scholes spot gamma \citep{blackscholes1973}.  Up to gross position
-mass and an impact scale absorbed by $\kappa$, the integral is
+and let $T$, $r$, and $q_d$ denote a common effective maturity, continuously compounded
+risk-free rate, and continuous dividend yield.  Integrating Black--Scholes spot gamma
+\citep{blackscholes1973}, and absorbing gross position mass and a common impact scale into
+$\kappa$, gives
 \begin{align}
 \mathcal G(X,v)
 &=\frac{\exp(-q_dT-X)}{\sqrt{2\pi\tau^2(v)}}
@@ -313,14 +312,14 @@ m(v)=\mu_q-(r-q_d+v/2)T. \nonumber
 \end{align}
 The functional used in \eqref{eq:x-sde} is centered and normalized:
 \begin{equation}
-g(X,\chi,v)=s\,
+g(X,v,\chi)=s\,
 \frac{\mathcal G(X,v)-\mathcal G(0,\theta_v)}
      {\mathcal G(0,\theta_v)},
 \qquad s\in\{-1,+1\}. \label{eq:centered-book}
 \end{equation}
 The sign $s$ is a latent dealer-position orientation, not an open-interest statistic.  More
 general $C^3$ functionals, including mixtures and a dependence on $\chi$, fit the theorem
-below provided $g(0,0,\theta_v)=0$.  The Gaussian specialization is intentionally static in
+below provided $g(0,\theta_v,0)=0$.  The Gaussian specialization is intentionally static in
 $\chi$ so that its assumptions are auditable.  \Cref{app:book-integral} derives
 \eqref{eq:raw-book} by completing the square rather than treating it as an assumed response
 surface.
@@ -333,9 +332,10 @@ used only to obtain an analytic witness; it is not a pricing or risk-premium cla
 
 \begin{remark}[What centering does]
 Centering removes the level of the book functional at the reference state, not its local
-price and variance sensitivities.  It is equivalent to absorbing a constant pressure into
-the predictable reference drift.  It avoids changing that drift as $\kappa$ varies; hence
-the bifurcation parameter traces one family of vector fields with a common equilibrium.
+price and variance sensitivities.  At any fixed coupling, the removed constant pressure can
+be absorbed into the predictable reference drift.  Subtracting it explicitly prevents the
+reference equilibrium from moving as $\kappa$ varies, so the bifurcation parameter traces a
+family of vector fields with one common equilibrium.
 \end{remark}
 
 \begin{proposition}[Positive normalization invariance]
@@ -358,7 +358,7 @@ tensors $B,C$ are identical, so all stated local quantities agree.
 \label{sec:hopf}
 
 Remove the Brownian terms and write the deterministic drift as $f(X,v,\chi;\kappa)$.
-Because $g(0,0,\theta_v)=0$,
+Because $g(0,\theta_v,0)=0$,
 \begin{equation}
 z_\star=(0,\theta_v,0) \label{eq:fixed-equilibrium}
 \end{equation}
@@ -394,7 +394,9 @@ $c_2>0$, $c_1>0$, $c_0>0$, and
 \begin{equation}
 H(\kappa):=c_1(\kappa)c_2(\kappa)-c_0(\kappa)>0. \label{eq:rh}
 \end{equation}
+A prime denotes differentiation with respect to $\kappa$.
 
+\begin{samepage}
 \begin{theorem}[Local Hopf criterion]
 \label{thm:hopf}
 Suppose $f$ is $C^3$ jointly in state and $\kappa$ near
@@ -422,6 +424,7 @@ $\ell_1<0$ gives stable small-amplitude periodic orbits on the side where the
 equilibrium pair has positive real part; $\ell_1>0$ gives unstable orbits on the
 opposite side.
 \end{theorem}
+\end{samepage}
 
 \begin{proof}
 At $H=0$ with the stated positivity conditions, the cubic factors as
@@ -489,13 +492,14 @@ from \eqref{eq:raw-book}.  Because $\mathcal G(0,\theta_v)>0$, derivatives of th
 functional are simply $s$ times the raw derivatives divided by that value.
 
 To classify a valid root, let $B$ and $C$ be the symmetric bilinear and trilinear Taylor
-tensors of $f$ at the equilibrium.  For right and left eigenvectors $q,p$ satisfying
-$Jq=i\omega q$, $J^\top p=-i\omega p$, and
-$\langle p,q\rangle=1$, we evaluate
+tensors of $f$ at the equilibrium.  To distinguish the eigenvector from the position density
+$q(k)$, let $u$ and $p$ be right and left eigenvectors satisfying
+$Ju=i\omega u$, $J^\top p=-i\omega p$, and
+$\langle p,u\rangle=1$ under the Hermitian pairing.  We evaluate
 \begin{align}
 \ell_1=\frac{1}{2\omega}\operatorname{Re}\Big\langle p,
-&C(q,q,\bar q)-2B\{q,J^{-1}B(q,\bar q)\}\nonumber\\
-&+B\{\bar q,(2i\omega I-J)^{-1}B(q,q)\}\Big\rangle .
+&C(u,u,\bar u)-2B\{u,J^{-1}B(u,\bar u)\}\nonumber\\
+&+B\{\bar u,(2i\omega I-J)^{-1}B(u,u)\}\Big\rangle .
 \label{eq:l1}
 \end{align}
 All derivatives of \eqref{eq:raw-book} through order three are analytic.  Importantly, the
@@ -594,8 +598,8 @@ proximity.
 \label{sec:robustness}
 
 A single orbit can verify implementation at one point but cannot establish that the result
-is structurally stable across book shapes or numerical choices.  We therefore conduct five
-checks on the corrected centered model.  None uses market data, and the parameter ranges
+is structurally stable across book shapes or numerical choices.  We therefore conduct a
+sequence of checks on the centered model.  None uses market data, and the parameter ranges
 are mechanical perturbations rather than calibrated confidence sets.
 
 \subsection{Local normal-form scaling and numerical convergence}
@@ -645,6 +649,10 @@ local side conditions.  Reproduction command:
 \label{fig:centered-robustness}
 \end{figure}
 
+Panel (c) shows that the first threshold changes nonlinearly under one-at-a-time parameter
+perturbations and can disappear when a local side condition fails.  The sweep is a diagnostic
+of model dependence, not a statistical confidence region.
+
 \subsection{Book shape, mixtures, and what is not robust}
 
 Among the 2,025 cells in \cref{fig:centered-robustness}(d), 747 have a valid positive local
@@ -665,6 +673,14 @@ would make the coupling explode mechanically when long and short components near
 Because differentiation is linear, all derivatives in \cref{eq:l1} are gross-normalized
 weighted sums of the component derivatives.
 
+The diagnostic mixtures are fully specified as
+$w\times(\mu_q,\sigma_q,T,s)$ components.  The nearby book is
+$0.5\times(0.04,0.18,0.20,+1)+0.5\times(0.08,0.22,0.30,+1)$; the dispersed book is
+$0.6\times(0.02,0.12,0.10,+1)+0.4\times(0.10,0.24,0.50,+1)$; and the offsetting book uses
+the same two component shapes with weights $0.7$ and $0.3$ but orientation $-1$ on the
+second component.  These choices probe nearby, maturity-dispersed, and sign-offsetting
+books rather than representing estimated portfolios.
+
 \begin{table}[ht]
 \centering
 \small
@@ -679,8 +695,8 @@ Offsetting-sign mixture & $-0.1440$ & $-1.5645$ & $50.4759$ & $27.8170$ & subcri
 Reversed canonical orientation & $0.0618$ & $2.0199$ & --- & --- & no valid positive root\\
 \bottomrule
 \end{tabular}
-\caption{Gross-normalized mixture audit.  Component definitions are fixed in the
-reproduction script.  The examples are diagnostic constructions, not estimated books.}
+\caption{Gross-normalized mixture audit.  The examples are diagnostic constructions, not
+estimated books.}
 \label{tab:mixtures}
 \end{table}
 
@@ -705,23 +721,13 @@ the Hopf threshold while changing its nonlinear classification.
 \section{What the future data can identify}
 \label{sec:empirical}
 
-No registered OptionMetrics, CRSP, or VIX dataset was loaded or analysed for this paper.
-The historical outcomes are nevertheless public and the named stress episodes were known
-when the protocol was written.  This is therefore a retrospective pre-analysis plan made
-before proprietary-data extraction, not a prospectively blinded experiment.  The
-timestamped original registration and its amendments remain in the repository.
-Amendments A13--A14 supersede the earlier event-selected directional GEX test and close the
-contract, source, and inference choices before extraction.  Amendment A15 independently
-fixes market-calendar alignment, the outcome-session weekday control, and this registration
-language.  The A13--A14 amendment file has SHA-256
-\texttt{603e89366c0dbe49718e8c31f805d6f85d3c508e2e0ed4276a6310c80f5f9cd7}
-and OpenTimestamps receipt \texttt{pre\_registration\_amendments.md.ots}; calendar
-attestations are pending Bitcoin consolidation.  A15 has SHA-256
-\begin{center}
-\small\texttt{a5f694f99953d57563d4f17dc5646ef0b87452c45119ccbdc12fc90efd034a52}
-\end{center}
-and receipt \texttt{pre\_registration\_amendment\_a15.md.ots}, also pending Bitcoin
-consolidation.  The earlier records are preserved rather than overwritten.
+No registered OptionMetrics option-chain data, CRSP returns, or Cboe Volatility Index
+(VIX) data were loaded or analysed for this paper.  The historical outcomes and named stress
+episodes were already public when the protocol was written.  This is therefore a
+retrospective pre-analysis plan recorded before proprietary-data extraction, not a
+prospectively blinded experiment.  Amendments A13--A15 replace an earlier event-selected,
+directional gamma-exposure (GEX) plan with the fixed-horizon, sign-agnostic design below.
+The timestamp and file-hash record is reported in \cref{app:empirical-audit}.
 
 The target of this exercise is an incremental predictive coefficient, not a structural
 parameter.  Formally, it is the linear-projection coefficient of next-day log squared
@@ -733,23 +739,29 @@ identification argument.
 
 \subsection{Primary proxy construction}
 
-On each eligible OptionMetrics date in the registered historical horizon from 3 January
-2017 through 29 October 2024,
-retain only the verified SPX security, OSI roots SPX/SPXW, unadjusted 100-multiplier
-standard-settlement contracts, 1--365 calendar-day maturities, valid quotes and IV in
-$[0.01,5]$, and $|\log(K/F)|\leq0.50$.  A parity forward is formed separately by date,
-expiration, and AM/PM settlement from the matched strike minimizing
-$|C_{mid}-P_{mid}|$, $F=K+e^{r\tau}(C_{mid}-P_{mid})$; carry is a flagged fallback when no
-pair survives.  The spot is the OptionMetrics SPX close, $r$ is linearly interpolated from
-its continuous zero curve, $q$ is its index-dividend yield, and ACT/365 is used consistently.
+On each eligible OptionMetrics date from 3 January 2017 through 29 October 2024, begin with
+the verified SPX security and option-symbol roots (OSI roots) SPX and SPXW.  Retain only
+unadjusted, standard-settlement contracts with multiplier 100, 1--365 calendar days to
+expiration, valid quotes, implied volatility (IV) in $[0.01,5]$, and
+$|\log(K/F)|\leq0.50$.
+
+\pagebreak
+Form the parity forward separately within each date--expiration--a.m./p.m.-settlement group.
+Among matched put--call strikes, choose the strike minimizing $|C_{mid}-P_{mid}|$ and set
+$F=K+e^{r\tau}(C_{mid}-P_{mid})$; use carry only as a flagged fallback when no pair survives.
+The spot is the OptionMetrics SPX close, $r$ is linearly interpolated from the continuous
+zero curve, $q$ is the index-dividend yield, and the ACT/365 day-count convention is used
+throughout.
 After these fixed filters, construct the unsigned gamma mass
 \begin{equation}
 U_t=\sum_i \mathrm{OI}_{i,t}\,\Gamma_{i,t}^{BS}\,S_t^2(0.01)(100),
 \label{eq:unsigned-gamma}
 \end{equation}
-together with three observable shape summaries.  Write
+where $\mathrm{OI}_{i,t}$ is contract open interest.  The factors $0.01$ and $100$ express
+gamma exposure for a one-percent underlying move and the standard contract multiplier.
+Together with $U_t$, construct three observable shape summaries.  Write
 $u_{i,t}=\mathrm{OI}_{i,t}\Gamma_{i,t}^{BS}S_t^2(0.01)(100)$ and
-$k_{i,t}=\log(K_i/F_{i,t})$.  The summaries are
+$k_{i,t}=\log(K_i/F_{i,t})$, and let $C$ and $P$ index calls and puts.  The summaries are
 \begin{equation}
 B_t=\frac{\sum_{i\in C}u_{i,t}-\sum_{i\in P}u_{i,t}}{U_t},\qquad
 M_t=\frac{\sum_i u_{i,t}k_{i,t}}{U_t},\qquad
@@ -763,11 +775,11 @@ construction \citep{squeezemetrics2017}, are reported only as secondary measurem
 sensitivities.  Reversing a convention mechanically reverses its coefficient and is not
 robustness evidence.
 
-The primary outcome is
-$Y_{t+1}=\log(r_{t+1}^2+10^{-8})$, where the immediately following CRSP trading-session
-log return is
-$r_{t+1}=\log(1+\texttt{crsp.dsp500.sprtrn}_{t+1})$.  VIX is the archived official Cboe
-daily close.  For each standardized proxy, estimate a strictly forward regression
+The primary outcome is $Y_{t+1}=\log(r_{t+1}^2+10^{-8})$, where the immediately following
+CRSP trading-session log return is
+$r_{t+1}=\log(1+\texttt{crsp.dsp500.sprtrn}_{t+1})$.  The VIX control is the archived
+official Cboe daily close.  For each standardized proxy, estimate a strictly forward
+regression
 \begin{align}
 Y_{t+1}={}&a+bQ_t+\phi_1Y_t+\phi_5\overline Y_{t-4:t}
 +\phi_{22}\overline Y_{t-21:t}\nonumber\\
@@ -775,14 +787,18 @@ Y_{t+1}={}&a+bQ_t+\phi_1Y_t+\phi_5\overline Y_{t-4:t}
 \label{eq:proxy-regression}
 \end{align}
 Here $Q_t$ is, in separate pre-specified regressions, $\log U_t$, $B_t$, $M_t$, or
-$\log(D_t+10^{-6})$.  Leads and lags are constructed on the complete ordered CRSP
+$\log(D_t+10^{-6})$.  The bars denote five-session and 22-session trailing means,
+$\overline Y_{t-4:t}=5^{-1}\sum_{j=0}^4Y_{t-j}$ and
+$\overline Y_{t-21:t}=22^{-1}\sum_{j=0}^{21}Y_{t-j}$.
+Leads and lags are constructed on the complete ordered CRSP
 trading-session calendar before rows with a missing option proxy are removed.  Thus a
 missing option date cannot compress the return horizon: $t+1$ always denotes the immediately
 following CRSP session.  Tuesday--Friday indicators refer to that outcome session, whose
 calendar identity is known at the close of $t$; the monthly-expiration indicator refers to
 the regressor session.  The
 primary inferential target is incremental predictive association, $b=0$ against a two-sided
-alternative.  Report fixed-lag-5 Newey--West inference \citep{neweywest1987} and a
+alternative.  Report fixed-lag-5 Newey--West heteroskedasticity- and
+autocorrelation-consistent (HAC) inference \citep{neweywest1987} and a
 moving-pairs block bootstrap (block 10, 2,000 draws, seed 42, 95\% percentile interval)
 \citep{kunsch1989}.
 Benjamini--Hochberg at $q=0.05$ is applied separately to the four HAC and four bootstrap
@@ -818,8 +834,9 @@ coverage, and SHA-256 hashes are frozen before outcomes are constructed.}
 \end{table}
 
 The overlapping $Y_t$, five-day, and 22-day controls are intentionally fixed as a
-HAR-style predictive conditioning set.  Their collinearity can inflate uncertainty without
-biasing OLS under full rank, so the primary table reports variance-inflation factors rather
+heterogeneous-autoregressive (HAR)-style predictive conditioning set.  Their collinearity
+can inflate uncertainty without biasing ordinary least squares (OLS) under full rank, so
+the primary table reports variance-inflation factors rather
 than removing whichever control is inconvenient.  Proxy standardization uses one common
 option-date sample before outcome-based listwise deletion.  Because that transformation
 uses no future return and is affine, it changes coefficient units but not fitted values or
@@ -831,15 +848,16 @@ Carlo-corrected two-sided sign-tail probability, and the interval is percentile-
 and bootstrap are not independent replications of evidence: they are two uncertainty
 approximations for one coefficient.  The conjunctive label is therefore a pre-specified
 robustness convention, not a theorem that the joint false-discovery rate is exactly five
-percent.  Benjamini--Hochberg's formal guarantee also requires dependence conditions that
+percent.  Benjamini--Hochberg's formal false-discovery-rate (FDR) guarantee also requires
+dependence conditions that
 need not hold for the four correlated summaries; raw and adjusted values and the full proxy
 correlation matrix will be reported so this limitation is visible.
 
 Event-window interactions for Volmageddon, COVID, and the August 2024 yen-carry episode are
 secondary heterogeneity analyses.  They are not used to select the sample or to validate a
-desired sign.  Absolute return is a secondary outcome.  The IV-surface/RL tournament and
-critical-slowing-down exercises from the initial registration are exploratory diagnostics,
-not confirmatory evidence for the mechanism.
+desired sign.  Absolute return is a secondary outcome.  The implied-volatility-surface
+reinforcement-learning tournament and critical-slowing-down exercises from the initial
+registration are exploratory diagnostics, not confirmatory evidence for the mechanism.
 
 \subsection{Ex-ante precision calculation}
 
@@ -848,7 +866,8 @@ interesting association.  To expose the relevant scale before extraction, residu
 standardized proxy $Q$ on the controls and let $R_Q^2$ be the auxiliary regression's
 $R^2$.  Under an idealized Gaussian approximation with effective independent sample size
 $n_{\mathrm{eff}}$, residual outcome standard deviation $\sigma_e$, two-sided five-percent
-size, and 80-percent power, the minimum detectable coefficient is approximately
+size, and 80-percent power, let $z_p$ denote the $p$ quantile of the standard normal
+distribution.  The minimum detectable coefficient is approximately
 \begin{equation}
 \frac{|b|_{\mathrm{MDE}}}{\sigma_e}
 \simeq \frac{z_{0.975}+z_{0.80}}
@@ -918,9 +937,9 @@ linear Hopf root survives.  The phase map is consequently illustrative.
 \item \textbf{Variance boundary and explosion.}  The added variance drift points inward at
 zero, but this paper does not prove global non-explosion for every parameter and initial
 condition.  The theorem and numerical example are local.
-\item \textbf{Measurement.}  Public OI does not recover signed dealer inventory.  September
-WRDS access will improve coverage and reproducibility, not solve this identification
-problem.
+\item \textbf{Measurement.}  Public OI does not recover signed dealer inventory.  Future
+proprietary-data access can improve coverage and reproducibility but cannot solve this
+identification problem.
 \item \textbf{Theory--proxy gap.}  The theorem is written for a latent signed book; the
 primary future regressors are unsigned summaries.  A predictive association for those
 summaries is not a direct test of the theorem's sign channel, and a null association does
@@ -988,7 +1007,9 @@ $k=\log K$.  Black--Scholes spot gamma for a common maturity $T$ is
 =\frac{e^{-q_dT-X}}{\sqrt{vT}}
 \phi\!\left(\frac{X-k+(r-q_d+v/2)T}{\sqrt{vT}}\right), \label{eq:bs-gamma-app}
 \end{equation}
-where $\phi$ is the standard-normal density.  With
+where $\phi$ is the standard-normal density.  Write
+$\varphi(k;\mu,\sigma^2)$ for a Gaussian density with mean $\mu$ and variance $\sigma^2$.
+With
 $k\sim N(\mu_q,\sigma_q^2)$, the positive unit-mass book is
 \begin{align}
 \mathcal G(X,v)
@@ -1064,8 +1085,9 @@ $G_{XXv}$ & $117.9016552$ & $G_{Xvv}$ & $83.4816197$ & $G_{vvv}$ & $-114.8072302
 \label{tab:book-derivatives}
 \end{table}
 
-For the drift expansion
-$f(z_\star+x)=Jx+\tfrac12B(x,x)+\tfrac16C(x,x,x)+O(\|x\|^4)$, the book contributes
+For the canonical drift expansion at the first Hopf point,
+$f(z_\star+x;\kappa^\star)=Jx+\tfrac12B(x,x)+\tfrac16C(x,x,x)+O(\|x\|^4)$,
+the book contributes
 \begin{align*}
 B_{1,XX}&=\kappa G_{XX},&B_{1,Xv}&=B_{1,vX}=\kappa G_{Xv},&
 B_{1,vv}&=\kappa G_{vv},\\
@@ -1092,7 +1114,7 @@ H(\kappa)
 +\{G_vL-G_XA(A+2\delta)\}\kappa\\
 &+A(M+\delta A+\delta^2)-\tfrac12L,
 \end{align*}
-which is \eqref{eq:hopf-coefficients}.  If $G_X=0$, the equation is linear unless
+which is \eqref{eq:hopf-quadratic}--\eqref{eq:hopf-coefficients}.  If $G_X=0$, the equation is linear unless
 $G_vL=0$; the implementation handles this degeneracy separately.  If the discriminant is
 non-negative, both real roots are enumerated in ascending order and each is subjected to
 the positivity, frequency, factorization, and transversality checks.  Thus the reported
@@ -1151,15 +1173,31 @@ amplitudes measured over the final five simulated years.  All times are in years
 The solver is DOP853 with default audit tolerances $(10^{-9},10^{-11})$ and maximum step
 $0.005$ years.  Periods are averages of successive local maxima of $X$ over the retained
 window.  The plotted $1.02\kappa^\star$ orbit in \cref{fig:centered-validation} is the same
-configuration as the middle row of \cref{tab:cycle-convergence}; the earlier 40-year
+configuration as the $2.0$-percent row of \cref{tab:cycle-convergence}; the earlier 40-year
 discard is more than sufficient for the plotted initialization, while the robustness audit
 uses the more conservative 80-year rule.
 
+\FloatBarrier
 \section{Empirical implementation and reporting audit}
 \label{app:empirical-audit}
 
 The data workflow is ordered to prevent outcome knowledge from influencing contract
 construction.
+
+The timestamped original registration and its amendments remain in the repository.
+Amendments A13--A14 close the contract, source, and inference choices before extraction;
+A15 fixes market-calendar alignment, the outcome-session weekday control, and the
+retrospective-registration language.  The A13--A14 file has SHA-256
+\begin{center}
+\small\texttt{603e89366c0dbe49718e8c31f805d6f85d3c508e2e0ed4276a6310c80f5f9cd7}
+\end{center}
+and receipt \texttt{pre\_registration\_amendments.md.ots}.  A15 has SHA-256
+\begin{center}
+\small\texttt{a5f694f99953d57563d4f17dc5646ef0b87452c45119ccbdc12fc90efd034a52}
+\end{center}
+and receipt \texttt{pre\_registration\_amendment\_a15.md.ots}.  Both receipts were pending
+Bitcoin consolidation when created; earlier records are preserved rather than overwritten.
+
 \begin{enumerate}
 \item Archive vendor documentation, query text, raw extracts, retrieval time, row count,
 date range, and SHA-256 hashes.  Do not construct returns at this stage.
@@ -1167,8 +1205,9 @@ date range, and SHA-256 hashes.  Do not construct returns at this stage.
 contract multipliers, unique option identifiers, and the OptionMetrics spot mapping.
 Non-identical duplicates are a no-go error rather than an invitation to choose a row.
 \item Apply every contract filter in A14 and record sequential attrition: input rows,
-root/security, adjustment/multiplier, settlement, DTE, quote, IV, duplicate, forward, and
-moneyness stages.  Record zero-OI rows even if later dropped for speed.
+root/security, adjustment/multiplier, settlement, days to expiration (DTE), quote, IV,
+duplicate, forward, and moneyness stages.  Record zero-OI rows even if later dropped for
+speed.
 \item Construct parity forwards within date--expiration--settlement groups.  Record the
 fraction of gamma mass using carry fallback and zero-curve endpoint extension.  Compare
 recomputed gamma with vendor gamma only as a mapping diagnostic.
@@ -1181,8 +1220,8 @@ record every listwise deletion as fixed in A15.
 \item Run all four primary equations with the same controls and aligned rows.  Save the
 design-matrix hashes, coefficients, HAC covariance matrices, bootstrap seeds and block
 indices, percentile distributions, VIFs, proxy correlations, and adjusted $p$-values.
-\item Produce the full primary table before any exploratory event, convention-signed, CSD,
-or RL analysis is opened.
+\item Produce the full primary table before any exploratory event, convention-signed,
+critical-slowing-down, or reinforcement-learning analysis is opened.
 \end{enumerate}
 
 For transparency, the Benjamini--Hochberg adjusted value for ordered raw values
@@ -1203,5 +1242,8 @@ pre-specified label; all signed-convention sensitivities; and a deviations table
 every post-data change with the registered analysis.  Participant-level or causal language
 is prohibited unless new data and a new identification design genuinely support it.
 
+{\small
+\setlength{\bibsep}{0.25em}
 \bibliography{references}
+}
 \end{document}

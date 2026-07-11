@@ -62,7 +62,7 @@ been established before submission.
 - [x] Render and inspect all 22 master pages; final LaTeX log has no warning, undefined
   reference, underfull box, or overfull box.
 - [x] arXiv tarball extraction/build test passes at 22 pages; SHA-256
-  `fb3b753d49c8a371e2180a13b871206fabe724eab9db90d5ee64a9e2014b6127`.
+  `fa4813d33568e5059022f75f486286056e7eedc8ebb8df562bb6d2b71ac27264`.
 - [x] Tar members are exactly `main.tex`, `main.bbl`, `references.bib`,
   `figures/centered_hopf_validation.pdf`, and
   `figures/centered_hopf_robustness.pdf`.

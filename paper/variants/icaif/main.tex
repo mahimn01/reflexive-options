@@ -15,7 +15,9 @@
 \begin{document}
 \title{Dealer-Gamma Feedback and Local Volatility Cycles:\
 A Fixed-Equilibrium Bifurcation Model}
-\author{Anonymous Author(s)}
+% Sole-author blind submission. The acmart anonymous option renders its fixed
+% "Anonymous Author(s)" label regardless of the singular placeholder below.
+\author{Anonymous Author}
 \affiliation{\institution{Anonymous Institution}\city{Anonymous}\country{Anonymous}}
 \email{anonymous@example.org}
 
@@ -61,7 +63,7 @@ positions \citep{vasquez2025zerodte}.
 Let $X_t=\log(S_t/F_t)$ for a predictable reference $F_t$ that absorbs
 baseline expected return. Locally,
 \begin{align}
-dX_t&=[-\delta X_t-\tfrac12(v_t-\theta_v)+\kappa g(X_t,\chi_t,v_t)]dt
+dX_t&=[-\delta X_t-\tfrac12(v_t-\theta_v)+\kappa g(X_t,v_t,\chi_t)]dt
        +\sqrt{v_t}\,dW_t^S,\label{eq:x}\\
 dv_t&=[\kappa_v(\theta_v-v_t)+\gamma v_t\chi_t]dt
        +\xi\sqrt{v_t}\,dW_t^v,\label{eq:v}\\
@@ -82,7 +84,7 @@ m(v)=\mu_q-(r-q_d+v/2)T.\label{eq:raw}
 \end{align}
 We use
 \begin{equation}
-g(X,\chi,v)=s\frac{\mathcal G(X,v)-\mathcal G(0,\theta_v)}
+g(X,v,\chi)=s\frac{\mathcal G(X,v)-\mathcal G(0,\theta_v)}
 {\mathcal G(0,\theta_v)},\qquad s\in\{-1,+1\}.\label{eq:centered}
 \end{equation}
 Here $s$ is a model input for signed dealer orientation, not an OI statistic.

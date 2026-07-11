@@ -7,8 +7,8 @@ This is the operating procedure for the centered-model paper. The upload file is
 
 - [x] `bash scripts/arxiv_build.sh` exits with `arxiv_build.sh DONE`.
 - [x] Tarball SHA-256 is
-  `fb3b753d49c8a371e2180a13b871206fabe724eab9db90d5ee64a9e2014b6127`.
-- [x] Simulated clean extraction compiles to 22 pages, within 13 bytes of the master PDF.
+  `fa4813d33568e5059022f75f486286056e7eedc8ebb8df562bb6d2b71ac27264`.
+- [x] Simulated clean extraction compiles to 22 pages, within 12 bytes of the master PDF.
 - [x] Tar members are exactly:
   - `main.tex`
   - `main.bbl`
