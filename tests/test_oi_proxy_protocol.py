@@ -1,4 +1,4 @@
-"""Checks for the pre-extraction A13--A15 open-interest proxy protocol."""
+"""Checks for the pre-extraction A13--A16 open-interest proxy protocol."""
 
 from __future__ import annotations
 
@@ -30,7 +30,12 @@ def test_gamma_book_summary_uses_no_dealer_sign() -> None:
         oi=np.array([10.0, 10.0]),
         is_call=np.array([True, False]),
     )
-    summary = gamma_book_summary(grid, forward=np.array([100.0, 100.0]))
+    summary = gamma_book_summary(
+        grid,
+        forward=np.array([100.0, 100.0]),
+        rate=0.0,
+        dividend=0.0,
+    )
     assert summary.unsigned_mass > 0.0
     assert -1.0 <= summary.call_put_balance <= 1.0
     assert np.log(0.9) < summary.mean_log_moneyness < np.log(1.1)
@@ -102,7 +107,7 @@ def test_gamma_book_summary_rejects_zero_mass_and_bad_alignment() -> None:
         is_call=np.array([True]),
     )
     with pytest.raises(ValueError, match="mass"):
-        gamma_book_summary(zero)
+        gamma_book_summary(zero, forward=100.0, rate=0.0, dividend=0.0)
     bad = OIGrid(
         spot=100.0,
         strike=np.array([100.0, 101.0]),
@@ -112,7 +117,31 @@ def test_gamma_book_summary_rejects_zero_mass_and_bad_alignment() -> None:
         is_call=np.array([True]),
     )
     with pytest.raises(ValueError, match="aligned"):
-        gamma_book_summary(bad)
+        gamma_book_summary(bad, forward=100.0, rate=0.0, dividend=0.0)
+
+
+def test_gamma_book_summary_fails_closed_on_registered_inputs() -> None:
+    base = dict(
+        spot=100.0,
+        strike=np.array([100.0]),
+        tau=np.array([0.25]),
+        sigma=np.array([0.20]),
+        oi=np.array([1.0]),
+    )
+    with pytest.raises(ValueError, match="boolean"):
+        gamma_book_summary(
+            OIGrid(is_call=np.array(["C"]), **base),
+            forward=100.0,
+            rate=0.0,
+            dividend=0.0,
+        )
+    with pytest.raises(ValueError, match="multiplier"):
+        gamma_book_summary(
+            OIGrid(is_call=np.array([True]), contract_multiplier=50.0, **base),
+            forward=100.0,
+            rate=0.0,
+            dividend=0.0,
+        )
 
 
 def test_primary_summary_transform_order_and_standardization() -> None:
@@ -133,7 +162,14 @@ def test_design_dates_every_outcome_strictly_after_regressors() -> None:
     vix = np.linspace(15.0, 25.0, n)
     dow = np.arange(n) % 5
     expiration = np.asarray(np.arange(n) % 21 == 0, dtype=float)
-    design = build_a13_design(proxy, returns, vix, dow, expiration)
+    design = build_a13_design(
+        proxy,
+        returns,
+        vix,
+        dow,
+        expiration,
+        spot=np.linspace(4000.0, 5000.0, n),
+    )
     assert design.regressor_day[0] == 21
     assert design.regressor_day[-1] == n - 2
     expected = np.log(returns[design.regressor_day + 1] ** 2 + 1e-8)
@@ -157,6 +193,7 @@ def test_missing_option_day_does_not_compress_the_return_calendar() -> None:
         np.full(n, 20.0),
         np.arange(n) % 5,
         np.zeros(n),
+        spot=np.full(n, 4500.0),
     )
     # Day 29 remains a valid regressor date and predicts the CRSP return on
     # day 30 even though day 30 has no option proxy.  Only day 30 is excluded
@@ -177,6 +214,7 @@ def test_a13_regression_uses_two_sided_inference() -> None:
         np.linspace(18.0, 24.0, n) + rng.normal(0.0, 0.2, n),
         np.arange(n) % 5,
         np.asarray(np.arange(n) % 21 == 0, dtype=float),
+        spot=np.linspace(4000.0, 5000.0, n),
     )
     result = run_a13_regression(design)
     assert 0.0 <= result.hac_pvalue <= 1.0
@@ -185,6 +223,7 @@ def test_a13_regression_uses_two_sided_inference() -> None:
     assert result.bootstrap["monte_carlo_correction"] == pytest.approx(1.0)
     assert result.bootstrap["n_boot"] == pytest.approx(2_000)
     assert result.bootstrap["seed"] == pytest.approx(42)
+    assert result.bootstrap["calendar_blocking"] == pytest.approx(1.0)
     assert set(result.vif) == set(design.names) - {"const"}
     assert all(value >= 1.0 for value in result.vif.values())
     assert result.n == n - 22
@@ -203,6 +242,7 @@ def test_a14_family_enforces_common_sample_and_reports_correlations() -> None:
             vix,
             np.arange(n) % 5,
             np.asarray(np.arange(n) % 21 == 0, dtype=float),
+            spot=np.linspace(4000.0, 5000.0, n),
         )
         for index in range(4)
     ]
@@ -211,6 +251,15 @@ def test_a14_family_enforces_common_sample_and_reports_correlations() -> None:
     assert family.proxy_correlation.shape == (4, 4)
     np.testing.assert_allclose(np.diag(family.proxy_correlation), 1.0)
     assert len(family.decision.labels) == 4
+    assert family.bootstrap_candidates_attempted >= 2_000
+    assert family.bootstrap_rank_deficient_discarded == (
+        family.bootstrap_candidates_attempted - 2_000
+    )
+    assert all(
+        result.bootstrap["n_draws_attempted"] == pytest.approx(2_000)
+        and result.bootstrap["n_rank_deficient"] == pytest.approx(0)
+        for result in family.regressions
+    )
 
     mismatched = list(designs)
     mismatched[3] = A13Design(
@@ -232,6 +281,22 @@ def test_a14_design_rejects_more_than_one_expiration_control() -> None:
             np.full(n, 20.0),
             np.arange(n) % 5,
             np.zeros((n, 2)),
+            spot=np.full(n, 4500.0),
+        )
+
+
+def test_a14_design_rejects_fractional_weekday_codes_before_casting() -> None:
+    n = 30
+    weekday = np.arange(n, dtype=float) % 5
+    weekday[4] = 1.5
+    with pytest.raises(ValueError, match="integer-valued"):
+        build_a13_design(
+            np.arange(n, dtype=float),
+            np.linspace(-0.01, 0.01, n),
+            np.full(n, 20.0),
+            weekday,
+            np.zeros(n),
+            spot=np.full(n, 4500.0),
         )
 
 

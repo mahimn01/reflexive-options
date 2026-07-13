@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "reflexive-options"
-version = "0.4.0"
+version = "0.4.1"
 description = "Fixed-equilibrium local dealer-gamma bifurcation model and pre-extraction OI proxy protocol."
 authors = [{name = "Mahimn Patel", email = "mahimn.patel@mail.utoronto.ca"}]
 readme = "README.md"
@@ -60,9 +60,9 @@ calibration = [
 
 # PEP 735 dependency groups — the canonical 2026 way to declare dev tooling.
 # `uv sync --group dev` installs these; `pip install -e ".[dev]"` falls back to
-# the [project.optional-dependencies].dev mirror above. Pinned exact versions
-# so reviewers running `uv sync --locked` two years from now get bit-identical
-# results — see docs/quality_research_brief.md §4.
+# the [project.optional-dependencies].dev mirror above. Pinned exact test-tool
+# versions reduce environment drift for reviewers using `uv sync --locked`;
+# numerical tolerances, rather than cross-platform bit identity, remain authoritative.
 [dependency-groups]
 dev = [
     "pytest==8.4.2",
@@ -168,7 +168,7 @@ strict = true
 warn_unused_configs = true
 disallow_untyped_defs = true
 # disallow_any_unimported intentionally False: vendored ATLAS/RAT modules and
-# untyped libs (QuantLib, diptest, ripser, mystic) would otherwise force a
+# untyped libs (QuantLib, diptest, ripser) would otherwise force a
 # # type: ignore on every class declaration. PyTorch's mypy-strict.ini keeps
 # this on only because they strict-check a curated allow-list. Scientific repos
 # universally relax it — see docs/quality_research_brief.md §3 / §7.
@@ -195,14 +195,13 @@ warn_unused_ignores = false
 
 [[tool.mypy.overrides]]
 # Libraries that still ship without py.typed in 2026-04. Verified absent:
-#   QuantLib (C++ binding), diptest, ripser, mystic.
+#   QuantLib (C++ binding), diptest, ripser.
 # scipy ships partial typing since 1.13 but no top-level py.typed marker;
 # we still need it here to avoid noise on import lines.
 module = [
     "QuantLib.*",
     "diptest.*",
     "ripser.*",
-    "mystic.*",
     "scipy.*",
     "sklearn.*",
 ]

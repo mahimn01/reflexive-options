@@ -7,8 +7,8 @@
 \usepackage{amsfonts,amsmath,amssymb,amsthm,mathtools}
 \newtheorem{theorem}{Theorem}
 
-\title{Dealer-Gamma Feedback and Local Volatility Cycles:\
-A Fixed-Equilibrium Bifurcation Model}
+\title{Gamma-Shaped Dealer-Book Pressure and Endogenous Volatility Cycles:\
+A Reduced-Form Fixed-Equilibrium Hopf Model}
 \author{Mahimn Patel\\
 \texttt{mahimn.patel@mail.utoronto.ca}}
 
@@ -16,15 +16,17 @@ A Fixed-Equilibrium Bifurcation Model}
 \maketitle
 
 \begin{abstract}
-We construct a local physical-measure feedback model whose equilibrium remains
-fixed as coupling varies and whose variance drift points inward at zero. For a
+We construct a reduced-form physical-measure model in which gamma-shaped book
+pressure interacts with a price--memory--variance loop. Its equilibrium remains
+fixed as coupling varies and its variance drift points inward at zero. For a
 centered Gaussian density of signed dealer positions, the local Hopf equation is
 quadratic in coupling. An illustrative, non-calibrated configuration gives
 $\kappa^\star=31.4933$ yr$^{-1}$, $\omega^\star=47.1186$ rad yr$^{-1}$,
 and $\ell_1=-6.2888$; the actual nonlinear book produces a nearby attracting
-cycle with positive variance. Public open interest does not identify dealer
-sign, so the pre-extraction WRDS protocol is an unsigned registered-horizon
-proxy study, not a structural confirmation. No registered market dataset is analysed.
+cycle with positive variance. The kernel shapes a postulated pressure term
+rather than deriving hedge flow. Public open interest does not identify dealer
+sign, so the pre-extraction WRDS protocol is participant-sign-free and
+predictive. No registered market dataset is analyzed.
 \end{abstract}
 
 \section{Model and measurement boundary}
@@ -139,31 +141,28 @@ is book-dependent; dispersed or offsetting books can instead be subcritical.
 
 \section{Pre-extraction protocol and limitations}
 
-Before expected September 2026 WRDS access, Amendments A13--A15 fix the
+Before expected September 2026 WRDS access, Amendments A13--A16 fix the
 registered historical horizon from 2017-01-03 through 2024-10-29. Four observable
-OI-gamma summaries---log unsigned mass, call--put composition, mean log
+OI-and-pricing-derived summaries---log nonnegative mass, call--put composition, mean log
 moneyness, and log dispersion---separately predict
 $\log(r_{t+1}^2+10^{-8})$ with leads and HAR-style lags constructed on the
-complete CRSP market calendar, official Cboe VIX, outcome-session weekday
-indicators, and one regressor-session monthly-expiration control. Contracts are
-unadjusted standard-settlement SPX/SPXW with 1--365 calendar-day maturities,
-fixed quote/IV/moneyness filters, and parity forwards split by AM/PM settlement.
-HAC lag 5 and a 10-day moving-block bootstrap are separately BH-adjusted over
+complete CRSP market calendar, official Cboe VIX, log spot, a linear trend,
+outcome-session weekday indicators, and one monthly-expiration control.
+Contracts use fractional settlement time, fixed liquidity/IV/moneyness filters,
+and parity forwards split by AM/PM settlement; OI is availability-timed.
+HAC lag 22 and a 22-session complete-calendar bootstrap are separately BH-adjusted over
 four tests. Robust association requires rejection by both adjusted families
 and a 95\% bootstrap interval excluding zero; one-family rejection is
 method-sensitive. Convention-signed GEX and stress interactions are secondary.
 This is a retrospective pre-analysis plan over historically public outcomes,
 not a blinded prospective experiment.
 
-The theorem is local and deterministic. Brownian paths are not periodic
-orbits. The model has no proved global attractor, stationary tail result,
-stochastic threshold shift, Hawkes equivalence, or causal identification. For
-an affine additive linearization, the tangent cocycle is $e^{Jt}$ and is
-noise-independent; the earlier nonzero shift claim was withdrawn. The full
-square-root model has state-dependent diffusion and is not analysed as a
-stochastic bifurcation here. Any WRDS
-association concerns public book summaries. Confirming signed dealer feedback
-requires participant-tagged positions and an identification strategy.
+The theorem is local, deterministic, and specific to the detrended-log-price
+coordinate. Brownian paths are not periodic orbits, and no global attractor or
+stochastic threshold is proved. The pressure term is reduced-form, while the
+price--memory--variance channel is independently assumed. Any WRDS association
+concerns public book summaries; confirming signed dealer feedback requires
+participant-tagged positions and an identification strategy.
 
 \bibliographystyle{plainnat}
 \bibliography{references}

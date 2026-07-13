@@ -16,6 +16,7 @@ from unittest import mock
 
 import numpy as np
 
+from reflexive_options.experiments import _common
 from reflexive_options.experiments.h4_validation import (
     H4ValidationConfig,
     H4ValidationResult,
@@ -85,8 +86,7 @@ def test_main_quick_writes_metrics_and_figure(tmp_path: Path, monkeypatch: objec
     with mock.patch.object(sys, "argv", args):
         run_main()
 
-    repo_root = Path(__file__).resolve().parents[1]
-    runs_dir = repo_root / "runs" / "h4_validation"
+    runs_dir = _common.RUNS_DIR / "h4_validation"
     latest = max(runs_dir.glob("*"), key=lambda p: p.stat().st_mtime)
 
     assert (latest / "config.json").exists()

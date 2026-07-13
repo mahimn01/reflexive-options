@@ -424,9 +424,9 @@ The deprecation warning you saw is GitHub deprecating Node 20 actions. Pin these
 | `actions/checkout` | `v5` (stable) or `v6` (current) | Both run on Node 24 |
 | `actions/setup-python` | `v6` | Upgraded to Node 24 in early 2026 |
 | `astral-sh/setup-uv` | `v8` | Pin by exact tag in production: `astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0` |
-| `codecov/codecov-action` | `v5` | Required for CODECOV_TOKEN-less OIDC upload |
+| `codecov/codecov-action` | `v6` | Node 24; set `use_oidc: true` and grant `id-token: write` for secretless OIDC upload |
 
-Sources: [actions/checkout releases](https://github.com/actions/checkout/releases), [actions/setup-python releases](https://github.com/actions/setup-python/releases), [astral-sh/setup-uv](https://github.com/astral-sh/setup-uv).
+Sources: [actions/checkout releases](https://github.com/actions/checkout/releases), [actions/setup-python releases](https://github.com/actions/setup-python/releases), [astral-sh/setup-uv](https://github.com/astral-sh/setup-uv), and [codecov/codecov-action](https://github.com/codecov/codecov-action#using-oidc).
 
 ### Caching strategy
 

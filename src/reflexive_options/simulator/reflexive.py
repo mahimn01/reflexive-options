@@ -1,10 +1,15 @@
-"""Reflexive 3D simulator — central artifact of the paper.
+"""Archived v0.3 reflexive 3D simulator; not the current paper model.
 
-Implements the SDE in paper/theory.md §1:
+Implements the superseded SDE preserved in paper/theory.md §1:
     dS/S = (μ + κ G(S, z, v)) dt + σ(S, v) dW_S
     dv   = (κ_v(θ_v - v) + γ z) dt + ξ √v dW_v
     dz   = (-α z + β log(S/S_0)) dt
 with d⟨W_S, W_v⟩ = ρ dt. Reduces to standard Heston when κ = γ = 0.
+
+The v0.4.1 manuscript instead uses the fixed-equilibrium centered model in
+theory/centered_model.py. This module remains installed only for historical
+reproduction and exploratory simulator/RL infrastructure; it must not be used
+to reproduce current-paper claims.
 """
 
 from __future__ import annotations
@@ -27,7 +32,7 @@ from reflexive_options.types import (
 
 
 class ReflexiveSimulator:
-    """Monte-Carlo + single-step interface for the 3D reflexive SDE."""
+    """Legacy Monte-Carlo + single-step interface for the superseded v0.3 SDE."""
 
     def __init__(
         self,

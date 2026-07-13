@@ -1,8 +1,8 @@
-# arXiv compatibility check — v0.4.0
+# arXiv compatibility check — v0.4.1
 
-The source archive `dist/arxiv_v0.4.0.tar.gz` was rebuilt and tested from a clean extraction
-on 2026-07-11. Local TeX Live 2025 produced the same 22-page document as the master within
-12 bytes of timestamp-level PDF metadata drift.
+The source archive `dist/arxiv_v0.4.1.tar.gz` was rebuilt and tested from a clean extraction
+on 2026-07-12. Local TeX Live 2025 produced the same 24-page document as the master within
+13 bytes of timestamp-level PDF metadata drift.
 
 ## Source closure
 
@@ -29,15 +29,15 @@ external package or asset.
 
 ## Final local result
 
-- page count: 22;
+- page count: 24;
 - theorem count: 1;
 - figure count: 2;
 - table count: 6;
-- cited bibliography entries: 28;
+- cited bibliography entries: 27;
 - unresolved references/citations: 0;
 - overfull boxes: 0;
 - arXiv source-tar SHA-256:
-  `fa4813d33568e5059022f75f486286056e7eedc8ebb8df562bb6d2b71ac27264`.
+  `81141e285320f9d011f702d4265e29280bb391b087cd17a72bd7f733cda9655e`.
 
 The operative upload procedure is `paper/arxiv_submission_checklist.md`. If any shipped
 source changes, rerun `scripts/arxiv_build.sh`; this checksum and compatibility result then

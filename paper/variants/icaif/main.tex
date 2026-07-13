@@ -13,8 +13,8 @@
 \newtheorem{theorem}{Theorem}
 
 \begin{document}
-\title{Dealer-Gamma Feedback and Local Volatility Cycles:\
-A Fixed-Equilibrium Bifurcation Model}
+\title{Gamma-Shaped Dealer-Book Pressure and Endogenous Volatility Cycles:\
+A Reduced-Form Fixed-Equilibrium Hopf Model}
 % Sole-author blind submission. The acmart anonymous option renders its fixed
 % "Anonymous Author(s)" label regardless of the singular placeholder below.
 \author{Anonymous Author}
@@ -22,17 +22,18 @@ A Fixed-Equilibrium Bifurcation Model}
 \email{anonymous@example.org}
 
 \begin{abstract}
-We give a local physical-measure model in which detrended log price,
-square-root variance, and a filtered price signal form a feedback loop. The
+We give a reduced-form physical-measure model in which gamma-shaped book
+pressure interacts with a detrended-price--memory--variance loop. The
 reference equilibrium is fixed as coupling varies and variance drift points
 inward at zero. For a centered Gaussian density of signed dealer positions,
 the Routh--Hurwitz determinant is quadratic in coupling. An illustrative,
 non-calibrated configuration has $\kappa^\star=31.4933$ yr$^{-1}$,
 $\omega^\star=47.1186$ rad yr$^{-1}$, and $\ell_1=-6.2888$; integrating the
 actual nonlinear book gives a nearby attracting cycle with positive variance.
-The result is local and deterministic. Public open interest does not identify
-dealer sign, so a future WRDS study is pre-specified as a registered-horizon
-predictive proxy analysis rather than a structural confirmation.
+The result is local and deterministic; the kernel shapes a postulated pressure
+term rather than deriving hedge flow. Public open interest does not identify
+dealer sign, so a future WRDS study is prespecified as a registered-horizon
+predictive analysis rather than a structural confirmation.
 \end{abstract}
 
 \ccsdesc[500]{Computing methodologies~Modeling and simulation}
@@ -49,11 +50,11 @@ option pricing shows that intermediary constraints affect option prices
 \citep{garleanu2009demand}; it does not derive a spot drift. We therefore treat
 the feedback below as a reduced-form physical-measure hypothesis.
 
-Three safeguards distinguish the model from its earlier draft. First, a
+Three safeguards define the model. First, a
 centered book functional pins one equilibrium for every coupling. Second, the
 memory term in variance is multiplied by variance, preserving inward boundary
 drift. Third, theory uses latent signed dealer positions, while the empirical
-protocol treats public open interest as unsigned. Open interest counts
+protocol treats public open interest as participant-sign-free. Open interest counts
 outstanding contracts and does not identify participant or side
 \citep{oicopeninterest}; participant-tagged data are needed to estimate dealer
 positions \citep{vasquez2025zerodte}.
@@ -177,26 +178,28 @@ same-sign mixtures remain supercritical, but dispersed or offsetting books can
 be subcritical. The attracting canonical cycle is therefore not a universal
 book-shape prediction.
 
-\section{Pre-extraction identification protocol}
+\section{Pre-extraction predictive protocol}
 
-No registered market dataset is analysed. Before expected September 2026 WRDS
-access, Amendments A13--A15 fix a registered historical horizon from 2017-01-03
+No registered market dataset is analyzed. Before expected September 2026 WRDS
+access, Amendments A13--A16 fix a registered historical horizon from 2017-01-03
 through 2024-10-29. They
-construct four observable OI-gamma book summaries: log unsigned mass,
+construct four observable OI-and-pricing-derived summaries: log nonnegative mass,
 call--put composition, gamma-weighted mean log moneyness, and log dispersion.
-Contracts are unadjusted standard-settlement SPX/SPXW with 1--365 calendar-day
-maturities, fixed quote/IV/moneyness filters, and parity forwards split by
-AM/PM settlement.
+Contracts are unadjusted standard-settlement SPX/SPXW with fractional
+settlement time, fixed liquidity/IV/moneyness filters, and parity forwards
+split by AM/PM settlement. OI is lagged whenever same-close availability is
+not documented.
 For each, a separate forward regression predicts the next-session log squared
 return from the day-$t$ summary. Leads and HAR-style lags
 remain on the complete CRSP market calendar; weekday indicators describe the
-outcome session, and one monthly-expiration control describes session $t$. HAC lag
-5 and a 10-day moving-block bootstrap are each BH-adjusted across four tests.
+outcome session, and the controls include log spot, a linear trend, and one
+monthly-expiration indicator. HAC lag 22 and a 22-session moving-block
+bootstrap operate on the complete CRSP calendar and are each BH-adjusted across four tests.
 A label is robust only if both adjusted $p$-values reject and the 95\%
 bootstrap interval excludes zero; one-family rejection is method-sensitive.
 
 Stress-window interactions and convention-signed GEX are secondary. A
-convention-dependent result is labelled non-identified. Even robust prediction
+convention-dependent result is labeled non-identified. Even robust prediction
 is association, not causation or dealer-sign identification. Participant-tagged
 positions and an identification strategy are required for a structural test.
 Because the historical outcomes and named episodes were already public, this

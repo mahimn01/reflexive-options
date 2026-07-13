@@ -1,25 +1,24 @@
-# arXiv submission checklist — v0.4.0
+# arXiv submission checklist — v0.4.1
 
 This is the operating procedure for the centered-model paper. The upload file is
-`dist/arxiv_v0.4.0.tar.gz`; metadata is in `paper/arxiv_metadata.txt`.
+`dist/arxiv_v0.4.1.tar.gz`; metadata is in `paper/arxiv_metadata.txt`.
 
 ## Local pre-flight
 
 - [x] `bash scripts/arxiv_build.sh` exits with `arxiv_build.sh DONE`.
 - [x] Tarball SHA-256 is
-  `fa4813d33568e5059022f75f486286056e7eedc8ebb8df562bb6d2b71ac27264`.
-- [x] Simulated clean extraction compiles to 22 pages, within 12 bytes of the master PDF.
+  `81141e285320f9d011f702d4265e29280bb391b087cd17a72bd7f733cda9655e`.
+- [x] Simulated clean extraction compiles to 24 pages, within 13 bytes of the master PDF.
 - [x] Tar members are exactly:
   - `main.tex`
   - `main.bbl`
   - `references.bib`
   - `figures/centered_hopf_validation.pdf`
   - `figures/centered_hopf_robustness.pdf`
-- [x] Master PDF has 22 pages, one theorem, two figures, six tables, and no unresolved
+- [x] Master PDF has 24 pages, one theorem, two figures, six tables, and no unresolved
   citation/reference, underfull box, overfull box, or final-pass LaTeX warning.
-- [x] Full verification passes: 607 tests, 88.48% coverage, strict mypy, and ruff; the 80
-  tests touching the final warning fixes pass with warnings treated as errors.
-- [ ] Confirm that the author field contains only `Mahimn Patel`; no institutional
+- [x] Full verification passes: 618 tests, 88.43% coverage, strict mypy, and ruff.
+- [x] Confirm that the author field contains only `Mahimn Patel`; no institutional
   affiliation is asserted.
 - [ ] Re-run the build immediately before upload and compare the reported checksum. If any
   source changed, use the new checksum rather than the value above.
@@ -31,33 +30,33 @@ This is the operating procedure for the centered-model paper. The upload file is
 2. Select **CC BY 4.0**, matching `paper/arxiv_metadata.txt`.
 3. Select primary category **q-fin.MF**. Request cross-lists **q-fin.TR** and **math.DS**, as
    recorded in `paper/arxiv_metadata.txt`, only if the interface permits them.
-4. Upload `dist/arxiv_v0.4.0.tar.gz`. Do not add `paper/main.pdf`; the source archive already
-   contains everything AutoTeX needs.
-5. Select `main.tex` as the top-level file if AutoTeX does not infer it.
+4. Upload `dist/arxiv_v0.4.1.tar.gz`. Do not add `paper/main.pdf`; the source archive already
+   contains everything arXiv processing needs.
+5. Select `main.tex` as the top-level file if arXiv processing does not infer it.
 6. Paste title, author, abstract, comments, MSC codes, and categories from
    `paper/arxiv_metadata.txt`. Leave journal reference, report number, and DOI blank unless
    one has actually been assigned.
 7. Confirm the form says **no market data are used** and does not resurrect the withdrawn
    stochastic-shift, Hawkes-equivalence, mean-field, stationary-tail, or dealer-sign claims.
 
-## AutoTeX PDF inspection
+## arXiv processing PDF inspection
 
 Compare the rendered file with `paper/main.pdf`:
 
-- [ ] exactly 22 pages;
-- [ ] title is *Dealer-Gamma Feedback and Local Volatility Cycles: A Fixed-Equilibrium
-  Bifurcation Model and a Pre-Extraction Identification Protocol*;
+- [ ] exactly 24 pages;
+- [ ] title is *Gamma-Shaped Dealer-Book Pressure and Endogenous Volatility Cycles: A
+  Reduced-Form Fixed-Equilibrium Hopf Model and a Pre-Extraction Predictive Protocol*;
 - [ ] author name, email, and ORCID are correct, and no institutional affiliation appears;
 - [ ] Figures 1--2 appear once each, with all panels and legends legible;
 - [ ] equations (1)--(27), theorem, six tables, and appendices A--D are present;
 - [ ] no `??`, missing-asset box, blank page, clipped equation, or overfull line;
-- [ ] bibliography contains the 28 references cited by this manuscript;
-- [ ] the empirical section states the A13--A15 contract/source/inference/alignment locks and the
+- [ ] bibliography contains the 27 references cited by this manuscript;
+- [ ] the empirical section states the A13--A16 contract/source/inference/alignment locks and the
   appendix gives the option-before-outcome audit order;
-- [ ] the limitations say the full state-dependent stochastic variational equation is not
-  analysed and public OI does not identify dealer sign.
+- [ ] the limitations state the deterministic, coordinate-specific, reduced-form scope and
+  explain that public OI does not identify dealer sign.
 
-Do not submit until the AutoTeX PDF passes every item. A successful compilation alone is
+Do not submit until the arXiv processing PDF passes every item. A successful compilation alone is
 not sufficient.
 
 ## Provenance files that are not part of the source upload
@@ -75,8 +74,11 @@ inside the TeX tarball:
 - `paper/pre_registration_amendment_a15.md`, SHA-256
   `a5f694f99953d57563d4f17dc5646ef0b87452c45119ccbdc12fc90efd034a52`, and its
   `.ots` receipt (pending Bitcoin consolidation at creation).
+- `paper/pre_registration_amendment_a16.md`, SHA-256
+  `a5cbf9ef56c9a402ff05b61bb720d8487313b154f30393b4835b43fe5c33e61d`, and its
+  `.ots` receipt (pending Bitcoin consolidation at creation).
 
-## If AutoTeX fails
+## If arXiv processing fails
 
 1. Save the complete arXiv log before replacing files.
 2. Compare it with `dist/arxiv_build.log` and the extracted source tree.

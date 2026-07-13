@@ -1,12 +1,12 @@
 #!/bin/sh
 # arxiv_build.sh — build a reproducible arXiv source tarball for the
-# "Dealer-Gamma Feedback and Local Volatility Cycles" paper (v0.4.0).
+# "Gamma-Shaped Dealer-Book Pressure and Endogenous Volatility Cycles" paper (v0.4.1).
 #
-# Output: dist/arxiv_v0.4.0.tar.gz
+# Output: dist/arxiv_v0.4.1.tar.gz
 # Log:    dist/arxiv_build.log
 #
-# Idempotent: same source -> bit-identical tarball
-# (uses SOURCE_DATE_EPOCH=0 + sorted tar listing + gzip -n).
+# Deterministic on a fixed toolchain: fixed mtimes, sorted members, and gzip -n.
+# The reported checksum remains toolchain-specific (notably BSD versus GNU tar).
 #
 # Does NOT modify paper/main.tex, paper/references.bib, or any
 # file under paper/figures/. Read-only access to those.
@@ -23,9 +23,9 @@ DIST_DIR="$REPO_ROOT/dist"
 BUILD_DIR="$DIST_DIR/arxiv_build"
 EXTRACT_TEST_DIR="$DIST_DIR/arxiv_extract_test"
 LOG="$DIST_DIR/arxiv_build.log"
-VERSION="v0.4.0"
+VERSION="v0.4.1"
 TARBALL="$DIST_DIR/arxiv_${VERSION}.tar.gz"
-EXPECTED_PAGES=22
+EXPECTED_PAGES=24
 MAX_TARBALL_BYTES=$((5 * 1024 * 1024))   # 5 MB hard ceiling
 PDF_TOLERANCE_BYTES=8192                  # 8 KB drift tolerance (build-timestamp)
 
@@ -124,7 +124,7 @@ done
 # Bibstyle file is shipped from TeXLive at arXiv-build time; no need to copy.
 
 # ----------------------------------------------------------------------------
-# Step 4: build PDF locally (pdflatex x2, bibtex, pdflatex x2)
+# Step 4: build PDF locally (pdflatex, bibtex, pdflatex x3)
 # ----------------------------------------------------------------------------
 log "Step 4: build PDF in $BUILD_DIR"
 cd "$BUILD_DIR"
@@ -148,6 +148,12 @@ if ! bibtex main >>"$LOG" 2>&1; then
 fi
 run_latex 2
 run_latex 3
+run_latex 4
+
+if grep -Eq 'LaTeX Warning:|Package .* Warning:|Overfull|Underfull|undefined references|undefined citations' main.log; then
+    grep -E 'LaTeX Warning:|Package .* Warning:|Overfull|Underfull|undefined references|undefined citations' main.log >&2
+    fail "final source build contains a LaTeX warning"
+fi
 
 # ----------------------------------------------------------------------------
 # Step 5: sanity check the built PDF vs the master
@@ -206,7 +212,7 @@ log "  build dir contents (final):"
 (cd "$BUILD_DIR" && find . -type f | LC_ALL=C sort) | sed 's/^/    /' | tee -a "$LOG" >/dev/null
 
 # Force every shipped file to mtime=epoch 0 so tar serialises deterministically
-# across runs / hosts (BSD tar ignores --mtime flags; touch is portable).
+# on the selected local tar toolchain (BSD tar ignores --mtime flags; touch is portable).
 log "  pinning mtimes to 1970-01-01T00:00:00Z for reproducibility"
 find "$BUILD_DIR" -exec touch -t 197001010000.00 {} +
 
@@ -216,8 +222,8 @@ find "$BUILD_DIR" -exec touch -t 197001010000.00 {} +
 log "Step 7: bundle tarball"
 cd "$BUILD_DIR"
 
-# Build a sorted file list (the tar -T trick + --no-recursion gives bit-identical
-# archives across runs / hosts). Sort excludes the leading "./".
+# Build a sorted file list. The tar -T trick plus --no-recursion gives stable
+# member ordering across repeated runs. Sort excludes the leading "./".
 FILE_LIST="$(mktemp -t arxivlist.XXXXXX)"
 find . -type f \! -name '.DS_Store' | LC_ALL=C sort > "$FILE_LIST"
 
@@ -275,16 +281,26 @@ log "  extract dir: $TMP_EXTRACT"
 
 (cd "$TMP_EXTRACT" && gzip -dc "$TARBALL" | tar -xf -)
 
-# arXiv AutoTeX uses the existing .bbl rather than re-running bibtex (recommended).
-# Mimic that exactly: ONE pdflatex pass with the shipped .bbl, then a second
-# pass to resolve cross-refs.
+# arXiv Submission 1.5 uses the existing .bbl rather than re-running bibtex (recommended).
+# Compile from the shipped .bbl and run enough passes to stabilize references.
 cd "$TMP_EXTRACT"
 log "  arXiv-style build: pdflatex pass 1"
 pdflatex -interaction=nonstopmode -halt-on-error main.tex >>"$LOG" 2>&1 \
-    || fail "arXiv-sim pdflatex pass 1 failed"
+    || fail "clean-extraction pdflatex pass 1 failed"
 log "  arXiv-style build: pdflatex pass 2"
 pdflatex -interaction=nonstopmode -halt-on-error main.tex >>"$LOG" 2>&1 \
-    || fail "arXiv-sim pdflatex pass 2 failed"
+    || fail "clean-extraction pdflatex pass 2 failed"
+log "  arXiv-style build: pdflatex pass 3"
+pdflatex -interaction=nonstopmode -halt-on-error main.tex >>"$LOG" 2>&1 \
+    || fail "clean-extraction pdflatex pass 3 failed"
+log "  arXiv-style build: pdflatex pass 4"
+pdflatex -interaction=nonstopmode -halt-on-error main.tex >>"$LOG" 2>&1 \
+    || fail "clean-extraction pdflatex pass 4 failed"
+
+if grep -Eq 'LaTeX Warning:|Package .* Warning:|Overfull|Underfull|undefined references|undefined citations' main.log; then
+    grep -E 'LaTeX Warning:|Package .* Warning:|Overfull|Underfull|undefined references|undefined citations' main.log >&2
+    fail "clean-extraction build contains a LaTeX warning"
+fi
 
 SIM_PAGES=""
 if [ $HAVE_PDFINFO -eq 1 ]; then
@@ -293,17 +309,17 @@ else
     SIM_PAGES="$(grep -oE 'Output written on main\.pdf \([0-9]+ pages' main.log \
         | grep -oE '[0-9]+' | head -1)"
 fi
-log "  arXiv-sim built PDF: $SIM_PAGES pages (expected $EXPECTED_PAGES)"
+log "  clean-extraction built PDF: $SIM_PAGES pages (expected $EXPECTED_PAGES)"
 if [ "$SIM_PAGES" != "$EXPECTED_PAGES" ]; then
-    fail "arXiv-sim page count mismatch: got '$SIM_PAGES'"
+    fail "clean-extraction page count mismatch: got '$SIM_PAGES'"
 fi
 
 SIM_BYTES=$(wc -c < main.pdf | tr -d ' ')
-log "  arXiv-sim PDF bytes: $SIM_BYTES"
+log "  clean-extraction PDF bytes: $SIM_BYTES"
 if [ -f "$MASTER_PDF" ]; then
     DIFF_SIM=$((SIM_BYTES - MASTER_BYTES))
     [ $DIFF_SIM -lt 0 ] && DIFF_SIM=$((-DIFF_SIM))
-    log "  arXiv-sim vs master diff = $DIFF_SIM bytes"
+    log "  clean-extraction vs master diff = $DIFF_SIM bytes"
 fi
 
 # ----------------------------------------------------------------------------

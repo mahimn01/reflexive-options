@@ -23,13 +23,13 @@ symbols may differ and are not silently mapped into the current theorem.
 | $\theta_v$ | long-run variance | annualized variance |
 | $\alpha$ | memory adjustment speed | yr$^{-1}$ |
 | $\beta$ | memory target loading | dimensionless |
-| $\gamma$ | strength of $v\chi$ variance feedback | yr$^{-1}$ |
+| $\gamma$ | strength of $v\chi$ variance feedback; unrelated to option gamma | yr$^{-1}$ |
 | $\xi$ | square-root variance diffusion scale | yr$^{-1}$ when $v$ is yr$^{-1}$ |
 | $\rho$ | Brownian correlation | $[-1,1]$ |
 
 The current dynamics are
 
-$$dX=[-\delta X-\tfrac12(v-\theta_v)+\kappa g(X,\chi,v)]dt+\sqrt v\,dW^S,$$
+$$dX=[-\delta X-\tfrac12(v-\theta_v)+\kappa g(X,v,\chi)]dt+\sqrt v\,dW^S,$$
 $$dv=[\kappa_v(\theta_v-v)+\gamma v\chi]dt+\xi\sqrt v\,dW^v,$$
 $$d\chi=\alpha(\beta X-\chi)dt.$$
 
@@ -40,7 +40,7 @@ $$d\chi=\alpha(\beta X-\chi)dt.$$
 | $q(k)$ | latent **signed dealer-position** density in fixed log moneyness |
 | $\mathcal G(X,v)$ | positive Gaussian book mass integrated against BS gamma |
 | $s\in\{-1,+1\}$ | latent dealer orientation; not observed from public OI |
-| $g$ | centered, normalized book pressure with $g(0,0,\theta_v)=0$ |
+| $g$ | centered, normalized book pressure with $g(0,\theta_v,0)=0$ |
 | $(\mu_q,\sigma_q,T)$ | Gaussian mean, dispersion, effective maturity |
 
 Public OI is a count of outstanding contracts. A convention-signed OI-gamma

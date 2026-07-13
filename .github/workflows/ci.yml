@@ -56,18 +56,50 @@ jobs:
       - name: Test (pytest)
         run: |
           uv run pytest \
-            --cov=reflexive_options \
-            --cov-report=xml \
             --cov-report=term-missing \
             --cov-fail-under=85
 
       - name: Prune uv cache
         run: uv cache prune --ci
 
-      - name: Upload coverage
-        # v6.0.0 (2026-03-26) bumps the transitive actions/github-script dep from
-        # v7 (Node 20, deprecated) to v8 (Node 24). See codecov/codecov-action#1928.
-        uses: codecov/codecov-action@v6
+  paper:
+    name: Paper and arXiv source
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8.1.0
         with:
-          files: ./coverage.xml
-          fail_ci_if_error: false
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install TeX and PDF inspection tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            poppler-utils \
+            texlive-bibtex-extra \
+            texlive-fonts-recommended \
+            texlive-latex-extra
+
+      - name: Install package
+        run: uv sync --locked --all-extras --group dev
+
+      - name: Selectively recompute current-paper receipt fields
+        run: uv run pytest --no-cov -q tests/test_current_paper_receipt.py
+
+      - name: Build and clean-extract the arXiv source archive
+        run: bash scripts/arxiv_build.sh
+
+      - name: Upload verified arXiv archive
+        uses: actions/upload-artifact@v7
+        with:
+          name: arxiv-source
+          path: dist/arxiv_v0.4.1.tar.gz
+          if-no-files-found: error

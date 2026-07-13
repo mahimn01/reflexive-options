@@ -47,6 +47,8 @@ from reflexive_options.theory.centered_model import (
     normalized_gaussian_mixture_partials,
 )
 
+plt.rcParams["pdf.fonttype"] = 42
+
 
 @dataclass(frozen=True)
 class RobustnessConfig:
@@ -460,7 +462,7 @@ def render(metrics: dict[str, object], arrays: dict[str, object], output: Path) 
         ylabel=r"threshold ratio $\kappa^\star/\kappa^\star_0$",
         title="(c) Mechanical threshold sensitivity",
     )
-    ax.legend(ncol=4, frameon=False, fontsize=7)
+    ax.legend(ncol=4, frameon=False, fontsize=8)
 
     ax = axes[1, 1]
     cmap = ListedColormap(["#3b6fb6", "#c44e52"])
@@ -475,7 +477,7 @@ def render(metrics: dict[str, object], arrays: dict[str, object], output: Path) 
         transform=ax.transAxes,
         ha="right",
         va="bottom",
-        fontsize=7,
+        fontsize=8,
         bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.82},
     )
     ax.set(

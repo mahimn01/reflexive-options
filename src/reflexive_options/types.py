@@ -124,7 +124,7 @@ class HestonParams:
 
 @dataclass(frozen=True)
 class ReflexiveParams:
-    """Parameters for the reflexive 3D simulator.
+    """Parameters for the archived v0.3 reflexive simulator.
 
     State: (S, v, z) where z is a low-pass-filtered log-price (memory channel).
 
@@ -134,8 +134,9 @@ class ReflexiveParams:
         dz   = (-α z + β log(S/S_0)) dt
     Reduces to standard time-dep Heston when κ = γ = 0.
 
-    See paper/theory.md and ../reflexivity-research/hopf_bifurcation_brief.md
-    for derivation of why the memory channel is necessary for Hopf bifurcation.
+    This dataclass does not parameterize the fixed-equilibrium v0.4.1 model in
+    theory.centered_model. It remains for legacy simulator and exploratory RL
+    compatibility; paper/theory.md is the corresponding archived derivation.
     """
 
     base: HestonParams

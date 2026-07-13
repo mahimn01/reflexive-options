@@ -1,7 +1,8 @@
 {
-  "title": "Dealer-Gamma Feedback and Local Volatility Cycles: A Fixed-Equilibrium Bifurcation Model and a Pre-Extraction Identification Protocol",
-  "description": "<p>Software, manuscript source, and reproducibility materials for a local physical-measure model of detrended log price, square-root variance, and filtered price memory. The centered dealer-book functional fixes the reference equilibrium while coupling varies, and variance feedback is proportional to variance so the added drift points inward at zero. The repository derives the complete cubic Routh--Hurwitz conditions, an exact eigenvalue-crossing derivative, and the first Lyapunov coefficient for a centered Gaussian signed-position book. A deliberately constructed, non-calibrated configuration has a first local Hopf point at kappa*=31.4932976/yr, omega*=47.1185670 rad/yr, and ell_1=-6.2888041; the quadratic also has a disclosed remote re-stabilizing root. The actual nonlinear drift produces a nearby positive-variance cycle, and six close amplitudes recover the Hopf square-root law. Gross-normalized signed mixtures show that the local root and supercriticality are book-dependent. These are local deterministic results, not an SPX calibration or stochastic-bifurcation result. Public open interest does not identify signed dealer inventory. Pre-extraction Amendments A13--A15 therefore register a registered-horizon, sign-agnostic proxy analysis whose conclusions are limited to predictive association. No registered market dataset is analysed in v0.4.0.</p>",
+  "title": "Gamma-Shaped Dealer-Book Pressure and Endogenous Volatility Cycles: A Reduced-Form Fixed-Equilibrium Hopf Model and a Pre-Extraction Predictive Protocol",
+  "description": "<p>Software, manuscript source, and reproducibility materials for a local physical-measure model of detrended log price, square-root variance, and filtered price memory. The centered dealer-book functional fixes the reference equilibrium while coupling varies, and variance feedback is proportional to variance so the added drift points inward at zero. The repository derives the complete cubic Routh--Hurwitz conditions, an exact eigenvalue-crossing derivative, and the first Lyapunov coefficient for a centered Gaussian signed-position book. A deliberately constructed, noncalibrated configuration has a first local Hopf point at kappa*=31.4932976/yr, omega*=47.1185670 rad/yr, and ell_1=-6.2888041; the quadratic also has a disclosed remote re-stabilizing root. The actual nonlinear drift produces a nearby positive-variance cycle, and six close amplitudes recover the Hopf square-root law. Gross-normalized signed mixtures show that the local root and supercriticality are book-dependent. These are local deterministic results for an independently assumed price--memory--variance loop, not an SPX calibration or stochastic-bifurcation result. Public open interest does not identify signed dealer inventory. Pre-extraction Amendments A13--A16 therefore register a fixed-horizon, participant-sign-free predictive analysis and resolve information timing, settlement, and complete-calendar inference. No registered market dataset is analyzed in v0.4.1.</p>",
   "upload_type": "software",
+  "version": "0.4.1",
   "creators": [
     {
       "name": "Patel, Mahimn",
@@ -18,7 +19,6 @@
     "pre-registration",
     "non-identification"
   ],
-  "license": "MIT",
   "access_right": "open",
   "related_identifiers": [
     {
@@ -27,7 +27,7 @@
       "scheme": "url"
     }
   ],
-  "notes": "Version 0.4.0 contains no registered market dataset. Add the real arXiv related identifier only after arXiv assigns it; do not publish a placeholder identifier.",
+  "notes": "Version 0.4.1 contains no registered market dataset. Repository code is MIT; the manuscript and its two current figures are CC BY 4.0. Record both rights in the Zenodo draft or split the software and paper deposits. Add the real arXiv related identifier only after arXiv assigns it; do not publish a placeholder identifier.",
   "subjects": [
     {
       "term": "Mathematical Finance",

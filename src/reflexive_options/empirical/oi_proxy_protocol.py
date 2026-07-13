@@ -1,10 +1,11 @@
-"""Amendments A13--A15: sign-agnostic open-interest proxy protocol.
+"""Amendments A13--A16: participant-sign-free open-interest proxy protocol.
 
 The primary objects in this module are observable summaries of an option
 open-interest grid.  None is labelled a dealer position.  Convention-signed
 GEX series remain secondary measurement sensitivities in the registration.
 A14 fixes the contract filters, forward construction, controls, and the rule
-for classifying agreement between HAC and block-bootstrap inference.
+for classifying agreement between HAC and block-bootstrap inference. A16
+adds fail-closed input requirements and complete-calendar inference.
 """
 
 from __future__ import annotations
@@ -19,17 +20,19 @@ from reflexive_options.empirical.gex_regression import (
     RegressionResult,
     block_bootstrap_pvalue,
     bs_gamma,
+    moving_block_bootstrap_indices,
     ols_hac,
 )
 
-A14_BLOCK_LENGTH = 10
+A16_HAC_LAGS = 22
+A16_BLOCK_LENGTH = 22
 A14_BOOTSTRAP_DRAWS = 2_000
 A14_BOOTSTRAP_SEED = 42
 
 
 @dataclass(frozen=True)
 class GammaBookSummary:
-    """Four observable, unsigned summaries and A14 attrition counts."""
+    """Four observable, participant-sign-free summaries and attrition counts."""
 
     unsigned_mass: float
     call_put_balance: float
@@ -106,18 +109,18 @@ def interpolate_zero_rate(
 def gamma_book_summary(
     grid: OIGrid,
     *,
-    forward: float | NDArray[np.float64] | None = None,
-    rate: float | NDArray[np.float64] = 0.0,
-    dividend: float | NDArray[np.float64] = 0.0,
+    forward: float | NDArray[np.float64],
+    rate: float | NDArray[np.float64],
+    dividend: float | NDArray[np.float64],
     scale: float = 1.0,
 ) -> GammaBookSummary:
     """Apply numerical A14 filters and compute the four A13 summaries.
 
-    ``forward`` may be one maturity-specific value per contract.  Passing no
-    forward uses spot only as an explicit fallback for unit tests; production
-    extraction must pass A14 put--call-parity or flagged carry forwards.  The
-    rate and dividend arrays must be the same values used in constructing the
-    corresponding forwards.  Root, settlement, adjustment, quote, and
+    ``forward`` may be one maturity-specific value per contract.  It is
+    mandatory so registered code cannot silently substitute spot for an A14
+    parity or flagged-carry forward.  Rate and dividend inputs are mandatory
+    and must match the tuple used for the corresponding forwards.  Root,
+    settlement, adjustment, quote, and
     duplicate filters require vendor fields absent from :class:`OIGrid` and
     therefore must be applied upstream before calling this function.
     """
@@ -127,7 +130,7 @@ def gamma_book_summary(
         np.asarray(grid.tau, dtype=np.float64),
         np.asarray(grid.sigma, dtype=np.float64),
         np.asarray(grid.oi, dtype=np.float64),
-        np.asarray(grid.is_call, dtype=bool),
+        np.asarray(grid.is_call),
     ]
     shapes = {array.shape for array in arrays}
     if (
@@ -138,13 +141,17 @@ def gamma_book_summary(
     ):
         raise ValueError("OI-grid arrays must be aligned and non-empty")
     strike, tau, sigma, oi, is_call = arrays
+    if is_call.dtype != np.bool_:
+        raise ValueError("is_call must be a validated boolean array")
     if (
         not np.isfinite(grid.spot)
         or not np.isfinite(grid.contract_multiplier)
         or grid.spot <= 0.0
-        or grid.contract_multiplier <= 0.0
+        or grid.contract_multiplier != 100.0
     ):
-        raise ValueError("spot and contract multiplier must be finite and positive")
+        raise ValueError(
+            "spot must be positive and the registered contract multiplier must equal 100"
+        )
     if np.any(~np.isfinite(strike)) or np.any(strike <= 0.0):
         raise ValueError("strikes must be finite and positive")
     if np.any(~np.isfinite(tau)) or np.any(~np.isfinite(sigma)):
@@ -152,10 +159,7 @@ def gamma_book_summary(
     if np.any(~np.isfinite(oi)) or np.any(oi < 0.0):
         raise ValueError("open interest must be finite and non-negative")
 
-    if forward is None:
-        forwards = np.full(strike.shape, grid.spot, dtype=np.float64)
-    else:
-        forwards = np.broadcast_to(np.asarray(forward, dtype=np.float64), strike.shape)
+    forwards = np.broadcast_to(np.asarray(forward, dtype=np.float64), strike.shape)
     if np.any(~np.isfinite(forwards)) or np.any(forwards <= 0.0):
         raise ValueError("forwards must be finite and positive")
 
@@ -165,8 +169,8 @@ def gamma_book_summary(
         raise ValueError("rates and dividends must be finite")
     log_moneyness = np.log(strike / forwards)
     eligible = (
-        (tau * 365.0 >= 1.0)
-        & (tau * 365.0 <= 365.0)
+        (tau > 0.0)
+        & (tau <= 1.0)
         & (sigma >= 0.01)
         & (sigma <= 5.0)
         & (np.abs(log_moneyness) <= 0.50)
@@ -238,7 +242,7 @@ def transform_primary_summaries(
 
 @dataclass(frozen=True)
 class A13Design:
-    """Strictly forward A13--A15 design and its regressor dates."""
+    """Strictly forward A13--A16 design and its complete-calendar dates."""
 
     y: NDArray[np.float64]
     X: NDArray[np.float64]
@@ -253,6 +257,7 @@ def build_a13_design(
     day_of_week: NDArray[np.int64],
     expiration: NDArray[np.float64],
     *,
+    spot: NDArray[np.float64],
     outcome: str = "log_squared_return",
 ) -> A13Design:
     """Build the A13 equation subject to A14's control locks.
@@ -265,19 +270,25 @@ def build_a13_design(
     Day of week is encoded Monday=0 through Friday=4.
     ``expiration`` is exactly one monthly-expiration-session indicator.
     Every regression variable is dated at or before ``t`` and the outcome is
-    the next eligible common trading day.
+    the immediately following CRSP trading session.
     """
 
     proxy = np.asarray(proxy, dtype=np.float64)
     returns = np.asarray(returns, dtype=np.float64)
     vix = np.asarray(vix, dtype=np.float64)
-    day_of_week = np.asarray(day_of_week, dtype=np.int64)
+    spot = np.asarray(spot, dtype=np.float64)
+    day_of_week_raw = np.asarray(day_of_week)
+    if np.any(~np.isfinite(day_of_week_raw)) or np.any(
+        day_of_week_raw != np.floor(day_of_week_raw)
+    ):
+        raise ValueError("day_of_week must be finite and integer-valued")
+    day_of_week = day_of_week_raw.astype(np.int64)
     expiration = np.asarray(expiration, dtype=np.float64)
-    arrays = (proxy, returns, vix, day_of_week)
+    arrays = (proxy, returns, vix, spot, day_of_week)
     if any(array.ndim != 1 for array in arrays):
         raise ValueError("daily arrays must be one-dimensional")
     n = returns.size
-    if not (proxy.size == vix.size == day_of_week.size == n):
+    if not (proxy.size == vix.size == spot.size == day_of_week.size == n):
         raise ValueError("daily arrays must have equal lengths")
     if expiration.ndim == 1:
         expiration = expiration[:, None]
@@ -293,6 +304,8 @@ def build_a13_design(
         raise ValueError(f"unknown outcome {outcome!r}")
     if np.any(np.isfinite(vix) & (vix <= 0.0)):
         raise ValueError("VIX must be positive before taking logs")
+    if np.any(np.isfinite(spot) & (spot <= 0.0)):
+        raise ValueError("spot must be positive before taking logs")
     if np.any((day_of_week < 0) | (day_of_week > 4)):
         raise ValueError("day_of_week must encode Monday=0 through Friday=4")
     if np.any(np.isfinite(expiration) & ~np.isin(expiration, (0.0, 1.0))):
@@ -309,6 +322,8 @@ def build_a13_design(
             float(np.mean(outcome_series[t - 4 : t + 1])),
             float(np.mean(outcome_series[t - 21 : t + 1])),
             float(np.log(vix[t])),
+            float(np.log(spot[t])),
+            float((t - 0.5 * (n - 1)) / n),
         ]
         # The calendar-known weekday of the outcome session controls its
         # seasonality.  Using DOW_t instead is equivalent on most ordinary
@@ -320,7 +335,16 @@ def build_a13_design(
             targets.append(float(outcome_series[t + 1]))
             regressor_days.append(t)
 
-    names = ["const", "proxy", "y_lag1", "y_mean5", "y_mean22", "log_vix"]
+    names = [
+        "const",
+        "proxy",
+        "y_lag1",
+        "y_mean5",
+        "y_mean22",
+        "log_vix",
+        "log_spot",
+        "linear_session_trend",
+    ]
     names.extend(f"dow_{weekday}" for weekday in (1, 2, 3, 4))
     names.append("monthly_expiration")
     return A13Design(
@@ -372,6 +396,8 @@ def variance_inflation_factors(design: NDArray[np.float64], names: list[str]) ->
 
 def run_a13_regression(
     design: A13Design,
+    *,
+    bootstrap_indices: NDArray[np.int64] | None = None,
 ) -> A13RegressionResult:
     """Fit one registered equation with every A14 inference setting fixed."""
 
@@ -382,18 +408,26 @@ def run_a13_regression(
         raise ValueError("primary regression requires more complete rows than coefficients")
     if np.linalg.matrix_rank(design.X) < k:
         raise ValueError("primary regression design is rank deficient")
-    regression = ols_hac(design.y, design.X, design.names, hac_lags=5)
+    regression = ols_hac(
+        design.y,
+        design.X,
+        design.names,
+        hac_lags=A16_HAC_LAGS,
+        time_index=design.regressor_day,
+    )
     proxy_index = design.names.index("proxy")
     bootstrap = block_bootstrap_pvalue(
         design.y,
         design.X,
         coef_index=proxy_index,
-        block_len=A14_BLOCK_LENGTH,
+        block_len=A16_BLOCK_LENGTH,
         n_boot=A14_BOOTSTRAP_DRAWS,
         seed=A14_BOOTSTRAP_SEED,
         alternative="two-sided",
         confidence=0.95,
         monte_carlo_correction=True,
+        time_index=design.regressor_day,
+        resample_indices=bootstrap_indices,
     )
     return A13RegressionResult(
         n=regression.n,
@@ -443,6 +477,8 @@ class A14FamilyResult:
     ]
     decision: A14FamilyDecision
     proxy_correlation: NDArray[np.float64]
+    bootstrap_candidates_attempted: int
+    bootstrap_rank_deficient_discarded: int
 
 
 def classify_a14_family(
@@ -509,7 +545,32 @@ def run_a14_family(designs: list[A13Design]) -> A14FamilyResult:
         if not np.array_equal(design.X[:, control_indices], reference.X[:, control_indices]):
             raise ValueError("all A14 designs must use identical controls")
 
-    fitted_list = [run_a13_regression(design) for design in designs]
+    candidates = moving_block_bootstrap_indices(
+        reference.y.size,
+        block_len=A16_BLOCK_LENGTH,
+        n_draws=20 * A14_BOOTSTRAP_DRAWS,
+        seed=A14_BOOTSTRAP_SEED,
+        time_index=reference.regressor_day,
+    )
+    accepted: list[NDArray[np.int64]] = []
+    attempted = 0
+    rank_deficient = 0
+    for indices in candidates:
+        attempted += 1
+        if all(np.linalg.matrix_rank(design.X[indices]) == design.X.shape[1] for design in designs):
+            accepted.append(indices)
+            if len(accepted) == A14_BOOTSTRAP_DRAWS:
+                break
+        else:
+            rank_deficient += 1
+    if len(accepted) < A14_BOOTSTRAP_DRAWS:
+        raise RuntimeError(
+            "could not obtain 2,000 resamples that are full rank for all four A14 designs"
+        )
+    shared_indices = np.asarray(accepted, dtype=np.int64)
+    fitted_list = [
+        run_a13_regression(design, bootstrap_indices=shared_indices) for design in designs
+    ]
     fitted = (fitted_list[0], fitted_list[1], fitted_list[2], fitted_list[3])
     decision = classify_a14_family(
         hac_pvalues=np.array([result.hac_pvalue for result in fitted]),
@@ -523,4 +584,6 @@ def run_a14_family(designs: list[A13Design]) -> A14FamilyResult:
         regressions=fitted,
         decision=decision,
         proxy_correlation=proxy_correlation,
+        bootstrap_candidates_attempted=attempted,
+        bootstrap_rank_deficient_discarded=rank_deficient,
     )

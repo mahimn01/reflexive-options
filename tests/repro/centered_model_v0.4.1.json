@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "paper_version": "0.4.1",
+  "generated_utc": "2026-07-13T03:18:24Z",
+  "commands": [
+    "python -m reflexive_options.experiments.centered_hopf_validation",
+    "python -m reflexive_options.experiments.centered_model_robustness"
+  ],
+  "canonical": {
+    "kappa_star": 31.4932976321588,
+    "omega_star": 47.11856695612763,
+    "period_years": 0.13334839561292042,
+    "first_lyapunov": -6.288804056947244,
+    "transversality": 0.2686294184904097,
+    "x_min_at_1.02": -0.02813836872063581,
+    "x_max_at_1.02": 0.0235808823859688,
+    "variance_min_at_1.02": 0.04453126449444231,
+    "variance_max_at_1.02": 0.08186969555448124
+  },
+  "robustness": {
+    "local_amplitude_slope_through_2pct": 0.5088638225387322,
+    "local_amplitude_r_squared_through_2pct": 0.9999220561473167,
+    "all_amplitude_slope_through_6pct": 0.5338077969616157,
+    "solver_amplitude_relative_difference": 1.933408988463725e-11,
+    "initial_amplitude_coefficient_of_variation": 3.120962037786573e-08,
+    "initial_period_coefficient_of_variation": 3.648236989783071e-06,
+    "finite_difference_first_lyapunov": -6.288803982965608,
+    "first_lyapunov_absolute_difference": 7.39816359285328e-08,
+    "first_lyapunov_relative_difference": 1.1764023089000375e-08,
+    "classification_counts": {
+      "no_valid_hopf": 1278,
+      "supercritical": 722,
+      "subcritical": 25
+    }
+  },
+  "mixtures": {
+    "nearby_same_sign": {
+      "G_x": -0.11515045037676526,
+      "G_v": -2.0132260806570814,
+      "kappa_star": 34.38906330587882,
+      "first_lyapunov": -4.8143433272670295,
+      "classification": "supercritical"
+    },
+    "dispersed_same_sign": {
+      "G_x": -0.1513970313025017,
+      "G_v": -2.347962269573609,
+      "kappa_star": 30.241646262387366,
+      "first_lyapunov": 5.849841251087067,
+      "classification": "subcritical"
+    },
+    "offsetting_signs": {
+      "G_x": -0.14396717434169998,
+      "G_v": -1.5644902654281108,
+      "kappa_star": 50.475917754448474,
+      "first_lyapunov": 27.816963586699337,
+      "classification": "subcritical"
+    },
+    "reversed_single": {
+      "classification": "no_valid_local_hopf"
+    }
+  },
+  "source_run_metrics_sha256": {
+    "centered_hopf_validation": "d44ca4c7052ad3c8d2fc6d23c49754f7f2ddef7faac14e31e02826d7e9a829b3",
+    "centered_model_robustness": "890cb3c62e2f83201de7d72d6fbcaeb2b6126eb44998b4e5707499f70e56731a"
+  }
+}

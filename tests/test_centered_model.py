@@ -9,6 +9,7 @@ from reflexive_options.theory.centered_model import (
     CenteredSVParams,
     GaussianBookComponent,
     GaussianBookParams,
+    _hopf_points_from_partials,
     canonical_centered_configuration,
     centered_drift_gaussian_book,
     centered_drift_gaussian_mixture,
@@ -23,6 +24,10 @@ from reflexive_options.theory.centered_model import (
     routh_hurwitz_coefficients,
     static_feedback_hopf_polynomial,
 )
+
+# The private root classifier is imported deliberately because the tests below
+# audit a numerical invariant of the polynomial implementation rather than the
+# public Gaussian-book construction that fixes one normalization.
 
 
 def test_centered_feedback_is_zero_at_fixed_equilibrium() -> None:
@@ -93,6 +98,57 @@ def test_canonical_quadratic_discloses_both_valid_positive_hopf_points() -> None
     assert second.omega == pytest.approx(309.551117075, rel=1e-9)
     assert second.transversality < 0.0
     assert second.first_lyapunov == pytest.approx(17479.5557196, rel=1e-8)
+
+
+@pytest.mark.parametrize("scale", [1.0e-4, 1.0e4])
+def test_hopf_points_are_invariant_to_positive_book_normalization(scale: float) -> None:
+    model, book = canonical_centered_configuration()
+    partials = normalized_gaussian_book_partials(model, book)
+    baseline = gaussian_book_hopf_points(model, book)
+    scaled_partials = {name: scale * value for name, value in partials.items()}
+    scaled_partials["G"] = 0.0
+
+    scaled = _hopf_points_from_partials(model, scaled_partials, tolerance=1.0e-8)
+
+    assert len(scaled) == len(baseline) == 2
+    for original, transformed in zip(baseline, scaled, strict=True):
+        assert transformed.kappa * scale == pytest.approx(original.kappa, rel=2e-12)
+        assert transformed.omega == pytest.approx(original.omega, rel=2e-12)
+        assert transformed.first_lyapunov == pytest.approx(
+            original.first_lyapunov,
+            rel=2e-11,
+        )
+        assert np.sign(transformed.transversality) == np.sign(original.transversality)
+        assert transformed.transversality / scale == pytest.approx(
+            original.transversality,
+            rel=2e-12,
+        )
+
+
+def test_canonical_linear_channel_ablations_isolate_variance_sensitivity() -> None:
+    model, book = canonical_centered_configuration()
+    partials = normalized_gaussian_book_partials(model, book)
+
+    without_direct_price_sensitivity = dict(partials)
+    without_direct_price_sensitivity["G_a"] = 0.0
+    points = _hopf_points_from_partials(
+        model,
+        without_direct_price_sensitivity,
+        tolerance=1.0e-8,
+    )
+    assert len(points) == 1
+    assert points[0].kappa == pytest.approx(28.9140812922, rel=1e-10)
+    assert points[0].omega == pytest.approx(45.2216762184, rel=1e-10)
+    assert points[0].transversality == pytest.approx(0.3083534535, rel=1e-10)
+
+    without_variance_sensitivity = dict(partials)
+    without_variance_sensitivity["G_v"] = 0.0
+    with pytest.raises(ValueError, match="no positive Hopf root"):
+        _hopf_points_from_partials(
+            model,
+            without_variance_sensitivity,
+            tolerance=1.0e-8,
+        )
 
 
 def test_hopf_eigenvalues_and_third_direction_are_correct() -> None:

@@ -3,7 +3,7 @@
 ## Construct validity
 
 The theoretical $q(k)$ is a signed dealer-position density. Public open
-interest is not that object. A13--A15 measure public positioning mass and shape.
+interest is not that object. A13--A16 measure public positioning mass and shape.
 Convention-signed GEX cannot validate dealer sign because its orientation is
 imposed by construction.
 
@@ -30,8 +30,8 @@ classification are the invariant conclusions of interest.
 
 ## Statistical validity
 
-Daily log squared return is a noisy volatility proxy. HAC and moving-block
-bootstrap handle serial dependence imperfectly. A14 separately BH-adjusts both
+Daily log squared return is a noisy volatility proxy. Calendar-aware HAC and moving-block
+bootstrap handle serial dependence imperfectly. A16 separately BH-adjusts both
 families and requires their agreement plus an interval excluding zero; this
 prevents ex-post method selection but does not make either approximation exact.
 BH control covers the registered family, not unregistered model search.

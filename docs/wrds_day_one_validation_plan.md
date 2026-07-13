@@ -1,4 +1,4 @@
-# WRDS day-one validation plan (A13--A15)
+# WRDS day-one validation plan (A13--A16)
 
 **Timing.** University of Toronto access is expected in September 2026. Run this mapping
 validation in the first access week and freeze the full option extraction promptly.
@@ -6,8 +6,8 @@ validation in the first access week and freeze the full option extraction prompt
 **Purpose.** Day one validates access, coverage, identifiers, units, and deterministic
 field mappings. It does not construct a return outcome, join VIX to a proxy, estimate a
 regression, inspect an event statistic, or test an economically desired sign. Amendments
-A13--A14 in `paper/pre_registration_amendments.md`, supplemented by A15 in
-`paper/pre_registration_amendment_a15.md`, are the operative specification.
+A13--A14 in `paper/pre_registration_amendments.md`, supplemented by A15 and A16 in
+their separate amendment files, are the operative specification.
 
 ## 1. Data firewall
 
@@ -36,7 +36,8 @@ Before writing the full query, confirm that the 2017--2024 tables expose or can 
 all required fields: `secid`, `date`, `symbol`, `optionid`, `exdate`, `cp_flag`,
 `strike_price`, `best_bid`, `best_offer`, `open_interest`, `impl_volatility`, vendor
 `gamma`, `cfadj`, `contract_size`, `ss_flag`, and `am_settlement`. Also locate security
-close, forward-price, zero-curve, and index-dividend tables. A missing required field is a
+close, forward-price, zero-curve, index-dividend, expiration-calendar, and documentation
+for OI as-of and release timing. A missing required field is a
 mapping issue to disclose and resolve before extraction, not a license to improvise later.
 
 ## 3. Identifier, root, and spot mapping
@@ -62,14 +63,14 @@ CRSP level is a cross-check; CRSP later supplies only the registered index retur
 | Spot | `optionm.secprd.close` | one finite positive SPX value per date |
 | Strike | `strike_price` | divide by 1,000 after verifying raw units |
 | Type | `cp_flag` | exactly `C` or `P` |
-| Expiry | `exdate` | 1--365 calendar DTE; same-day excluded |
-| Quote | `best_bid`, `best_offer` | offer $>0$, bid $\geq0$, offer $\geq$ bid |
+| Expiry | `exdate`, `am_settlement` | fractional ACT/365 to official settlement timestamp; 0 < tau <= 1 |
+| Quote | `best_bid`, `best_offer` | bid $>0$, ask $>$ bid, relative spread $\leq0.50$ |
 | Implied vol | `impl_volatility` | finite in [0.01, 5.00]; no imputation |
-| Open interest | `open_interest` | finite, non-negative, exactly vendor-dated |
+| Open interest | `open_interest` | finite, non-negative, latest documented available by close $t$ |
 | Identity | `optionid` | unique within date after exact-duplicate collapse |
 | Contract | `symbol`, `cfadj`, `contract_size`, `ss_flag` | SPX/SPXW, 1, 100, `0` |
-| Settlement | `am_settlement` | forward groups split by AM/PM flag |
-| Rate | OptionMetrics zero curve | continuous rate; linear in calendar days |
+| Settlement | `am_settlement` | AM/PM official timestamp from archived Cboe calendar |
+| Rate | OptionMetrics zero curve | continuous rate; linear at fractional maturity |
 | Dividend | OptionMetrics index-dividend file | annualized continuous SPX yield |
 | Forward | matched call/put mids | parity primary; flagged carry fallback |
 | Gamma | recomputed Black--Scholes spot gamma | vendor gamma is a cross-check only |
@@ -78,6 +79,11 @@ Verify whether rate/dividend fields are stored as decimals or percentage points 
 vendor documentation and a hand calculation. Do not choose a conversion because it makes
 gamma look plausible.
 
+Before any outcome query, archive vendor documentation for the OI field's as-of date and
+release time. If date-$t$ OI is documented as available by the close of $t$, use it; otherwise
+use the latest earlier documented-available record. Ambiguity defaults to the previous CRSP
+session. Record quote session, OI source session, and availability lag for every retained row.
+
 ## 5. Deterministic contract pipeline
 
 For each date, record rows remaining and OI/gamma mass after every stage:
@@ -85,14 +91,16 @@ For each date, record rows remaining and OI/gamma mass after every stage:
 1. verified SPX `secid`;
 2. OSI root exactly SPX or SPXW;
 3. `cfadj = 1`, `contract_size = 100`, `ss_flag = '0'`;
-4. finite positive spot/strike and 1--365 calendar DTE;
-5. valid bid/offer, finite IV in [0.01, 5.00], finite non-negative OI;
+4. finite positive spot/strike and fractional ACT/365 settlement time in $(0,1]$;
+5. positive bid, ask above bid, relative spread at most 0.50, finite IV in [0.01, 5.00],
+   and finite non-negative availability-timed OI;
 6. unique date--`optionid` after collapsing and counting exact duplicate rows;
 7. forward assigned by date--expiration--AM/PM group;
 8. $|\log(K/F)|\leq0.50$;
 9. finite recomputed gamma and positive aggregate gamma-weighted OI mass.
 
-Non-identical duplicate date--option identifiers are a no-go. Zero-OI rows remain in
+Non-identical duplicate date--option identifiers halt the pipeline until a documented
+mapping resolution is made. Zero-OI rows remain in
 attrition counts, then may be dropped computationally. No daily value is winsorized,
 clipped, or deleted because it is extreme.
 
@@ -104,9 +112,11 @@ strike. Compute
 
 $$F=K+e^{r\tau}(C_{mid}-P_{mid}).$$
 
-If no pair survives, use $F=Se^{(r-q)\tau}$ and flag the group. Interpolate the continuous
-zero rate linearly in calendar days; nearest-endpoint extension is allowed only outside the
-available curve and is separately flagged. Use ACT/365 throughout. Preserve descriptive
+If no pair survives, use $F=Se^{(r-q)\tau}$ and flag the group. Compute $\tau$ from the
+16:00 America/New_York valuation time to the official AM/PM settlement timestamp, including
+holiday exceptions. Interpolate the continuous zero rate at that fractional maturity;
+nearest-endpoint extension is allowed only outside the available curve and is separately
+flagged. Use ACT/365 throughout. Preserve descriptive
 differences from the vendor forward and carry forward; neither comparison is a fit-based
 selection rule.
 
@@ -130,7 +140,7 @@ recomputation. Report full-chain and near-money IV missingness.
 wide-market problems. Outputs must be finite and contract-level arithmetic must reconcile.
 There is no expected sign or external magnitude target.
 
-The old 7-by-11 IV surface and its arbitrage filter are not part of the primary A13--A15
+The old 7-by-11 IV surface and its arbitrage filter are not part of the primary A13--A16
 pipeline and cannot be used to delete primary contracts or days.
 
 ## 8. Freeze options before outcomes
@@ -160,7 +170,9 @@ re-extraction gets a new manifest; never silently replace a frozen file.
 4. Generate Tuesday--Friday indicators for the immediately following outcome session, with
    Monday omitted, and exactly one standard-monthly expiration indicator for the regressor
    session (third Friday, or preceding open session if closed).
-5. Join proxies and VIX without compressing the CRSP calendar, count listwise deletions,
+5. Add log OptionMetrics spot and a centered linear CRSP-session trend to every primary
+   equation.
+6. Join proxies and VIX without compressing the CRSP calendar, count listwise deletions,
    and reserve the first 22 CRSP sessions for lag initialization. Do not run a proxy
    correlation during this step.
 
@@ -174,13 +186,21 @@ Before running the four regressions, assert in code and log:
 - immediately following CRSP-session log squared return outcome, even if that outcome
   session has no option proxy;
 - fixed controls and a single monthly-expiration indicator;
-- HAC lag 5;
-- moving-pairs blocks of length 10, 2,000 draws, NumPy seed 42 with common row indices
-  across regressions, 95% percentile interval,
+- Bartlett HAC lag 22 measured in actual CRSP-session offsets, with no finite-sample
+  sandwich multiplier and Student-t tails;
+- moving-pairs blocks of 22 complete CRSP sessions, 2,000 full-rank draws, NumPy seed 42
+  with common starting sessions across regressions, a 95% percentile interval,
   and Monte Carlo-corrected two-sided sign p-value;
 - separate BH adjustments over four HAC and four bootstrap p-values;
 - labels restricted to `robustly_associated`, `method_sensitive`, or `not_detected` under
   A14's conjunctive rule.
+
+After the primary table is frozen, run the A16 measurement diagnostics: 0.25 and former
+nonnegative-bid quote filters; lag-5 HAC and retained-row block-10 inference; year effects
+and first differences; gamma mass divided by total OI; the three registered subperiods;
+OI-only shape summaries; and gamma weights recomputed at fixed 20% volatility with
+registered contract geometry. Report raw sample size and HAC/bootstrap uncertainty; no
+realized effective-sample-size estimator is selected.
 
 ## 11. Go/no-go and disclosure
 

@@ -1,6 +1,6 @@
 """Centered dealer-feedback theory, pre-extraction protocol, and legacy simulators."""
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 
 from reflexive_options.types import (
     GreekGrid,

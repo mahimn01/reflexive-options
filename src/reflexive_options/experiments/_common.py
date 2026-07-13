@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import time
 from collections.abc import Generator
 from contextlib import contextmanager
@@ -14,8 +15,10 @@ from typing import Any
 import numpy as np
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RUNS_DIR = REPO_ROOT / "runs"
-FIGURES_DIR = REPO_ROOT / "paper" / "figures"
+RUNS_DIR = Path(os.environ.get("REFLEXIVE_OPTIONS_RUNS_DIR", str(REPO_ROOT / "runs")))
+FIGURES_DIR = Path(
+    os.environ.get("REFLEXIVE_OPTIONS_FIGURES_DIR", str(REPO_ROOT / "paper" / "figures"))
+)
 
 
 def make_run_dir(experiment_name: str, *, seed: int | None = None) -> Path:

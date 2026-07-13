@@ -41,7 +41,7 @@ unsure which office handles WRDS — please forward as appropriate."
 > possibility result, not an SPX calibration or a claim that public open
 > interest reveals dealer positions. The repository also contains a
 > timestamped, pre-extraction protocol for a separate sign-agnostic proxy
-> analysis. No registered market dataset has yet been analysed. I would be
+> analysis. No registered market dataset has yet been analyzed. I would be
 > happy to share the manuscript and protocol for context.
 >
 > **Why I need WRDS.** The registered-horizon proxy analysis requires
@@ -84,7 +84,7 @@ unsure which office handles WRDS — please forward as appropriate."
 
 ## Attachments to mention (don't pre-attach — share on response)
 
-- `paper/main.pdf` (current 22-page v0.4.0 manuscript)
+- `paper/main.pdf` (current 24-page v0.4.1 manuscript)
 - `paper/pre_registration.md` and `paper/pre_registration.md.ots` (the
   pre-registration document and its OpenTimestamps proof)
 - GitHub repository: <https://github.com/mahimn01/reflexive-options>
@@ -100,7 +100,7 @@ unsure which office handles WRDS — please forward as appropriate."
   subject lines on mobile composers).
 - [ ] Spell-checked the body, especially the institution / personal-name
   fields if a specific librarian name is added.
-- [ ] Verified `paper/main.pdf` is the latest v0.4.0 build (not a stale
+- [ ] Verified `paper/main.pdf` is the latest v0.4.1 build (not a stale
   copy) before offering to share it on a follow-up reply.
 - [ ] Decided whether to include a phone number in the signature.
 - [ ] Do not CC or name a faculty member unless that person has agreed to
@@ -116,6 +116,6 @@ unsure which office handles WRDS — please forward as appropriate."
 
 - Pull the OptionMetrics IvyDB US data into `data/optionmetrics/` (gitignored).
 - Freeze and hash the complete option extraction before constructing outcomes,
-  as required by the current protocol and Amendments A13--A15.
+  as required by the current protocol and Amendments A13--A16.
 - Record any deviation from the registered specification before inspecting
   affected results, and label non-registered analyses exploratory.

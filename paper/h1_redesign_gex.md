@@ -1,6 +1,6 @@
 # A5 — Primary-hypothesis redesign: direct dealer-gamma (GEX) regression (H1')
 
-> **ARCHIVED A9-ERA DESIGN; SUPERSEDED BY A13--A15.** Public OI does not identify
+> **ARCHIVED A9-ERA DESIGN; SUPERSEDED BY A13--A16.** Public OI does not identify
 > dealer sign. This event-selected directional design is an audit trail only.
 
 **Status.** Pre-data pre-registration amendment. LaTeX-ready spec for

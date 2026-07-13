@@ -4,7 +4,7 @@ The original manuscript varied the spot drift together with the feedback
 coupling in order to pin the equilibrium.  That construction does not identify
 a one-parameter bifurcation in the coupling.  This module instead works with a
 detrended log-price deviation ``x`` and a *centered* dealer-book functional
-``g`` satisfying ``g(0, theta_v) = 0``.  The equilibrium
+``g`` satisfying ``g(0, theta_v, 0) = 0``.  The equilibrium
 
     (x, v, chi) = (0, theta_v, 0)
 
@@ -13,7 +13,7 @@ is held constant.
 
 The physical-measure local model is
 
-    dx   = [-delta*x - 0.5*(v-theta_v) + kappa*g(x, chi, v)] dt
+    dx   = [-delta*x - 0.5*(v-theta_v) + kappa*g(x, v, chi)] dt
            + sqrt(v) dW_S,
     dv   = [kappa_v*(theta_v-v) + gamma*v*chi] dt
            + xi*sqrt(v) dW_v,
@@ -444,20 +444,27 @@ def _hopf_points_from_partials(
     G_v = partials["G_v"]
     A2, A1, A0 = static_feedback_hopf_polynomial(model=model, G_x=G_x, G_v=G_v)
 
-    if abs(A2) < tolerance:
-        if abs(A1) < tolerance:
+    # A positive rescaling g -> scale*g must be absorbed exactly by
+    # kappa -> kappa/scale.  Absolute coefficient cutoffs violate that
+    # invariance because A2 and A1 then scale as scale**2 and scale,
+    # respectively.  Here A2 = G_x**2*A with A > 0, so the polynomial is
+    # genuinely linear exactly when G_x (and hence A2) is exactly zero.
+    if A2 == 0.0:
+        if A1 == 0.0:
             raise ValueError("Hopf polynomial is degenerate")
         candidates = [-A0 / A1]
     else:
         discriminant = A1 * A1 - 4.0 * A2 * A0
-        if discriminant < -tolerance:
+        discriminant_scale = max(A1 * A1, abs(4.0 * A2 * A0), np.finfo(float).tiny)
+        if discriminant < -tolerance * discriminant_scale:
             raise ValueError("no real root of the Hopf determinant")
         sqrt_discriminant = float(np.sqrt(max(discriminant, 0.0)))
         # Use the cancellation-resistant quadratic formula.  The canonical
         # witness has roots separated by more than two orders of magnitude,
         # making the stable form preferable for a reproducibility routine.
         q = -0.5 * (A1 + np.copysign(sqrt_discriminant, A1))
-        if abs(q) <= tolerance:
+        q_scale = max(abs(A1), sqrt_discriminant, np.finfo(float).tiny)
+        if abs(q) <= tolerance * q_scale:
             candidates = [
                 (-A1 - sqrt_discriminant) / (2.0 * A2),
                 (-A1 + sqrt_discriminant) / (2.0 * A2),
@@ -467,12 +474,12 @@ def _hopf_points_from_partials(
 
     valid_points: list[HopfPoint] = []
     positive_candidates: list[float] = []
-    for candidate in sorted(value for value in candidates if value > tolerance):
+    for candidate in sorted(value for value in candidates if value > 0.0):
         if positive_candidates and np.isclose(
             candidate,
             positive_candidates[-1],
-            rtol=10.0 * np.finfo(float).eps,
-            atol=tolerance,
+            rtol=max(tolerance, 10.0 * np.finfo(float).eps),
+            atol=0.0,
         ):
             continue
         positive_candidates.append(float(candidate))
@@ -488,7 +495,8 @@ def _hopf_points_from_partials(
             continue
         H_prime = 2.0 * A2 * kappa + A1
         transversality = -H_prime / (2.0 * (c1 + c2 * c2))
-        if abs(transversality) <= tolerance:
+        derivative_scale = max(abs(2.0 * A2 * kappa), abs(A1), np.finfo(float).tiny)
+        if abs(H_prime) <= tolerance * derivative_scale:
             continue
         omega = float(np.sqrt(c1))
         eigenvalues = np.linalg.eigvals(jacobian)

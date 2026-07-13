@@ -14,7 +14,7 @@ clean:
 watch:
 	latexmk -pvc -pdf main.tex
 
-# Build the arXiv-ready source tarball at dist/arxiv_v0.4.0.tar.gz.
+# Build the arXiv-ready source tarball at dist/arxiv_v0.4.1.tar.gz.
 # Delegates to scripts/arxiv_build.sh — see that script for the full
 # pipeline (figure discovery, pdflatex/bibtex, .bbl shipping, tar packing,
 # simulated extract+rebuild sanity check, page-count verification).

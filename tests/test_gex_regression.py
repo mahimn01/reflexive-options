@@ -21,12 +21,14 @@ import pytest
 
 from reflexive_options.empirical.gex_regression import (
     OIGrid,
+    _newey_west_cov,
     benjamini_hochberg,
     bs_gamma,
     build_design,
     csd_autocorr,
     estimate_gex,
     estimate_gex_series,
+    moving_block_bootstrap_indices,
     ols_hac,
     realized_vol,
     realized_vol_of_vol,
@@ -148,6 +150,42 @@ def test_ols_hac_handles_autocorrelated_errors():
     X = np.column_stack([np.ones(n), x])
     res = ols_hac(y, X, ["const", "x"])
     assert res.se_hac[0] > res.se_ols[0]  # intercept SE inflated by serial corr
+
+
+def test_calendar_hac_does_not_treat_rows_across_a_gap_as_adjacent():
+    X = np.ones((3, 1))
+    residual = np.array([1.0, 2.0, 3.0])
+    row_order = _newey_west_cov(X, residual, 1)
+    calendar = _newey_west_cov(
+        X,
+        residual,
+        1,
+        time_index=np.array([0, 2, 3]),
+    )
+    # Row-order HAC pairs both (0,2) and (2,3); complete-calendar HAC pairs
+    # only sessions 2 and 3 at lag one.
+    assert calendar[0, 0] < row_order[0, 0]
+
+
+def test_calendar_block_indices_are_reproducible_and_preserve_gaps():
+    calendar = np.array([0, 1, 2, 10, 11, 12])
+    first = moving_block_bootstrap_indices(
+        calendar.size,
+        block_len=2,
+        n_draws=20,
+        seed=19,
+        time_index=calendar,
+    )
+    second = moving_block_bootstrap_indices(
+        calendar.size,
+        block_len=2,
+        n_draws=20,
+        seed=19,
+        time_index=calendar,
+    )
+    np.testing.assert_array_equal(first, second)
+    assert first.shape == (20, calendar.size)
+    assert np.all((first >= 0) & (first < calendar.size))
 
 
 # --------------------------------------------------------------------------- #

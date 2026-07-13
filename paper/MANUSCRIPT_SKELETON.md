@@ -2,7 +2,7 @@
 
 > **ARCHIVED / WITHDRAWN.** This predates the v0.4 centered-model
 > reconstruction. Its model, anchors, stochastic shift, and empirical
-> hierarchy are not current. Use `paper/main.tex` and Amendments A13--A15.
+> hierarchy are not current. Use `paper/main.tex` and Amendments A13--A16.
 
 > **⚠ Superseded planning artifact (pre-v0.3.9).** This skeleton predates the v0.3.9 empirical-leg redesign. Wherever it describes **H1** as a "primary realism" RL-agent / sliced-W2 test or **H4** as a "Hopf-frequency spectral peak via Welch's method", those are retracted: the primary empirical test is now a direct, model-free **dealer-gamma (GEX) regression (H1′)** and H4 is a **critical-slowing-down** early-warning test. The Hawkes–SV theorem was repositioned (no `n_SV` numerology) and theorem numbering shifted (Hawkes–SV is now Theorem 5). The authoritative state is `paper/main.tex` + amendments **A8–A11** in `paper/pre_registration_amendments.md`. Kept as the historical authoring blueprint, not a current spec.
 

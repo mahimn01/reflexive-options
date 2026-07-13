@@ -47,7 +47,13 @@ echo "==> mypy src"
 run mypy src
 
 echo "==> pytest --cov-fail-under=85"
-run pytest --cov=reflexive_options --cov-report=term-missing --cov-fail-under=85
+# pyproject.toml already supplies the single canonical --cov target. Repeating
+# it here starts a duplicate source tracker and emits a misleading
+# "module previously imported, but not measured" coverage warning.
+run pytest --cov-report=term-missing --cov-fail-under=85
+
+echo "==> paper/arXiv clean-extraction build"
+bash scripts/arxiv_build.sh
 
 echo
 echo "verify.sh: all checks passed."

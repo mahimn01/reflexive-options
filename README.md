@@ -3,8 +3,8 @@
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![paper](https://img.shields.io/badge/paper-PDF-blue)](paper/main.pdf)
 
-Research code for *Dealer-Gamma Feedback and Local Volatility Cycles: A
-Fixed-Equilibrium Bifurcation Model and a Pre-Extraction Identification Protocol*
+Research code for *Gamma-Shaped Dealer-Book Pressure and Endogenous Volatility Cycles: A
+Reduced-Form Fixed-Equilibrium Hopf Model and a Pre-Extraction Predictive Protocol*
 (Patel, 2026).
 
 ## Current claim
@@ -14,7 +14,7 @@ instantaneous variance $v$, and filtered price memory $\chi$:
 
 $$
 \begin{aligned}
-dX_t&=[-\delta X_t-\tfrac12(v_t-\theta_v)+\kappa g(X_t,\chi_t,v_t)]dt
+dX_t&=[-\delta X_t-\tfrac12(v_t-\theta_v)+\kappa g(X_t,v_t,\chi_t)]dt
       +\sqrt{v_t}\,dW_t^S,\\
 dv_t&=[\kappa_v(\theta_v-v_t)+\gamma v_t\chi_t]dt
       +\xi\sqrt{v_t}\,dW_t^v,\\
@@ -39,7 +39,7 @@ non-calibrated example reproduces
 The same quadratic also has a remote second valid point at
 $\kappa^{\star\star}=16860.8961\,\mathrm{yr}^{-1}$, where the pair crosses back
 into the stable half-plane. The API returns both roots; plots and phase maps
-labelled “threshold” use the first.
+labeled “threshold” use the first.
 
 On the closest numerical grid, the actual nonlinear cycle amplitude scales as
 $\{(\kappa-\kappa^\star)/\kappa^\star\}^{0.509}$, close to the local Hopf
@@ -49,9 +49,11 @@ offsetting-sign books can be subcritical, and reversing the canonical sign
 orientation removes the valid positive root. The existence and type of the
 local bifurcation are therefore book-dependent.
 
-This is a **local deterministic possibility result**. It is not an SPX
-calibration, a global-stability result, or evidence that markets are near a
-Hopf threshold.
+This is a **local deterministic possibility result** for a postulated
+gamma-shaped pressure term inside an independently assumed
+price--memory--variance loop. It is neither an SPX calibration nor evidence
+that markets are near a Hopf threshold. The canonical crossing is driven
+mainly by the book kernel's variance sensitivity, not delta hedging alone.
 
 ## Measurement boundary
 
@@ -60,20 +62,22 @@ which side is held by a dealer. The theory's signed position density is
 therefore latent; an OI-weighted signed GEX series is a convention-dependent
 proxy, not observed dealer inventory.
 
-Amendments A13--A15 replace the former event-selected directional GEX test with
+Amendments A13--A16 replace the former event-selected directional GEX test with
 a pre-extraction registered-horizon protocol. On eligible OptionMetrics dates from
 2017-01-03 through 2024-10-29 it will study four observable summaries:
 
-1. unsigned OI-gamma mass;
+1. nonnegative OI-gamma mass;
 2. call--put composition;
 3. gamma-weighted mean log moneyness;
 4. gamma-weighted log-moneyness dispersion.
 
 The contract universe, parity/carry forward rule, rate/dividend tuple, spot and
-return sources, OI timing, and duplicate/attrition policy are fixed before
-access. Leads and lags remain on the complete CRSP trading-session calendar, so
+return sources, OI availability rule, fractional settlement time, liquidity
+filters, and duplicate/attrition policy are fixed before access. Leads, lags,
+HAC offsets, and bootstrap blocks remain on the complete CRSP trading-session calendar, so
 a missing option date cannot compress the next-session outcome. These summaries
-predict next-session log squared CRSP returns with fixed lags, official Cboe VIX,
+predict next-session log squared CRSP returns with 22-session inference horizons,
+official Cboe VIX, log spot, a linear session trend,
 outcome-session weekday indicators, and one regressor-session monthly-expiration
 control. HAC and moving-block-bootstrap p-values are BH-adjusted as separate
 families. “Robustly associated” requires both adjusted p-values below 0.05 and
@@ -83,7 +87,7 @@ secondary. Even a robust association is not causal or dealer-sign
 identification.
 
 No registered WRDS, OptionMetrics, CRSP, or VIX dataset has been extracted or
-analysed in the project. The 2017--2024 market path and named stress episodes
+analyzed in the project. The 2017--2024 market path and named stress episodes
 were historically public when the plan was written; this is a retrospective
 pre-analysis plan, not a blinded prospective experiment. Access is expected in
 September 2026.
@@ -118,6 +122,7 @@ The principal implementation is in:
 - `paper/main.tex`
 - `paper/pre_registration_amendments.md` (preserved A13--A14 record)
 - `paper/pre_registration_amendment_a15.md` (calendar and disclosure correction)
+- `paper/pre_registration_amendment_a16.md` (timing, settlement, inference, and measurement correction)
 - `docs/wrds_day_one_validation_plan.md`
 
 ## What was withdrawn from v0.3
@@ -127,7 +132,7 @@ current paper does **not** claim:
 
 - a non-zero stochastic threshold correction from the affine additive
   surrogate; its tangent cocycle is $e^{Jt}$ and the correction is zero. The
-  full state-dependent stochastic variational equation remains unanalysed;
+  full state-dependent stochastic variational equation remains unanalyzed;
 - a Hawkes--SV equivalence theorem;
 - global stability from absence of a Hopf root;
 - a McKean--Vlasov threshold theorem for the centered model;
@@ -144,7 +149,7 @@ is no longer an installed command.
 ```text
 src/reflexive_options/
 ├── theory/          # centered current model plus archived legacy utilities
-├── empirical/       # A13--A15 OI proxy protocol and legacy A9 reproducer
+├── empirical/       # A13--A16 OI proxy utilities and legacy A9 reproducer
 ├── experiments/     # current validation plus archived experiments
 ├── simulator/       # legacy/full simulator infrastructure
 ├── baselines/       # comparison simulators
@@ -164,7 +169,7 @@ paper/
 ## Pre-registration provenance
 
 The original document and earlier amendments retain their historical
-OpenTimestamps proofs. A13--A15 are disclosed pre-extraction amendments made
+OpenTimestamps proofs. A13--A16 are disclosed pre-extraction amendments made
 before anticipated WRDS access. The preserved A13--A14 amendment-file SHA-256 is
 `603e89366c0dbe49718e8c31f805d6f85d3c508e2e0ed4276a6310c80f5f9cd7`, with
 receipt `paper/pre_registration_amendments.md.ots` pending Bitcoin
@@ -177,22 +182,27 @@ The separate A15 correction has SHA-256
 `a5f694f99953d57563d4f17dc5646ef0b87452c45119ccbdc12fc90efd034a52`
 and receipt `paper/pre_registration_amendment_a15.md.ots`, pending Bitcoin
 consolidation at creation.
+The separate A16 correction has SHA-256
+`a5cbf9ef56c9a402ff05b61bb720d8487313b154f30393b4835b43fe5c33e61d`
+and receipt `paper/pre_registration_amendment_a16.md.ots`, pending Bitcoin
+consolidation at creation.
 
 ## Citation
 
 ```bibtex
 @unpublished{patel2026dealergamma,
   author = {Patel, Mahimn},
-  title  = {Dealer-Gamma Feedback and Local Volatility Cycles:
-            A Fixed-Equilibrium Bifurcation Model and a Pre-Extraction
-            Identification Protocol},
+  title  = {Gamma-Shaped Dealer-Book Pressure and Endogenous Volatility Cycles:
+            A Reduced-Form Fixed-Equilibrium Hopf Model and a Pre-Extraction
+            Predictive Protocol},
   year   = {2026},
-  note   = {Working paper, v0.4.0},
+  note   = {Working paper, v0.4.1},
   url    = {https://github.com/mahimn01/reflexive-options}
 }
 ```
 
 ## License
 
-MIT. Vendored ATLAS/RAT modules derive from `mahimn01/trading-algo`; see
-[NOTICE](NOTICE).
+Code is MIT-licensed. The manuscript and its original figures are licensed
+under CC BY 4.0; see [paper/LICENSE.md](paper/LICENSE.md). Vendored ATLAS/RAT
+modules derive from `mahimn01/trading-algo`; see [NOTICE](NOTICE).

@@ -211,9 +211,11 @@ def _fit_gp_and_derivative(
     )
     # On the deliberately tiny locked n=9 grid, a rough response can place
     # the fitted RBF length scale exactly at its registered lower bound.  That
-    # is an admissible constrained optimum, not a failed fit.  Suppress only
-    # sklearn's exact boundary diagnostic; every other convergence warning
-    # remains visible.
+    # is an admissible constrained optimum, not a failed fit.  A single L-BFGS
+    # restart can also terminate abnormally even when another of the six
+    # deterministic starts supplies the finite optimum used by sklearn.
+    # Suppress only those two diagnostics inside this multi-start fit; the
+    # returned slope and uncertainty remain covered by analytic-truth tests.
     with warnings.catch_warnings():
         warnings.filterwarnings(
             "ignore",
@@ -221,6 +223,11 @@ def _fit_gp_and_derivative(
                 "The optimal value found for dimension 0 of parameter "
                 "k1__length_scale is close to the specified lower bound.*"
             ),
+            category=ConvergenceWarning,
+        )
+        warnings.filterwarnings(
+            "ignore",
+            message="lbfgs failed to converge after .*",
             category=ConvergenceWarning,
         )
         gp.fit(x_train_s.reshape(-1, 1), y_norm)

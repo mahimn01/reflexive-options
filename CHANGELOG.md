@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-07-12
+
+### Corrected — mechanism boundary, empirical timing, and publication audit
+
+- Retitled and rewrote the paper to distinguish its reduced-form fixed-equilibrium Hopf
+  result from Dupire local volatility and from an already executed identification study.
+- Corrected the units of the variance-memory noise coefficient and synchronized the public
+  state order as $(X,v,\chi)$ across the manuscript, notation, documentation, and code.
+- Made the economic sign boundary explicit: the canonical positive
+  $X\mathbin{\to}\chi\mathbin{\to}v$ loop is an independent reduced-form assumption, not a
+  deduction from option gamma or a calibrated equity leverage effect. Added analytic
+  $G_X=0$ and $G_v=0$ ablations and documented the frozen-book horizon.
+- Added Amendment A16 before data extraction. It resolves open-interest availability
+  timing, fractional settlement maturity, quote-liquidity filters, actual-session HAC lags,
+  shared complete-calendar block resamples, persistent-state controls, and decomposition
+  diagnostics. The new OpenTimestamps receipt is pending calendar attestation.
+- Made the empirical implementation fail closed on forward, rate, dividend, settlement,
+  option type, and multiplier inputs. Added log spot and a linear time trend, calendar-aware
+  Newey--West covariance, common full-rank bootstrap draws across all four primary proxies,
+  and explicit discarded-draw accounting.
+- Replaced absolute polynomial-root tolerances with scale-relative and exact-degree checks;
+  tests now enforce polynomial-normalization invariance and both derivative ablations.
+- Added a tracked numerical receipt for the current paper's reported experiment outputs,
+  with CI recomputation of the canonical Hopf point, classification map, mixtures, and
+  finite-difference Lyapunov check; also added fresh figure regeneration, a paper-build CI
+  gate, a scoped CC BY 4.0 manuscript license, and current arXiv metadata/build artifacts.
+- Reworked the exposition from abstract through conclusion for chronological definitions,
+  claim strength, notation, finance interpretation, and reduced defensive constructions.
+  Mahimn Patel remains the sole author and no institutional affiliation is claimed.
+
 ## [0.4.0] - 2026-07-10
 
 ### Rebuilt — pre-publication model and identification audit

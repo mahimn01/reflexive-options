@@ -1,6 +1,6 @@
 """Pre-extraction empirical protocols and legacy reproducibility utilities.
 
-Amendments A13--A15 use sign-agnostic open-interest book summaries. Public OI
+Amendments A13--A16 use sign-agnostic open-interest book summaries. Public OI
 does not identify dealer positions. The older signed-GEX H1' code is retained
 only to reproduce the superseded A9 registration.
 """

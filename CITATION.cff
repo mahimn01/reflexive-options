@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "If you use this software, please cite the paper and repository."
 title: "reflexive-options"
 abstract: >-
-  A fixed-equilibrium local physical-measure model of dealer-gamma feedback,
+  A fixed-equilibrium local physical-measure model of gamma-shaped dealer-book pressure,
   with an inward-pointing variance boundary, analytic local Hopf conditions,
   actual-nonlinearity and signed-mixture robustness audits, and a pre-extraction
   sign-agnostic open-interest proxy protocol.
@@ -11,8 +11,8 @@ authors:
     given-names: "Mahimn"
     email: "mahimn.patel@mail.utoronto.ca"
     orcid: "https://orcid.org/0009-0002-2422-9005"
-version: "0.4.0"
-date-released: "2026-07-10"
+version: "0.4.1"
+date-released: "2026-07-12"
 url: "https://github.com/mahimn01/reflexive-options"
 repository-code: "https://github.com/mahimn01/reflexive-options"
 license: "MIT"
@@ -26,7 +26,7 @@ keywords:
   - pre-registration
 preferred-citation:
   type: article
-  title: "Dealer-Gamma Feedback and Local Volatility Cycles: A Fixed-Equilibrium Bifurcation Model and a Pre-Extraction Identification Protocol"
+  title: "Gamma-Shaped Dealer-Book Pressure and Endogenous Volatility Cycles: A Reduced-Form Fixed-Equilibrium Hopf Model and a Pre-Extraction Predictive Protocol"
   authors:
     - family-names: "Patel"
       given-names: "Mahimn"
@@ -35,7 +35,7 @@ preferred-citation:
   year: 2026
   month: 7
   url: "https://github.com/mahimn01/reflexive-options"
-  notes: "No registered market dataset analysed; Amendments A13--A15 were recorded before anticipated WRDS access."
+  notes: "No registered market dataset analyzed; Amendments A13--A16 were recorded before anticipated WRDS access."
   keywords:
     - stochastic volatility
     - options markets

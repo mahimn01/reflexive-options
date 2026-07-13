@@ -1,9 +1,9 @@
 # reflexive-options — agent context
 
-This is Mahimn's research codebase for the in-progress paper *Dealer-Gamma
-Feedback and Local Volatility Cycles* (v0.4 centered-model reconstruction).
+This is Mahimn's research codebase for the in-progress paper *Gamma-Shaped
+Dealer-Book Pressure and Endogenous Volatility Cycles* (v0.4.1 centered-model reconstruction).
 `paper/main.tex`, `src/reflexive_options/theory/centered_model.py`, and
-Amendments A13--A15 are authoritative. v0.3 theory/experiment files are historical
+Amendments A13--A16 are authoritative. v0.3 theory/experiment files are historical
 unless explicitly imported by the current paper.
 
 ## Sibling repos
@@ -75,7 +75,8 @@ first error.
 
 `paper/pre_registration.md` is the preserved historical registration.
 `paper/pre_registration_amendments.md` Amendments A13--A14, supplemented by
-`paper/pre_registration_amendment_a15.md`, form the operative primary protocol and
+`paper/pre_registration_amendment_a15.md` and
+`paper/pre_registration_amendment_a16.md`, form the operative primary protocol and
 supersede A9/A11 where inconsistent. They were added before WRDS access. Do not
 rewrite a historical file; new changes require a disclosed pre-extraction amendment
 and their own proof.
@@ -83,7 +84,8 @@ and their own proof.
 The A13-only bytes and receipt are preserved as
 `paper/pre_registration_amendments.md.a13{,.ots}`. The preserved A13--A14 file is
 paired with `paper/pre_registration_amendments.md.ots`; A15 is paired with
-`paper/pre_registration_amendment_a15.md.ots`. Treat all registration documents
+`paper/pre_registration_amendment_a15.md.ots`; A16 is paired with
+`paper/pre_registration_amendment_a16.md.ots`. Treat all registration documents
 and receipts as immutable provenance artifacts.
 
 The pre-reg's chain-of-custody anchor is `paper/pre_registration.md.ots` — an OpenTimestamps proof binding the file's SHA256 into the Bitcoin blockchain. Verify with:

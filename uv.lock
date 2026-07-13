@@ -2597,7 +2597,7 @@ wheels = [
 
 [[package]]
 name = "reflexive-options"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "diptest" },

@@ -231,19 +231,56 @@ class RegressionResult:
         return float(self.tstat_hac[self.names.index(name)])
 
 
-def _newey_west_cov(X: np.ndarray, resid: np.ndarray, lags: int) -> np.ndarray:
+def _newey_west_cov(
+    X: np.ndarray,
+    resid: np.ndarray,
+    lags: int,
+    *,
+    time_index: np.ndarray | None = None,
+) -> np.ndarray:
     """Newey-West HAC covariance of the OLS coefficient vector.
 
     V = (X'X)^-1 [ S0 + sum_{l=1..L} w_l (S_l + S_l') ] (X'X)^-1
     with Bartlett weights w_l = 1 - l/(L+1) and S_l = sum_t u_t u_{t-l} x_t x_{t-l}'.
+    When time_index is supplied, lag l means an actual calendar-index
+    difference of l rather than l adjacent retained rows.
     """
     XtX_inv = np.linalg.pinv(X.T @ X)
     u = resid.reshape(-1, 1)
     Xu = X * u  # (n,k) score contributions
     S = Xu.T @ Xu  # S0
+    if time_index is not None:
+        time_index = np.asarray(time_index)
+        if (
+            time_index.ndim != 1
+            or time_index.size != X.shape[0]
+            or np.any(~np.isfinite(time_index))
+            or np.any(time_index != np.floor(time_index))
+            or np.any(np.diff(time_index) <= 0)
+        ):
+            raise ValueError("time_index must be finite, integer-valued, aligned, and increasing")
+        time_index = time_index.astype(np.int64)
+        row_for_time = {int(value): index for index, value in enumerate(time_index)}
     for lag in range(1, lags + 1):
         weight = 1.0 - lag / (lags + 1.0)
-        gamma_lag = Xu[lag:].T @ Xu[:-lag]
+        if time_index is None:
+            gamma_lag = Xu[lag:].T @ Xu[:-lag]
+        else:
+            later = np.array(
+                [
+                    index
+                    for index, value in enumerate(time_index)
+                    if int(value) - lag in row_for_time
+                ],
+                dtype=np.int64,
+            )
+            if later.size == 0:
+                continue
+            earlier = np.array(
+                [row_for_time[int(time_index[index]) - lag] for index in later],
+                dtype=np.int64,
+            )
+            gamma_lag = Xu[later].T @ Xu[earlier]
         S += weight * (gamma_lag + gamma_lag.T)
     cov: np.ndarray = XtX_inv @ S @ XtX_inv
     return cov
@@ -254,6 +291,8 @@ def ols_hac(
     X: np.ndarray,
     names: list[str],
     hac_lags: int | None = None,
+    *,
+    time_index: np.ndarray | None = None,
 ) -> RegressionResult:
     """OLS of y on X (X must already include an intercept column) with
     Newey-West HAC standard errors.
@@ -263,7 +302,9 @@ def ols_hac(
     y = np.asarray(y, dtype=float)
     X = np.asarray(X, dtype=float)
     n, k = X.shape
-    beta, *_ = np.linalg.lstsq(X, y, rcond=None)
+    beta, _, rank, _ = np.linalg.lstsq(X, y, rcond=None)
+    if rank < k:
+        raise ValueError("OLS design matrix is rank deficient")
     resid = y - X @ beta
 
     # Plain OLS SEs (homoskedastic) for reference.
@@ -275,7 +316,7 @@ def ols_hac(
     if hac_lags is None:
         hac_lags = int(np.floor(4.0 * (n / 100.0) ** (2.0 / 9.0)))
         hac_lags = max(hac_lags, 1)
-    cov_hac = _newey_west_cov(X, resid, hac_lags)
+    cov_hac = _newey_west_cov(X, resid, hac_lags, time_index=time_index)
     se_hac = np.sqrt(np.maximum(np.diag(cov_hac), 0.0))
 
     with np.errstate(divide="ignore", invalid="ignore"):
@@ -302,6 +343,74 @@ def ols_hac(
     )
 
 
+def moving_block_bootstrap_indices(
+    n_rows: int,
+    *,
+    block_len: int,
+    n_draws: int,
+    seed: int,
+    time_index: np.ndarray | None = None,
+) -> np.ndarray:
+    """Generate reproducible row indices for moving-pairs block resamples.
+
+    When ``time_index`` is supplied, ``block_len`` is measured on the complete
+    session calendar rather than in retained rows.  The returned array can be
+    reused across several aligned designs so every equation receives exactly
+    the same resampling starts.
+    """
+    if n_rows < 1:
+        raise ValueError("n_rows must be positive")
+    if block_len < 1:
+        raise ValueError("block_len must be positive")
+    if n_draws < 1:
+        raise ValueError("n_draws must be positive")
+    block_len = min(block_len, n_rows)
+    rng = np.random.default_rng(seed)
+
+    if time_index is None:
+        n_blocks = int(np.ceil(n_rows / block_len))
+        max_start = n_rows - block_len
+        starts = rng.integers(0, max_start + 1, size=(n_draws, n_blocks))
+        draws = np.empty((n_draws, n_rows), dtype=np.int64)
+        for draw, draw_starts in enumerate(starts):
+            draws[draw] = np.concatenate(
+                [np.arange(start, start + block_len) for start in draw_starts]
+            )[:n_rows]
+        return draws
+
+    calendar = np.asarray(time_index)
+    if (
+        calendar.ndim != 1
+        or calendar.size != n_rows
+        or np.any(~np.isfinite(calendar))
+        or np.any(calendar != np.floor(calendar))
+        or np.any(np.diff(calendar) <= 0)
+    ):
+        raise ValueError("time_index must be finite, integer-valued, aligned, and increasing")
+    calendar = calendar.astype(np.int64)
+    calendar_min = int(calendar[0])
+    calendar_max_start = max(calendar_min, int(calendar[-1]) - block_len + 1)
+    candidate_starts = np.arange(calendar_min, calendar_max_start + 1, dtype=np.int64)
+    blocks = [
+        np.flatnonzero((calendar >= start) & (calendar < start + block_len))
+        for start in candidate_starts
+    ]
+    blocks = [rows for rows in blocks if rows.size > 0]
+    if not blocks:
+        raise RuntimeError("no non-empty calendar blocks can be formed")
+
+    draws = np.empty((n_draws, n_rows), dtype=np.int64)
+    for draw in range(n_draws):
+        parts: list[np.ndarray] = []
+        selected = 0
+        while selected < n_rows:
+            rows = blocks[int(rng.integers(0, len(blocks)))]
+            parts.append(rows)
+            selected += int(rows.size)
+        draws[draw] = np.concatenate(parts)[:n_rows]
+    return draws
+
+
 def block_bootstrap_pvalue(
     y: np.ndarray,
     X: np.ndarray,
@@ -312,6 +421,8 @@ def block_bootstrap_pvalue(
     alternative: str = "less",
     confidence: float = 0.90,
     monte_carlo_correction: bool = False,
+    time_index: np.ndarray | None = None,
+    resample_indices: np.ndarray | None = None,
 ) -> dict[str, float]:
     """Moving-pairs block-bootstrap uncertainty for a single coefficient.
 
@@ -321,6 +432,8 @@ def block_bootstrap_pvalue(
     the fraction of bootstrap coefficients that are non-negative.  The
     optional Monte Carlo correction adds one to the numerator and denominator;
     A14 enables it so a finite simulation cannot report a zero p-value.
+    With time_index, block length is measured in complete-session indices;
+    missing retained rows do not compress the block horizon.
 
     Returns the point estimate, bootstrap SE, a percentile interval at the
     requested confidence level, and the sign-tail p-value.
@@ -333,7 +446,6 @@ def block_bootstrap_pvalue(
         raise ValueError("block_len must be positive")
     if n_boot < 2:
         raise ValueError("n_boot must be at least two")
-    rng = np.random.default_rng(seed)
     y = np.asarray(y, dtype=float)
     X = np.asarray(X, dtype=float)
     if y.ndim != 1 or X.ndim != 2 or X.shape[0] != y.size or y.size == 0:
@@ -343,26 +455,71 @@ def block_bootstrap_pvalue(
     if not 0 <= coef_index < X.shape[1]:
         raise ValueError("coef_index is outside the design matrix")
     n = len(y)
-    # Clamp block length so a block always fits inside a (possibly short) series.
-    block_len = max(1, min(block_len, n))
-    n_blocks = int(np.ceil(n / block_len))
-    max_start = n - block_len
+    if time_index is not None:
+        time_index = np.asarray(time_index)
+        if (
+            time_index.ndim != 1
+            or time_index.size != n
+            or np.any(~np.isfinite(time_index))
+            or np.any(time_index != np.floor(time_index))
+            or np.any(np.diff(time_index) <= 0)
+        ):
+            raise ValueError("time_index must be finite, integer-valued, aligned, and increasing")
+        time_index = time_index.astype(np.int64)
+    block_len = min(block_len, n)
 
-    beta_hat, *_ = np.linalg.lstsq(X, y, rcond=None)
+    beta_hat, _, rank, _ = np.linalg.lstsq(X, y, rcond=None)
+    if rank < X.shape[1]:
+        raise ValueError("bootstrap source design is rank deficient")
     point = float(beta_hat[coef_index])
 
     boots = np.empty(n_boot)
-    for b in range(n_boot):
-        starts = rng.integers(0, max_start + 1, size=n_blocks)
-        idx = np.concatenate([np.arange(s, s + block_len) for s in starts])[:n]
+    valid_draws = 0
+    attempted_draws = 0
+    rank_deficient_draws = 0
+    if resample_indices is None:
+        candidates = moving_block_bootstrap_indices(
+            n,
+            block_len=block_len,
+            n_draws=20 * n_boot,
+            seed=seed,
+            time_index=time_index,
+        )
+    else:
+        candidates = np.asarray(resample_indices)
+        if (
+            candidates.ndim != 2
+            or candidates.shape[1] != n
+            or candidates.shape[0] < n_boot
+            or np.any(~np.isfinite(candidates))
+            or np.any(candidates != np.floor(candidates))
+            or np.any((candidates < 0) | (candidates >= n))
+        ):
+            raise ValueError(
+                "resample_indices must contain at least n_boot valid integer row-index draws"
+            )
+        candidates = candidates.astype(np.int64)
+
+    for idx in candidates:
+        if valid_draws >= n_boot:
+            break
+        attempted_draws += 1
         yb, Xb = y[idx], X[idx]
         try:
-            bb, *_ = np.linalg.lstsq(Xb, yb, rcond=None)
-            boots[b] = bb[coef_index]
+            bb, _, bootstrap_rank, _ = np.linalg.lstsq(Xb, yb, rcond=None)
         except np.linalg.LinAlgError:
-            boots[b] = np.nan
+            rank_deficient_draws += 1
+            continue
+        if bootstrap_rank < X.shape[1] or not np.isfinite(bb[coef_index]):
+            rank_deficient_draws += 1
+            continue
+        boots[valid_draws] = bb[coef_index]
+        valid_draws += 1
 
-    boots = boots[np.isfinite(boots)]
+    if valid_draws < n_boot:
+        raise RuntimeError(
+            f"only {valid_draws} full-rank bootstrap draws after {attempted_draws} candidates"
+        )
     boot_se = float(np.std(boots, ddof=1))
     tail = 50.0 * (1.0 - confidence)
     ci_lo, ci_hi = (float(x) for x in np.percentile(boots, [tail, 100.0 - tail]))
@@ -386,6 +543,9 @@ def block_bootstrap_pvalue(
         "ci_hi": ci_hi,
         "pvalue": pvalue,
         "n_boot": len(boots),
+        "n_draws_attempted": float(attempted_draws),
+        "n_rank_deficient": float(rank_deficient_draws),
+        "calendar_blocking": float(time_index is not None),
         "confidence": confidence,
         "monte_carlo_correction": float(monte_carlo_correction),
         "seed": float(seed),
@@ -447,7 +607,7 @@ def build_design(
 
     The dependent variable is the outcome at t+1; all regressors are dated t,
     so the regression is strictly predictive (GEX_t -> y_{t+1}). This removes
-    the mechanical same-day correlation and isolates the forward feedback claim.
+    mechanical same-day overlap but does not establish a causal feedback effect.
 
     Returns a Design with y, X, names, and valid_mask.
     """

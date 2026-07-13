@@ -36,6 +36,8 @@ from reflexive_options.theory.centered_model import (
     normalized_gaussian_book_partials,
 )
 
+plt.rcParams["pdf.fonttype"] = 42
+
 
 @dataclass(frozen=True)
 class CenteredHopfValidationConfig:
