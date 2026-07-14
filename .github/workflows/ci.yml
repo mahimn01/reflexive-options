@@ -23,6 +23,8 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+          # Matrix jobs finish concurrently, so each must own a distinct save key.
+          cache-suffix: "py-${{ matrix.python-version }}"
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -73,6 +75,7 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+          cache-suffix: "paper-py-3.12"
 
       - name: Set up Python
         uses: actions/setup-python@v6
